@@ -41,11 +41,6 @@ export default function PanelSkeleton({
         return (
             <div className={styles.libraryStats}>
                 <Statistics />
-                <div className={styles.about}>
-                    <div>
-                        <Skeleton variant="avatar" shouldFill />
-                    </div>
-                </div>
             </div>
         );
     if (variant === 'achievements') return <Achievements />;
@@ -125,28 +120,25 @@ function Statistics({ isOverview = false }: { isOverview?: boolean }) {
     const count = isOverview ? CLUB_STAT_COUNT : PERSONAL_STAT_COUNT;
     return (
         <div className={styles.statistics} data-overview={isOverview || undefined}>
-            {Array.from({ length: count }, (_, index) => (
-                <div className={styles.stat} key={index}>
-                    <div className={styles.statIcon}>
-                        <Skeleton variant="avatar" shouldFill />
-                    </div>
-                    <div className={styles.statCopy}>
-                        <div
-                            className={styles.statValue}
-                            data-text={
-                                index >=
-                                    (isOverview ? CLUB_STAT_COUNT - 2 : PERSONAL_STAT_COUNT - 3) ||
-                                undefined
-                            }
-                        >
-                            <Skeleton shouldFill />
+            {Array.from({ length: count }, (_, index) => {
+                const isText =
+                    index >= (isOverview ? CLUB_STAT_COUNT - 2 : PERSONAL_STAT_COUNT - 3);
+                return (
+                    <div className={styles.stat} key={index}>
+                        <div className={styles.statIcon}>
+                            <Skeleton variant="avatar" shouldFill />
                         </div>
-                        <div className={styles.statLabel}>
-                            <Skeleton />
+                        <div className={styles.statCopy}>
+                            <div className={styles.statValue} data-text={isText || undefined}>
+                                <Skeleton variant={isText ? 'text' : 'title'} />
+                            </div>
+                            <div className={styles.statLabel}>
+                                <Skeleton />
+                            </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }
@@ -193,7 +185,7 @@ function Achievements() {
                 {Array.from({ length: ROW_COUNT }, (_, index) => (
                     <div className={styles.filter} key={index}>
                         <div className={styles.filterValue}>
-                            <Skeleton shouldFill />
+                            <Skeleton variant="title" />
                         </div>
                         <div className={styles.filterLabel}>
                             <Skeleton />
@@ -211,7 +203,7 @@ function Achievements() {
                             <Skeleton shouldFill />
                         </div>
                         <div className={styles.achievementTitle}>
-                            <Skeleton shouldFill />
+                            <Skeleton />
                         </div>
                         <div className={styles.description}>
                             <Skeleton />

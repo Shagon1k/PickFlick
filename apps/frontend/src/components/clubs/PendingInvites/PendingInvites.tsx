@@ -6,6 +6,7 @@ import { type ReactNode, useEffect, useId, useRef, useState, useTransition } fro
 
 import { useNotifications } from '#components/notifications/notifications-context';
 import { useProductOverlay } from '#components/shells/product-overlay';
+import Alert from '#components/ui/Alert/Alert';
 import Button from '#components/ui/Button/Button';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
@@ -155,30 +156,38 @@ export default function PendingInvites() {
                 <div className={styles.header} ref={headerRef}>
                     <div>
                         <h2>Pending invites</h2>
-                        <span>{isLoaded ? countLabel : 'Checking invitations…'}</span>
+                        <span>
+                            {isLoaded
+                                ? countLabel
+                                : loadError && !isPending
+                                  ? 'Temporarily unavailable'
+                                  : 'Checking invitations…'}
+                        </span>
                     </div>
                     <button type="button" className={styles.close} onClick={() => closeOverlay()}>
                         Close
                     </button>
                 </div>
-                <p
-                    aria-live="polite"
-                    className={loadError ? styles.feedback : 'visually-hidden'}
-                    role="status"
-                >
-                    {loadError || announcement}
+                <p aria-live="polite" className="visually-hidden" role="status">
+                    {announcement}
                 </p>
                 {isLoaded && invitations.length === 0 ? (
                     <p className={styles.feedback}>No pending invitations.</p>
                 ) : null}
-                {!isLoaded ? (
-                    <Button
-                        disabled={isPending}
-                        onClick={() => startTransition(load)}
-                        variant="secondary"
-                    >
-                        Retry invites
-                    </Button>
+                {loadError ? (
+                    <div className={styles.recovery}>
+                        <Alert tone="warning">{loadError}</Alert>
+                        <div>
+                            <Button
+                                loading={isPending}
+                                onClick={() => startTransition(load)}
+                                size="small"
+                                variant="secondary"
+                            >
+                                Retry invites
+                            </Button>
+                        </div>
+                    </div>
                 ) : null}
                 <ul className={styles.list}>
                     {invitations.map((invitation) => (

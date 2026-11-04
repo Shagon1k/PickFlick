@@ -103,7 +103,10 @@
     --hit: 44px;
     --film-rail-icon-size: 20px;
     --film-rail-score-size: var(--fs-body);
-    --session-result-row-min: 112px;
+    --session-result-row-min: 104px;
+    --session-result-score-size: 28px;
+    --session-result-score-font: 600 var(--session-result-score-size) / var(--lh-ui)
+        var(--font-display);
     --movie-search-gap: 2px;
     --movie-search-panel-height: 320px;
     --movie-search-count-height: 32px;
@@ -151,4 +154,10 @@
     --ease-standard: ease;
     --ease-action: cubic-bezier(0.22, 0.8, 0.3, 1);
     --ease-menu: cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+@media (width < 576px) {
+    :root {
+        --session-result-score-size: 22px;
+    }
 }

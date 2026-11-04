@@ -96,6 +96,8 @@
     min-width: 0;
 }
 .statValue {
+    display: grid;
+    align-items: center;
     width: 70%;
     height: calc(clamp(40px, 5vw, 56px) * var(--lh-tight));
     border-radius: var(--radius);
@@ -112,17 +114,6 @@
 }
 .libraryStats {
     margin-bottom: var(--gap-lg);
-}
-.about {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    min-height: var(--hit);
-}
-.about > div {
-    width: 18px;
-    height: 18px;
-    border-radius: var(--radius-pill);
 }
 .statistics[data-overview] {
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -216,6 +207,8 @@
     border-radius: var(--radius-lg);
 }
 .filterValue {
+    display: grid;
+    align-items: center;
     width: 60%;
     height: calc(var(--fs-app-title) * var(--lh-title));
     border-radius: var(--radius);
@@ -258,6 +251,8 @@
     border-radius: var(--radius);
 }
 .achievementTitle {
+    display: grid;
+    align-items: center;
     width: 100%;
     height: calc(var(--fs-card-title) * var(--lh-title));
     margin-bottom: 7px;
@@ -266,6 +261,7 @@
 .description {
     display: grid;
     grid-template-rows: repeat(3, 1fr);
+    gap: var(--gap-xs);
     align-items: center;
     width: 100%;
     min-height: 3lh;

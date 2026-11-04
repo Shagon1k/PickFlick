@@ -308,12 +308,13 @@ button.notifBody::before {
     border-bottom: 1px solid var(--border);
 }
 
-.notifFeedback p {
-    margin: 0;
+.notifFeedback {
+    display: grid;
+    gap: var(--gap-sm);
 }
 
-.notifMore,
-.notifFeedback button {
+.notifMore {
+    width: 100%;
     min-height: 44px;
     padding: 8px 18px;
     font: inherit;
@@ -321,10 +322,6 @@ button.notifBody::before {
     cursor: pointer;
     background: none;
     border: 0;
-}
-
-.notifMore {
-    width: 100%;
     border-top: 1px solid var(--border);
 }
 

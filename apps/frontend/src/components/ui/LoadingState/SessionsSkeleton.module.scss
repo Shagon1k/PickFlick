@@ -32,7 +32,7 @@
     grid-template-columns: 64px minmax(0, 1fr) auto;
     gap: var(--gap-md);
     align-items: center;
-    padding-block: 16px;
+    padding-block: var(--gap-sm);
 }
 .row + .row {
     border-top: 1px solid var(--border);
@@ -66,13 +66,13 @@
 }
 .score {
     width: 48px;
-    height: calc(28px * var(--lh-ui));
+    height: calc(var(--session-result-score-size) * var(--lh-ui));
     border-radius: var(--radius);
 }
 .score[data-known] {
     width: auto;
     height: auto;
-    font: 600 28px/var(--lh-ui) var(--font-display);
+    font: var(--session-result-score-font);
 }
 .closedStatus {
     font: var(--fs-meta)/var(--lh-body) var(--font-mono);
@@ -132,13 +132,6 @@
     .row {
         grid-template-columns: 56px minmax(0, 1fr) auto;
         column-gap: var(--gap-sm);
-    }
-    .score {
-        height: calc(22px * var(--lh-ui));
-    }
-    .score[data-known] {
-        height: auto;
-        font-size: 22px;
     }
     .row[data-rating] {
         grid-template-columns: 40px auto minmax(0, 1fr);

@@ -2,6 +2,7 @@ import { type RefObject, useState } from 'react';
 
 import { useNotifications } from '#components/notifications/notifications-context';
 import styles from '#components/shells/product-navigation.module.scss';
+import Alert from '#components/ui/Alert/Alert';
 import Button from '#components/ui/Button/Button';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 
@@ -74,16 +75,18 @@ export default function NotificationsPanel({
                 </span>
             </div>
             {error ? (
-                <div className={styles.notifFeedback} role="alert">
-                    <p>{error}</p>
-                    <Button
-                        loading={isRetrying}
-                        size="small"
-                        variant="subtle"
-                        onClick={() => void handleRetry()}
-                    >
-                        Try again
-                    </Button>
+                <div className={styles.notifFeedback}>
+                    <Alert tone="warning">{error}</Alert>
+                    <div>
+                        <Button
+                            loading={isRetrying}
+                            size="small"
+                            variant="subtle"
+                            onClick={() => void handleRetry()}
+                        >
+                            Try again
+                        </Button>
+                    </div>
                 </div>
             ) : null}
             {!isLive && data ? (

@@ -118,6 +118,11 @@ for conditional actions and rows. Club Ratings/My Ratings/Watchlist use the real
 columns and native local scrolling, no posters, and the real pagination geometry. Manage Club
 reserves its session cards and distinct Info, Visibility/range, Members and Danger sections.
 Library query-tab content has a keyed Suspense boundary and statistics stream independently.
+Session card loading modes share the live 104px minimum; Hub Session/History rows and their
+skeleton counterparts use matching 12px vertical padding.
+Numeric/filter and title placeholders center the shared 24px/14px strips inside their original
+line boxes instead of filling the full line height. Achievement description strips have an 8px
+row gap; outer card sizes, padding and section spacing stay matched to the live content.
 Movie Details and Session loading share the live MovieMedia layout and TicketPoster geometry,
 including the phone ticket, tablet credits beside the poster, trailer after synopsis on compact
 screens and Session's wider desktop credits. Search retains its count slot, five rows and shimmer.
@@ -365,8 +370,17 @@ here.
   other submitted responses appear only after the caller submits their own response. After means
   Session Completed, and all visibility switches apply to Admins/Moderators as well as Members.
   Save Changes applies the current rules to existing, historical and future Sessions. The Settings
-  tooltip explains this scope. Legacy Session fields do not override the global rules. Authorized Selection matrices show participant names, film columns
+  rating switches are labelled Show individual ratings. Club averages stay visible independently
+  of these switches and of the viewer's own submission; the settings tooltip states this.
+  Legacy Session fields do not override the global rules. Authorized Selection matrices show participant names, film columns
   and missing imported cells as `—`; author-only nominations remain independent of score visibility.
+  Read-only Selection scores use the shared Table matrix variant: a 24px/600 sans section title,
+  a quiet scale label, ruled table edges and display-font score numerals. Participant and film
+  headers reuse the shared ascending/descending/reset controls, with keyboard focus and aria-sort.
+  Sorting is local to the received rows; ties retain their source order and missing cells stay
+  last in either direction, distinct from zero. Phones retain the labelled local horizontal scroll.
+  Film headers wrap at normal word boundaries and retain a longest-word minimum width; whole
+  words never split merely to fit the viewport. Extra width stays inside the table's scroll region.
 - All three views show the same adminless, archived and excess-member notices. Adminless Clubs
   explain the missing owner actions; excess-member Clubs keep history and participation but pause new
   Sessions and invites while roster recovery stays available.
@@ -385,6 +399,9 @@ here.
   date, and have no token expiry. Accepting a Session invite opens the Session.
 - Responding moves focus to Close before the row's controls change, so the trap and Escape keep
   working after the last answer. Loading, empty, retry and stale-invitation feedback are explicit.
+- Failed reads show Temporarily unavailable in the header and a shared warning Alert plus a
+  small retry button inside the padded body. Show Retry only after a failure; its pending state
+  disables duplicate activation. Loading and error labels must not appear simultaneously.
 - The ticket appears once an invitation or a loading failure exists, and then stays, so focus can
   return to it after the last answer; with nothing pending it never covers content. On phones it
   floats above the bottom bar.
@@ -431,6 +448,11 @@ here.
   the existing invalid-field path. Review text keeps its layout with a transparent 44px hit area.
 - Editing Session form values clears obsolete submit feedback. Notification retries use the shared
   Button loading state and retain the label footprint while refresh is pending.
+- Session polling failures use a shared warning Alert inside the Session content width and gutters,
+  in both the normal and unavailable views; recovery stays automatic. Notification failures use
+  the same Alert with a separated retry action, without overriding shared Button styling. Library
+  read/filter failures and Club Ratings invalid filters keep a standard gap before their recovery
+  button. These states apply to production network/API failures as well as local restarts.
 - Shared `HorizontalScroll` supplies decorative edge fades for application tables and Pricing's
   comparison table. Each fade appears only when more columns remain in that direction, updates on
   scroll/resize, does not capture pointers, and keeps the labelled keyboard-focusable scroll region.
@@ -531,8 +553,8 @@ here.
   filters. Eight bordered tiles use the canonical stat icons and a decorative panda backdrop;
   the four-column desktop grid recomposes into two columns below L. Genre/person names wrap fully,
   including unbroken text. Empty counts and watch hours show zero; absent averages and metadata
-  summaries show an explained em dash. Copy explains current-rating/UTC-year semantics and the
-  watch-time estimate. Loading uses the Library boundary; statistics failures show their own retry
+  summaries show an em dash. The summary has no standalone calculation tooltip or reserved footer
+  row; empty statistics retain their invitation to rate a film. Loading uses the Library boundary; statistics failures show their own retry
   while the table stays usable. Existing editor revalidation updates the totals after saves.
   `?tab=achievements` opens the personal shelf, and the Club Achievements tab opens
   `/clubs/[clubId]/achievements`. Shared shelves use at most three columns from 768px and two
@@ -591,7 +613,7 @@ data; this work does not rewrite historical records.
   Selection participants score the frozen films. Kick lists removable participants and can still
   revoke legacy personal links. Archived Clubs and terminal Sessions drop the controls they cannot use.
 - The facts companion is the progress metric while Nomination or Selection is open, a coming-soon chat
-  while Watching, and the permitted Session average as Club score after Rating completes.
+  while Watching, and the Session average as Club score after Rating completes.
 
 #### Nomination
 
@@ -619,10 +641,12 @@ data; this work does not rewrite historical records.
   `NominationMovieCard`; their lists use `NominationMovieList`. The 48×72px poster centers vertically,
   while title, 12px author credit and genre chips form one top-aligned block with 4px internal gaps.
   Rivals add an independent right-hand slot for a plain total or a 52px-minimum avg. button,
-  without changing the text spacing or adding a phone footer. Both numbers use the display font
-  at 24px/400. Native full-card Movie links keep the avg. button separate and do not underline titles.
+  without changing the text spacing or adding a phone footer. Ratings and rival avg./total numbers
+  share History's 600-weight display font: 28px normally and 22px below 576px, controlled by the
+  same font token and mirrored in loading states. Native full-card Movie links keep the avg.
+  button separate and do not underline titles.
   Lists use an unconstrained inner equal-row grid inside a 300px-max scroller: all cards in a list
-  match its tallest card, without fixed heights, clipping or a measurement controller. The 112px
+  match its tallest card, without fixed heights, clipping or a measurement controller. The 104px
   minimum and 12px card padding/radius remain. Nomination retains its three-genre limit; Rivals
   retain all supplied genres and the existing author/count visibility rules. Selection stays separate.
 - After submission, the left panel becomes Your nomination, with a quiet check and
@@ -716,9 +740,10 @@ data; this work does not rewrite historical records.
 - Positive N/N completion is automatic. Session Settings offers Close Rating early to authorized
   operators, with received/pending counts and typed `CLOSE`. Cancel or Escape preserves Rating and
   returns focus. Failure preserves the dialog and confirmation; success focuses the Session heading.
-- Other responses and the Club score appear only when the current Club period policy permits
-  them; live disclosure additionally requires the caller's own submitted rating. Completed results show
-  individual scores, comments and the average only when the server permits them. Hidden results,
+- Other individual responses appear only when the current Club period policy permits
+  them; live disclosure additionally requires the caller's own submitted rating. Club averages
+  remain visible independently in Rating, Completed and Logged Sessions, History/activity,
+  statistics and the Club Ratings table. No received ratings uses a dash. Hidden individual results,
   no received ratings, non-participation and read-only Clubs have explicit text. The caller's own
   response stays visible. Completion removes further submission and management controls.
 - Rating and Completed share SessionResults after the film and stable screening facts: individual
@@ -739,9 +764,11 @@ data; this work does not rewrite historical records.
   Details uses the same alignment and numeral sizing while retaining its editor.
 - Completed retains both result panels' neutral outer borders and uses independent rounded row
   cards inside. Ratings and Nomination Rivals share the Open Ratings heading typography: 600,
-  24px body sans, with a 44px header slot and matching panel padding. Shared tokens set a 112px
+  24px body sans, with a 44px header slot and matching panel padding. Shared tokens set a 104px
   row minimum and 300px list maximum; the desktop grid stretches the panels to equal outer height
   without assuming equal counts. Below 1024px the panels stack and use their natural heights.
+  Individual Ratings list scores display `1.0` through `9.0`, with `10` kept without decimals.
+  The loading text uses the same formatted value to preserve its measured footprint.
   Ratings use the shared 48px Avatar with same-origin photos and initials; Rivals retain actual
   Movie posters. Images restore color on row hover/focus, and plain scores change from white to
   gold-light. Gray card backgrounds apply only to actual fine-pointer hover, without lingering
@@ -772,7 +799,7 @@ data; this work does not rewrite historical records.
   instead of a text plus prefix; it remains a button opening the invitation dialog.
 - History starts with ten Completed/Cancelled Sessions. Load More appends the next ten from the
   server, retaining the loaded list on ordinary Hub refreshes and announcing completion without
-  visible success text. The shown count includes both terminal states; restricted or absent
+  visible success text. The shown count includes both terminal states; absent
   averages remain `—`. A role change resets loaded pages to the newly authorized projection.
   Eligible operators keep a compact Log Past action beside History, even while a blocking Session
   exists. Manage Club also retains open Ratings; Overview omits the duplicate Active Ratings card.

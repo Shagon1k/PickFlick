@@ -7,6 +7,7 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import LoadingState from '#components/ui/LoadingState/LoadingState';
 
 import { loadLibraryRead } from '../../load-library-read';
+import styles from '../../page.module.scss';
 import LibraryStatistics from '../LibraryStatistics/LibraryStatistics';
 
 async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) {
@@ -14,7 +15,7 @@ async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) 
     return statistics ? (
         <LibraryStatistics statistics={statistics} />
     ) : (
-        <section aria-label="Personal statistics unavailable">
+        <section className={styles.recovery} aria-label="Personal statistics unavailable">
             <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
             <ButtonLink href={returnPath}>Retry statistics</ButtonLink>
         </section>

@@ -16,6 +16,7 @@ import LibraryShell from './_components/LibraryShell/LibraryShell';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
 import { buildLibraryPath } from './library-path';
 import { loadLibraryRead } from './load-library-read';
+import styles from './page.module.scss';
 
 export const metadata: Metadata = {
     title: 'My Library — PickFlick',
@@ -30,7 +31,7 @@ async function AchievementContent() {
     return achievements ? (
         <Achievements items={achievements.items} />
     ) : (
-        <section aria-label="Achievements unavailable">
+        <section className={styles.recovery} aria-label="Achievements unavailable">
             <Alert tone="warning">Your achievements are temporarily unavailable.</Alert>
             <RetryButton />
         </section>
@@ -54,7 +55,7 @@ async function LibraryContent({
     return (
         <>
             {!isValid && (
-                <section aria-label="Invalid Library filters">
+                <section className={styles.recovery} aria-label="Invalid Library filters">
                     <Alert tone="warning">
                         These Library filters are invalid. Clear them and try again.
                     </Alert>
@@ -63,7 +64,7 @@ async function LibraryContent({
             )}
             {library && <LibraryTable key={query.tab} library={library} query={query} />}
             {isValid && !library && (
-                <section aria-label={`${title} unavailable`}>
+                <section className={styles.recovery} aria-label={`${title} unavailable`}>
                     <Alert tone="warning">
                         {query.tab === 'watchlist'
                             ? 'Your Watchlist is temporarily unavailable.'

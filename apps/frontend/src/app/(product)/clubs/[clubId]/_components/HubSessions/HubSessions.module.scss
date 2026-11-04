@@ -42,7 +42,7 @@
     grid-template-columns: 64px minmax(0, 1fr) auto;
     gap: var(--gap-md);
     align-items: center;
-    padding-block: 16px;
+    padding-block: var(--gap-sm);
     color: var(--fg);
     text-decoration: none;
     border-block: 0;
@@ -86,7 +86,7 @@
 
 .score {
     display: grid;
-    font: 600 28px/var(--lh-ui) var(--font-display);
+    font: var(--session-result-score-font);
     color: var(--fg);
     text-align: right;
 }
@@ -100,10 +100,6 @@
     .row {
         grid-template-columns: 56px minmax(0, 1fr) auto;
         column-gap: var(--gap-sm);
-    }
-
-    .score {
-        font-size: 22px;
     }
 }
 

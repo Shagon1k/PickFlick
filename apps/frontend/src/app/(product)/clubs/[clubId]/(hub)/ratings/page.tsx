@@ -9,6 +9,7 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import HubLoadFailure from '../../_components/HubLoadFailure/HubLoadFailure';
 import HubPanel from '../../_components/HubPanel/HubPanel';
 import ClubRatings from './_components/ClubRatings/ClubRatings';
+import styles from './page.module.scss';
 
 export const metadata: Metadata = { title: 'Club Ratings — PickFlick' };
 
@@ -44,7 +45,7 @@ export default async function ClubRatingsPage({
             {ratings ? (
                 <ClubRatings clubId={clubId} ratings={ratings} query={query} />
             ) : (
-                <section aria-label="Invalid ratings filters">
+                <section className={styles.recovery} aria-label="Invalid ratings filters">
                     <Alert tone="warning">
                         These ratings filters are invalid. Clear them and try again.
                     </Alert>

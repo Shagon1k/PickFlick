@@ -428,6 +428,83 @@ cases are finished. Screenshots are now provided only when the owner explicitly 
   and My Ratings/Watchlist at 390px have document width equal to viewport client width. The table
   still scrolls locally while window scrollX stays zero. Shown/open invitation states and automated
   regression coverage remain for the deferred test round; no screenshots, tests or commit made.
+- Ratings row decimal labels (2026-11-04): owner requested `1.0`–`9.0`, keeping `10` without
+  decimals. RatingEntry formats its display label once using the canonical scale maximum;
+  measured Skeleton text and the live score share that label. Stored scores, scale/input controls,
+  other score displays and average/total formatting stay unchanged. Source review/formatting;
+  browser/tests remain deferred. Updated design references; no app writes or commit.
+- Session score typography parity (2026-11-04): History already used display/600 at 28px,
+  switching to 22px below 576px; Ratings and live/Logged rival avg./total used display/400 at 24px.
+  Added shared session-result-score-size/font tokens and used them in History, Ratings and Rivals,
+  copying History's weight, size, line height and family exactly. The phone size changes centrally.
+  Known/unknown Hub History skeleton scores use the same font/line-height tokens, and actual
+  Ratings/Rivals loading modes inherit the typography through measured Skeleton text. Captions,
+  table numbers, score controls and 104px row minimum retain their separate layouts. Updated
+  design references. Source review/formatting; browser/tests remain deferred. No data writes,
+  commit or push; #63 In progress.
+- Session row density follow-up (2026-11-04): reduced shared session-result-row-min from 112px
+  to 104px for Ratings, Current/Your Nominations and live/Logged Rivals. Retained intrinsic equal
+  rows, the 300px list limit, content wrapping, typography and image/control sizes. Hub Open
+  Ratings and History use 12px rather than 16px vertical row padding; SessionsSkeleton uses the
+  same token. Session-loading results/nominations render the real components in isLoading mode,
+  so they inherit the same card minimum without duplicate geometry. Long content can still grow
+  rows; no fixed heights or clipping introduced. Updated current design rules (older evidence
+  keeps its original measurements). Source review/formatting; browser/tests remain deferred.
+  No data writes, commit or push; #63 In progress.
+- Selection matrix header wrapping follow-up (2026-11-04): owner screenshot caught Superman
+  splitting before its last letter. The new film-title span combined min-width:0 with
+  overflow-wrap:anywhere, allowing the sort icon to squeeze the word. Changed to min-content
+  minimum width and normal wrapping; ordinary word boundaries remain, and long words widen the
+  locally scrolling table. Sorting and other tables are unchanged. Source review/formatting only;
+  browser/tests remain deferred. Updated design references; no app writes or commit.
+- Selection scores table alignment/sorting (2026-11-04): replaced the visible serif caption with
+  the standard 24px/600 sans section heading and a quiet scale label. Added a semantic matrix
+  variant to shared Table, reusing its ruled HorizontalScroll frame, row hover, sortable header
+  controls, focus and aria-sort. Matrix numeric cells use the common display font; existing default
+  and leaderboard variants retain their styles. The SelectionScores component sorts received rows
+  locally through getNextTableSort, using the same asc/desc/reset cycle as other tables. Names
+  sort alphabetically, film scores numerically, zero stays numeric, missing cells stay last in both
+  directions and ties retain source order. Live and imported authorized matrices use this component.
+  No API/schema/authorization change. Source review/formatting; browser, sorting/keyboard tests and
+  baselines remain owner-deferred, with zero/missing/tied scores and narrow-screen overflow as
+  round-end checks. Updated design references; no app data writes, commit or push.
+- Visible failure-state audit (2026-11-04): the reported Pending Invites Retry had no padded
+  container and its header retained Checking invitations after a failed read. Failure now uses
+  shared warning Alert plus small retry inside the padded body; the header says Temporarily
+  unavailable, and Retry appears only after failure with standard loading/disabled feedback.
+  SessionProgress emitted a bare paragraph before the page grid; it now uses shared Alert at the
+  Session width/gutters in normal/recovery views, retaining the existing five-second retry logic.
+  These are real production failure branches, not dev-only styles. Source audit also found four
+  Library read/filter recovery compositions and Club Ratings invalid filters with no Alert/action
+  gap, plus notification CSS overriding shared retry Button styles. Added route-local recovery
+  grids and separated notification Alert/action; removed the button override. Existing styled
+  forms, dialogs, Hub load failures and hidden live feedback stay intact. No new state framework.
+  Source review/formatting; fault-state/browser tests and baselines remain deferred. No invitation
+  responses, notification read writes, settings/rating submissions or other app data mutations.
+  Final local checks: frontend HTTP 200, API ready with database/storage up, git diff --check clean.
+  No failure-state injection, browser verification or automated suites were run in this follow-up.
+- Club average visibility clarification (2026-11-04): owner requires averages everywhere even
+  when individual ratings are hidden. Session results now retain average with nullable entries;
+  own response remains separate and During/After entry gates stay enforced. The Ratings list
+  handles hidden entries independently of average availability. Hub History/activity and shared
+  completed-screening analytics no longer filter out scores by individual-rating visibility.
+  Average/count-derived Club awards and personal Hot Take use the available aggregate; Selection
+  privacy masking and role-based private-award visibility remain. Settings and its skeleton use
+  Show individual ratings; tooltip explains that Club averages stay visible. No migration.
+  Source review/formatting; tests/fixtures/baselines stay deferred. Required round-end coverage:
+  During/After on/off across roles, own submitted/unsubmitted, empty/partial/Logged/legacy results,
+  nullable entries without peer data, unchanged averages in summaries/Hub/analytics/leaderboards,
+  and aggregate award/notification behavior while named Selection privacy stays enforced.
+  The owner's invitation/error-state styling screenshots are addressed in the audit above.
+- Library/Hub skeleton inner spacing (2026-11-04): owner clarified the missing air is between
+  painted strips inside cards, not the outer padding. Shared numeric/filter paint now uses the
+  existing 24px title strip and text/title paint the 14px text strip, centered inside the unchanged
+  line boxes. Achievement descriptions add an 8px row gap within the existing three-line reserve.
+  Library statistics, Hub Overview and both achievement shelves share this adjustment; no separate
+  Library skeleton or new primitive was introduced. Removed the Library statistics calculation
+  InfoTip, its 44px footer row and matching skeleton placeholder; empty-statistics copy remains.
+  Source review/targeted formatting; manual geometry evidence is recorded in #63. No screenshots,
+  app data writes, automated suites, fixture/baseline changes or commit.
 - Past Session empty-value copy (2026-11-04): replaced Unknown with `—` in nominator choices
   and native Selection-score cells. Both keep their empty-string value and existing clearing
   behavior; explicit zero is unchanged. Updated design references. Source review/formatting only;

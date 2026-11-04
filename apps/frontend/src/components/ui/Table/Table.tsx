@@ -27,7 +27,7 @@ export interface ITableProps {
     columns: ITableColumn[];
     rows: ITableRow[];
     emptyMessage?: string;
-    variant?: 'default' | 'leaderboard';
+    variant?: 'default' | 'leaderboard' | 'matrix';
 }
 
 /** A semantic table whose dense content scrolls inside its own region, never the page. */
@@ -42,11 +42,12 @@ export default function Table({
         column.isNumeric ? styles.table__numeric : undefined;
     const hasExplicitSort = columns.some((column) => column.sortDirection);
     return (
-        <HorizontalScroll label={caption} variant={variant}>
-            <table
-                className={clsx(styles.table, variant === 'leaderboard' && styles['m-leaderboard'])}
-            >
-                <caption className={variant === 'leaderboard' ? 'visually-hidden' : undefined}>
+        <HorizontalScroll
+            label={caption}
+            variant={variant === 'default' ? 'default' : 'leaderboard'}
+        >
+            <table className={clsx(styles.table, variant !== 'default' && styles[`m-${variant}`])}>
+                <caption className={variant !== 'default' ? 'visually-hidden' : undefined}>
                     {caption}
                 </caption>
                 <thead>

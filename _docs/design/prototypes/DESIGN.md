@@ -440,6 +440,9 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - My Library uses Ratings/Watchlist tables or the achievement shelf according to the target query
   tab. Its tab-keyed content boundary and independent statistics boundary show the appropriate
   fallback while server content streams; initial loading includes the eight-stat summary.
+  Center 24px numeric/filter strips and 14px text strips in their original line boxes; do not paint
+  the whole counter/title line height. Achievement description strips have an 8px row gap.
+  The statistics summary has no standalone calculation tooltip or placeholder footer row.
   Tables reuse Table's actual five/six-column leaderboard layout and local scrolling; no poster column
   is invented. Pagination keeps the two arrow targets and centered page label. Hub fallbacks use
   the frame's existing authorized snapshot for known conditional rows and actions. Manage Club has
@@ -495,21 +498,41 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - Film hero: poster (grayscale, hover → color + zoom when an image exists), trailer, credits, and synopsis share one grid and one flat surface treatment.
 - Genre chips use a transparent fill with restrained ivory text/border.
 - Session Details uses one row system and one metric system. Values may change (`9.2`, `3/5`, `4/5`, `—`); geometry and typography do not.
+- The read-only Selection score matrix uses the common ruled Table frame, a 24px/600 body-font
+  section heading and a separate quiet scale label. Scores use the display font; participant and
+  film headers support the shared ascending/descending/reset sort cycle with aria-sort and 44px
+  keyboard/touch controls. Keep missing cells last in either direction, zero numeric and equal
+  values stable. Sorting reorders rows only; phones scroll inside the labelled table region.
+  Film titles wrap at word boundaries and keep their longest word intact, expanding the locally
+  scrolling table when needed rather than splitting a title such as Superman across letters.
+- Failed invitation/notification reads use a shared warning Alert and a separated retry button
+  inside padded overlay content. An invitation error replaces its checking label; show Retry only
+  on failure and keep its standard pending/disabled state. Session polling warnings use the page's
+  content width/gutters and automatic recovery. Library and Club Ratings recovery actions retain
+  a normal gap from their Alert; feature CSS must not reset shared Button appearance.
+- Individual-rating switches hide peer scores/comments, while the caller's own rating and Club
+  average remain visible. Apply this to Rating/Completed/Logged summaries, History/activity,
+  Club statistics and the Ratings leaderboard. An average needs no own submission; no received
+  ratings means `—`. Settings names the switches Show individual ratings and explains the average.
 - Completed results retain the two outer panel outlines and use separate rounded cards per row.
   Both headings match Open Ratings: 24px, 600 body sans. Panel padding/header slots match; rows
-  share a 112px minimum and lists a 300px maximum, with stretched desktop panel heights.
+  share a 104px minimum and lists a 300px maximum, with stretched desktop panel heights.
+  Loading modes share the same minimum; Hub Session/History rows and their skeletons use
+  matching 12px vertical padding.
   Ratings show user photos/initials and Rivals show actual posters. A live Selection average is a
   framed avg. button with chevron and visible hover/focus/open states; imported totals stay plain.
+  Individual Ratings list scores use `1.0`–`9.0` and `10`; loading text measures the same labels.
   Ratings use 48px avatars. Read-only totals align right; show per-film score counts only when
   they differ, while retaining equal counts for assistive technology.
   Nomination and live/Logged Rivals share `NominationMovieCard` and `NominationMovieList`.
   Posters center vertically at 48×72px; title, 12px author credit and genres stay in one top-aligned
   block with 4px gaps. An independent right-hand slot holds total or a 52px-minimum avg. button
   at every width, without stretching title/author spacing or adding a phone footer. Both score
-  numerals use the display font at 24px/400. The native full-card Movie link excludes the avg.
+  numerals share History's 600-weight display font: 28px normally and 22px below 576px through
+  one font token, including Ratings and loading states. The native full-card Movie link excludes the avg.
   button, preserves keyboard focus and omits title underlining. A naturally sized inner grid
   gives every card in a list the tallest card's height; its outer scroller keeps the 300px maximum.
-  Keep the 112px minimum, 12px padding/radius, Nomination's three-genre limit and Rivals' full genre
+  Keep the 104px minimum, 12px padding/radius, Nomination's three-genre limit and Rivals' full genre
   list. The Logged viewed-film badge reads Watched and does not imply a computed winner.
 - Nomination's Find & Nominate and Current Nominations reuse those 24px/600 headings and 20px
   panel padding. Find & Nominate uses content height with a 280px minimum; Current Nominations

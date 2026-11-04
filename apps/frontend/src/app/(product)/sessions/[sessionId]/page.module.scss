@@ -1,8 +1,16 @@
-.main {
+.main,
+.progressFeedback {
     width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - var(--gutter) * 2));
-    padding-block: var(--gap-lg) var(--gap-2xl);
     margin-inline: auto;
+}
+
+.main {
+    padding-block: var(--gap-lg) var(--gap-2xl);
     overflow-wrap: anywhere;
+}
+
+.progressFeedback {
+    margin-top: var(--gap-md);
 }
 
 /* Completed uses the Movie Details score rail; phase capsules live on the film poster. */

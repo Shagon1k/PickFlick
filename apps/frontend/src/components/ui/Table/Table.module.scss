@@ -109,7 +109,8 @@
     min-width: 640px;
 }
 
-.table.m-leaderboard td {
+.table.m-leaderboard td,
+.table.m-matrix td {
     vertical-align: middle;
 }
 
@@ -121,6 +122,16 @@
     text-align: left;
 }
 
-.table.m-leaderboard thead th {
+.table.m-leaderboard thead th,
+.table.m-matrix thead th {
     border-top: 0;
+}
+
+.table.m-matrix td.table__numeric {
+    font: var(--fs-card-title)/var(--lh-body) var(--font-display);
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+.table.m-matrix .table__sort svg {
+    flex-shrink: 0;
 }

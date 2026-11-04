@@ -146,6 +146,6 @@
 .score {
     flex: 0 0 auto;
     padding-right: var(--gap-xs);
-    font: 400 var(--fs-app-section)/1 var(--font-display);
+    font: var(--session-result-score-font);
     color: var(--fg);
 }
