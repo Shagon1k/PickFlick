@@ -1,7 +1,7 @@
 'use client';
 
 import { Button as MantineButton } from '@mantine/core';
-import Link from 'next/link';
+import Link, { type LinkProps as TNextLinkProps } from 'next/link';
 import type { AnchorHTMLAttributes } from 'react';
 
 import { getButtonClassName, type TButtonSize, type TButtonVariant } from './Button';
@@ -15,6 +15,7 @@ export interface IButtonLinkProps extends Omit<
     size?: TButtonSize;
     disabled?: boolean;
     fullWidth?: boolean;
+    onNavigate?: TNextLinkProps['onNavigate'];
 }
 
 export default function ButtonLink({
@@ -22,6 +23,7 @@ export default function ButtonLink({
     disabled = false,
     href,
     onClick,
+    onNavigate,
     size = 'default',
     tabIndex,
     variant = 'secondary',
@@ -45,7 +47,7 @@ export default function ButtonLink({
             renderRoot={
                 disabled || href === undefined
                     ? undefined
-                    : (rootProps) => <Link {...rootProps} href={href} />
+                    : (rootProps) => <Link {...rootProps} href={href} onNavigate={onNavigate} />
             }
             unstyled
         >

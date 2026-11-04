@@ -28,6 +28,7 @@ export interface ITableProps {
     rows: ITableRow[];
     emptyMessage?: string;
     variant?: 'default' | 'leaderboard' | 'matrix';
+    isLoading?: boolean;
 }
 
 /** A semantic table whose dense content scrolls inside its own region, never the page. */
@@ -37,6 +38,7 @@ export default function Table({
     emptyMessage = 'No records yet.',
     rows,
     variant = 'default',
+    isLoading = false,
 }: ITableProps) {
     const getCellClass = (column: ITableColumn) =>
         column.isNumeric ? styles.table__numeric : undefined;
@@ -46,7 +48,10 @@ export default function Table({
             label={caption}
             variant={variant === 'default' ? 'default' : 'leaderboard'}
         >
-            <table className={clsx(styles.table, variant !== 'default' && styles[`m-${variant}`])}>
+            <table
+                aria-busy={isLoading || undefined}
+                className={clsx(styles.table, variant !== 'default' && styles[`m-${variant}`])}
+            >
                 <caption className={variant !== 'default' ? 'visually-hidden' : undefined}>
                     {caption}
                 </caption>
@@ -93,7 +98,7 @@ export default function Table({
                         ))}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody aria-hidden={isLoading || undefined} inert={isLoading}>
                     {rows.length > 0 ? (
                         rows.map((row) => (
                             <tr key={row.id}>

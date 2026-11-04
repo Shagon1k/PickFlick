@@ -32,6 +32,8 @@ export default function WatchlistBookmark({
     const [isOpen, setIsOpen] = useState(false);
     const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const label = item ? 'Edit watchlist priority' : 'Add to watchlist';
+    const priorityLabel =
+        WATCHLIST_PRIORITIES.find((priority) => priority.value === item?.priority)?.label ?? 'Save';
 
     function handleSave(priority: TWatchlistPriority | null, shouldClose = true) {
         run(() => setWatchlistAction(movieId, priority), {
@@ -66,7 +68,7 @@ export default function WatchlistBookmark({
                 onChange={setIsOpen}
                 trigger={
                     <button
-                        aria-label={label}
+                        aria-label={variant === 'table' ? `${label}: ${priorityLabel}` : label}
                         aria-pressed={Boolean(item)}
                         aria-busy={isPending || undefined}
                         aria-disabled={isPending}
@@ -84,9 +86,10 @@ export default function WatchlistBookmark({
                                 <path d={RIBBON} />
                             </svg>
                         ) : (
-                            (WATCHLIST_PRIORITIES.find(
-                                (priority) => priority.value === item?.priority,
-                            )?.label ?? 'Save')
+                            <>
+                                <span>{priorityLabel}</span>
+                                <Icon name="chevron-down" />
+                            </>
                         )}
                     </button>
                 }

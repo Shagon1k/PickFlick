@@ -25,7 +25,7 @@ export default function PersonalRating({
     movieId: string;
     rating: TPersonalMovieRating | null;
     onSaved?: (message: string) => void;
-    /** A Library table cell shows the plain score, as the prototype's Rating column does. */
+    /** A Library table cell opens the same editor from a compact score button. */
     isInTable?: boolean;
 }) {
     const id = useId();
@@ -66,8 +66,8 @@ export default function PersonalRating({
             onChange={setIsOpen}
             trigger={
                 <Button
-                    variant={isInTable ? 'ghost' : 'cell'}
-                    size={isInTable ? 'small' : 'default'}
+                    variant={isInTable ? 'secondary' : 'cell'}
+                    size={isInTable ? 'icon' : 'default'}
                     aria-label={
                         rating
                             ? `Your rating: ${rating.score} out of ${RATING_SCALE.max}. Edit rating`

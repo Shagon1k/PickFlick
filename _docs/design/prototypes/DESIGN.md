@@ -592,6 +592,19 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - "See also" links row + "You may also like" scroll carousel
 
 ### My Library
+- Search/sort/page/filter navigation replaces only table rows with the shared skeleton cells,
+  preserving the current count, search focus and mounted horizontal scroll container. Empty
+  results use one placeholder row while loading. Headers and pagination remain visible with their
+  normal pending guards; placeholders are inert/assistive-hidden and the table is marked busy.
+  Club Ratings uses the same behavior. Clear filters/pagination links retain native new-tab use.
+- Table empty/no-match messages use centered 14px secondary body text across all table variants.
+  Exclude the full-width empty cell from special first-column rank/participant styling.
+- Match Club Ratings' Film-link and pagination typography. Personal Rating cells align right and
+  use its 20px display numerals inside 44×44px shared outlined buttons, opening the existing stars.
+  Priority uses a fixed 112×44px rounded rectangle with one 14px/500 label style and trailing
+  chevron for every level. Keep visible focus, the open-state accent and pending guard.
+  Omit visible films-rated/queued counts and their skeleton row. Loading controls mirror the
+  44px rating square and shared fixed-width priority rectangle; totals stay assistive-only.
 - Stats row: Films rated, Rated this year, Avg rating, Total watch time, Favorite genre, Top director, Top actor, On watchlist
 - Tabs: My Ratings, Watchlist, Achievements
 - Mascot panda behind stats

@@ -22,12 +22,14 @@
     gap: var(--gap-sm);
     align-items: center;
     justify-content: space-between;
-    font-size: var(--fs-body-sm);
 }
 
 .libraryTable__film {
-    min-width: 16ch;
+    min-width: 150px;
     max-width: 28ch;
+    font-weight: 600;
+    color: var(--fg);
+    text-decoration: none;
 }
 
 .libraryTable__title {

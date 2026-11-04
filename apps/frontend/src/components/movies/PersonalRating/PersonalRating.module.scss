@@ -34,6 +34,12 @@
 }
 
 .tableScore {
-    font: 700 var(--fs-body) var(--font-mono);
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+    color: var(--fg);
+    transition: color var(--motion-local) var(--ease-standard);
+}
+
+tr:is(:hover, :focus-within) .tableScore,
+button:is(:hover, :focus-visible, [aria-expanded='true']) .tableScore {
     color: var(--gold-light);
 }

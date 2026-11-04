@@ -11,6 +11,7 @@ import { useState, useTransition } from 'react';
 
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
+import { buildTableSkeletonRows } from '#components/ui/LoadingState/TableSkeleton';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatAverage, formatCount } from '#lib/format';
@@ -84,35 +85,40 @@ export default function ClubRatings({
             </p>
             <Table
                 variant="leaderboard"
+                isLoading={isPending}
                 caption="Club rating leaderboard"
                 columns={[
                     { key: 'rank', header: '#', isNumeric: true },
                     { key: 'film', header: 'Film', ...sortable('title') },
                     { key: 'year', header: 'Year', ...sortable('year') },
                     { key: 'genre', header: 'Genre', ...sortable('genre') },
-                    { key: 'rating', header: 'Rating', isNumeric: true, ...sortable('rating') },
+                    { key: 'value', header: 'Rating', isNumeric: true, ...sortable('rating') },
                 ]}
-                rows={ratings.items.map((item, index) => ({
-                    id: item.movieId,
-                    cells: {
-                        rank: (ratings.page - 1) * ratings.pageSize + index + 1,
-                        film: (
-                            <Link
-                                className={styles.clubRatings__film}
-                                href={`/movies/${item.movieId}`}
-                            >
-                                {item.title ?? 'Untitled film'}
-                            </Link>
-                        ),
-                        year: item.year ?? '—',
-                        genre: item.genres.join(', ') || '—',
-                        rating: (
-                            <span className={styles.clubRatings__rating}>
-                                {formatAverage(item.averageRating)}
-                            </span>
-                        ),
-                    },
-                }))}
+                rows={
+                    isPending
+                        ? buildTableSkeletonRows('club-ratings', ratings.items.length || 1)
+                        : ratings.items.map((item, index) => ({
+                              id: item.movieId,
+                              cells: {
+                                  rank: (ratings.page - 1) * ratings.pageSize + index + 1,
+                                  film: (
+                                      <Link
+                                          className={styles.clubRatings__film}
+                                          href={`/movies/${item.movieId}`}
+                                      >
+                                          {item.title ?? 'Untitled film'}
+                                      </Link>
+                                  ),
+                                  year: item.year ?? '—',
+                                  genre: item.genres.join(', ') || '—',
+                                  value: (
+                                      <span className={styles.clubRatings__rating}>
+                                          {formatAverage(item.averageRating)}
+                                      </span>
+                                  ),
+                              },
+                          }))
+                }
                 emptyMessage={query.q ? 'No rated films match your search.' : 'No rated films yet.'}
             />
             <nav aria-label="Club Ratings pages" className={styles.clubRatings__pagination}>

@@ -9,11 +9,6 @@
     margin-inline: auto;
     border-radius: var(--radius);
 }
-.count {
-    width: 120px;
-    height: 1lh;
-    font-size: var(--fs-body);
-}
 .cell {
     display: flex;
     align-items: center;
@@ -21,11 +16,20 @@
     min-width: 36px;
 }
 .cell[data-film] {
-    min-width: 16ch;
+    min-width: 150px;
     max-width: 28ch;
 }
-.cell[data-film][data-club] {
-    min-width: 150px;
+.cell[data-numeric] {
+    justify-content: flex-end;
+}
+.control {
+    flex-shrink: 0;
+    width: var(--hit);
+    height: var(--hit);
+    border-radius: var(--radius);
+}
+.control[data-priority] {
+    width: var(--watchlist-priority-control-width);
 }
 .pagination {
     display: flex;

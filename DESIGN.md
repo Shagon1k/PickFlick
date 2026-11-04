@@ -107,6 +107,16 @@ The primitive uses a Mantine Box span so it also fits inside headings and inline
 Sessions, Ratings, Members, Achievements and Manage Club fallbacks. Members shows only list rows,
 without a placeholder for an absent top action. My Library uses table layouts
 for My Ratings/Watchlist, the achievement shelf for Achievements and eight statistic placeholders.
+Library table fallbacks have no visible count row. My Ratings reserves a right-aligned 44px square
+score control; Watchlist reserves the same fixed-width priority control as its loaded table.
+Shared Table empty/no-match rows use centered 14px body text in secondary color. They span the
+table and never inherit the first rank/participant column's typography or color.
+My Ratings, Watchlist and Club Ratings also use the shared table-skeleton rows while search,
+sorting, pagination or Clear filters navigation is pending. Keep the current row count (one
+placeholder for an empty table), mounted search/header/pagination and local scroll container.
+The table is busy and placeholder tbody is inert/assistive-hidden; real controls keep their
+existing pending guards, while search remains usable for newer input. Native link navigation
+retains modifier/new-tab behavior through ButtonLink's Next onNavigate forwarding.
 Achievement filter placeholders reserve the actual counter line height from `--fs-app-title` and
 `--lh-title`, the label line and 24px vertical padding; their four-column grid becomes two below
 576px, matching the live summary rather than using generic 100px card geometry. The gap from
@@ -538,11 +548,18 @@ here.
 - `/library` opens My Ratings; `?tab=my-ratings` and `?tab=watchlist` select the two sections in
   the control shell. Tables show rank, Film, cached Genre, Year, Rated on/Added on and the shared
   rating or priority editor. Missing metadata uses `—`; Film links open Movie Details.
+- Library Film links use Club Ratings' 600-weight neutral text and pagination typography.
+  My Ratings' numeric column aligns right and uses the same 20px display font as Club Ratings,
+  inside a shared secondary 44px square button with normal hover/focus and its existing editor.
+  Watchlist priorities use equal 112×44px outlined rectangles with 12px corners, consistent
+  14px/500 body text, left-aligned labels and a trailing chevron. Low/Medium/High share the same
+  geometry and weight; an open trigger has the normal gold border/rotated chevron. No visible
+  films-rated/queued count row appears in either table; result totals remain assistive feedback.
 - My Ratings and Watchlist reuse the centered 480px title search, sortable headers and arrow
   pagination from Club Ratings. Filter and sort dropdowns are removed. Film, Genre, Year,
   Rated on/Added on and Rating/Priority support the same ascending → descending → reset cycle;
   switching columns resets an active sort. The default stays highest rating or highest priority.
-  Search applies after a typing pause or Enter, updates the count and retains newer input while
+  Search applies after a typing pause or Enter, announces the result count and retains newer input while
   earlier responses arrive. URL state survives reloads and changes start at page one. Existing
   exact score/priority query links remain supported with a Clear filters recovery action.
   Each page contains at most 25 films, with Previous/Next bounds and counts.

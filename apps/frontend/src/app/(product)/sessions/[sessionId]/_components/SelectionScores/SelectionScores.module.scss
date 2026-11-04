@@ -36,7 +36,7 @@
 }
 
 .scores th:first-child,
-.scores td:first-child {
+.scores td:first-child:not([colspan]) {
     min-width: 160px;
     color: var(--fg);
 }

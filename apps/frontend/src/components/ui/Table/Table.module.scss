@@ -94,7 +94,8 @@
 }
 
 .table .table__empty {
-    color: var(--muted);
+    font: var(--fs-body-sm)/var(--lh-body) var(--font-body);
+    color: var(--fg-secondary);
     text-align: center;
 }
 
@@ -115,7 +116,7 @@
 }
 
 .table.m-leaderboard th:first-child,
-.table.m-leaderboard td:first-child {
+.table.m-leaderboard td:first-child:not(.table__empty) {
     width: 40px;
     font: var(--fs-lead)/var(--lh-body) var(--font-display);
     color: var(--muted);

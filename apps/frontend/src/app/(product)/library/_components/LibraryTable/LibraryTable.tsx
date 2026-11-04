@@ -1,6 +1,11 @@
 'use client';
 
-import { LIBRARY_SEARCH_MAX_LENGTH, type TLibrary, type TLibraryQuery } from '@pickflick/contracts';
+import {
+    LIBRARY_SEARCH_MAX_LENGTH,
+    libraryQuerySchema,
+    type TLibrary,
+    type TLibraryQuery,
+} from '@pickflick/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
@@ -10,6 +15,7 @@ import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBoo
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
+import { buildTableSkeletonRows } from '#components/ui/LoadingState/TableSkeleton';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatCount } from '#lib/format';
@@ -81,7 +87,7 @@ export default function LibraryTable({
         item: TLibrary['items'][number],
         index: number,
         date: string,
-        action: ReactNode,
+        value: ReactNode,
     ) => ({
         id: item.movieId,
         cells: {
@@ -93,10 +99,10 @@ export default function LibraryTable({
                     </span>
                 </Link>
             ),
-            genres: item.genres.join(', ') || '—',
+            genre: item.genres.join(', ') || '—',
             year: item.releaseYear ?? '—',
             date: <LocalTime format="date" value={date} />,
-            action,
+            value,
         },
     });
     const rows =
@@ -145,24 +151,32 @@ export default function LibraryTable({
                 }}
             />
             {query.score || query.priority ? (
-                <ButtonLink href={`/library?tab=${query.tab}`} variant="subtle">
+                <ButtonLink
+                    href={`/library?tab=${query.tab}`}
+                    variant="subtle"
+                    onNavigate={(event) => {
+                        event.preventDefault();
+                        navigate(libraryQuerySchema.parse({ tab: query.tab }));
+                    }}
+                >
                     Clear filters
                 </ButtonLink>
             ) : null}
-            <p role="status">
-                {`${formatCount(library.total, 'film')} ${isWatchlist ? 'queued' : 'rated'}`}
-            </p>
             <p className="visually-hidden" role="status">
-                {isPending ? 'Loading films…' : message}
+                {isPending
+                    ? 'Loading films…'
+                    : message ||
+                      formatCount(library.total, isWatchlist ? 'queued film' : 'rated film')}
             </p>
             {navigationMessage ? <p role="status">{navigationMessage}</p> : null}
             <Table
                 variant="leaderboard"
+                isLoading={isPending}
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}
                 columns={[
                     { key: 'rank', header: '#', isNumeric: true },
                     { key: 'film', header: 'Film', ...sortable('title') },
-                    { key: 'genres', header: 'Genre', ...sortable('genre') },
+                    { key: 'genre', header: 'Genre', ...sortable('genre') },
                     { key: 'year', header: 'Year', ...sortable('year') },
                     {
                         key: 'date',
@@ -170,12 +184,20 @@ export default function LibraryTable({
                         ...sortable('recent'),
                     },
                     {
-                        key: 'action',
+                        key: 'value',
                         header: isWatchlist ? 'Priority' : 'Rating',
+                        isNumeric: !isWatchlist,
                         ...sortable('value'),
                     },
                 ]}
-                rows={rows}
+                rows={
+                    isPending
+                        ? buildTableSkeletonRows(
+                              isWatchlist ? 'watchlist' : 'ratings',
+                              rows.length || 1,
+                          )
+                        : rows
+                }
                 emptyMessage={emptyMessage}
             />
             <nav aria-label={`${title} pages`} className={styles.libraryTable__pagination}>
@@ -184,6 +206,10 @@ export default function LibraryTable({
                     variant="navigation"
                     size="icon"
                     href={buildLibraryPath(query, library.page - 1)}
+                    onNavigate={(event) => {
+                        event.preventDefault();
+                        navigate({ ...query, page: library.page - 1 });
+                    }}
                     disabled={isPending || library.page === 1}
                 >
                     <Icon name="arrow-left" />
@@ -197,6 +223,10 @@ export default function LibraryTable({
                     size="icon"
                     data-direction="next"
                     href={buildLibraryPath(query, library.page + 1)}
+                    onNavigate={(event) => {
+                        event.preventDefault();
+                        navigate({ ...query, page: library.page + 1 });
+                    }}
                     disabled={isPending || library.page === library.pages}
                 >
                     <Icon name="arrow-left" />

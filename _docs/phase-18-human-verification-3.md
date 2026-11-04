@@ -428,6 +428,35 @@ cases are finished. Screenshots are now provided only when the owner explicitly 
   and My Ratings/Watchlist at 390px have document width equal to viewport client width. The table
   still scrolls locally while window scrollX stays zero. Shown/open invitation states and automated
   regression coverage remain for the deferred test round; no screenshots, tests or commit made.
+- In-place table loading feedback (2026-11-04): My Ratings, Watchlist and Club Ratings now
+  replace pending data rows with the same skeleton-cell builder as initial route loading, keeping
+  the prior row count (one for empty results). Table/search/header/pagination/scroll containers stay
+  mounted. Table marks busy and its placeholder tbody is inert/assistive-hidden; search remains
+  usable and existing sort/page guards remain. Canonical internal cell keys align live and
+  placeholder rows; no API sort/query changes. ButtonLink forwards Next's onNavigate so Library
+  pagination and Clear filters can use the local transition without intercepting modifier/new-tab
+  clicks; reset defaults come from the existing query schema. No new loader framework or delay.
+  Manual DOM evidence and unverified cases are recorded in #63. Tests/fixtures/baselines remain
+  deferred; no rating/priority writes or screenshots, commit or push. Updated design references.
+- Table empty-state typography (2026-11-04): the full-width no-results td was also the first
+  cell, so leaderboard rank styling replaced its font with the 19px display face and left
+  alignment. Shared Table now explicitly uses 14px secondary body text, centered, and excludes
+  the empty cell from rank styling. SelectionScores similarly excludes colspan cells from its
+  participant-column color rule. Covers Club Ratings, My Ratings, Watchlist and score matrices
+  through the shared renderer. Updated design references. Source review/formatting only;
+  browser/tests remain deferred. No data writes or commit; #63 In progress.
+- Library table style parity (2026-11-04): My Ratings now uses Club Ratings' 20px/400 display
+  score typography, neutral rest/gold row or control feedback, right-aligned numeric column and
+  a shared secondary 44px square editor trigger. Film links match its 600-weight neutral style
+  and pagination inherits the same body text. Watchlist priorities use a shared 112px width,
+  44px height, 12px corners, consistent 14px/500 labels and trailing/open-state chevron instead
+  of variable pills and High-only bold text. The trigger's accessible name includes its level.
+  Removed visible films-rated/queued count rows; loading and result counts remain assistive.
+  TableSkeleton removes the count reserve, right-aligns rating controls and mirrors the 44px
+  square/112px priority rectangle through existing Skeleton paint and common dimension tokens.
+  Save, sorting, pagination and Movie Details editors keep their existing behavior. Manual DOM
+  evidence and limitations are recorded in #63; automated tests/baselines remain deferred.
+  Updated design references; no rating/priority writes, screenshots, commit or push.
 - Ratings row decimal labels (2026-11-04): owner requested `1.0`–`9.0`, keeping `10` without
   decimals. RatingEntry formats its display label once using the canonical scale maximum;
   measured Skeleton text and the live score share that label. Stored scores, scale/input controls,
