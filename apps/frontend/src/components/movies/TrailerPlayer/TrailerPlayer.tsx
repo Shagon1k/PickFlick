@@ -86,7 +86,6 @@ export default function TrailerPlayer({
                             <Button
                                 aria-label="Previous trailer"
                                 variant="navigation"
-                                size="icon"
                                 onClick={() => select(-1)}
                             >
                                 <Icon name="arrow-left" />
@@ -98,7 +97,6 @@ export default function TrailerPlayer({
                             <Button
                                 aria-label="Next trailer"
                                 variant="navigation"
-                                size="icon"
                                 data-direction="next"
                                 onClick={() => select(1)}
                             >

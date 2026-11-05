@@ -195,7 +195,6 @@ export default function LibraryTable({
                 <ButtonLink
                     aria-label="Previous page"
                     variant="navigation"
-                    size="icon"
                     href={buildLibraryPath(query, library.page - 1)}
                     onNavigate={(event) => {
                         event.preventDefault();
@@ -211,7 +210,6 @@ export default function LibraryTable({
                 <ButtonLink
                     aria-label="Next page"
                     variant="navigation"
-                    size="icon"
                     data-direction="next"
                     href={buildLibraryPath(query, library.page + 1)}
                     onNavigate={(event) => {

@@ -3,18 +3,15 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useRef } from 'react';
 
+import { readDurationToken } from '#lib/css-duration';
+
 import { COLOR_REVEAL_CONFIG } from './color-reveal.config';
 import styles from './ColorReveal.module.scss';
 
-const MILLISECONDS_PER_SECOND = 1000;
 const TOUCH_HOLD_MS = 1800;
 const MASK_START_PX = 0.1;
 const EMPTY_MASK = 'linear-gradient(transparent, transparent)';
 const FULL_MASK = 'linear-gradient(black, black)';
-
-function toMilliseconds(value: string) {
-    return Number.parseFloat(value) * (value.trim().endsWith('ms') ? 1 : MILLISECONDS_PER_SECOND);
-}
 
 /** Image/accent children are visual only; surfaces leave their host's live content untouched. */
 export default function ColorReveal({
@@ -101,7 +98,7 @@ export default function ColorReveal({
                 Math.hypot(box.width - originX, box.height - originY),
             );
             const tokens = window.getComputedStyle(surface);
-            const duration = toMilliseconds(tokens.getPropertyValue('--motion-color-reveal'));
+            const duration = readDurationToken(tokens, '--motion-color-reveal');
             const feather =
                 radius * Number.parseFloat(tokens.getPropertyValue('--color-reveal-feather'));
             const layers = getLayers().map((layer) => {

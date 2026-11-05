@@ -30,12 +30,10 @@ export function toScreeningTime(value: string): string | null {
 
 export type TInstantFormat = 'date' | 'dateTime' | 'short' | 'relative';
 
-const INSTANT_FORMATS: Record<TInstantFormat, Intl.DateTimeFormatOptions> = {
+const INSTANT_FORMATS: Record<Exclude<TInstantFormat, 'relative'>, Intl.DateTimeFormatOptions> = {
     date: { dateStyle: 'medium' },
     dateTime: { dateStyle: 'medium', timeStyle: 'short' },
     short: { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' },
-    // Server markup cannot know the viewer's clock, so it carries the date until hydration.
-    relative: { dateStyle: 'medium' },
 };
 
 const RELATIVE_FORMAT = new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' });
@@ -69,7 +67,7 @@ export function formatInstant(
     timeZone?: string,
     now = Date.now(),
 ): string {
-    if (format === 'relative' && !timeZone) return formatRelative(value, now);
+    if (format === 'relative') return formatRelative(value, now);
     return new Date(value).toLocaleString('en', { ...INSTANT_FORMATS[format], timeZone });
 }
 

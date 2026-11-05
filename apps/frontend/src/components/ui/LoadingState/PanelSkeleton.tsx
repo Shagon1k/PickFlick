@@ -80,14 +80,14 @@ export default function PanelSkeleton({
                             />
                         </p>
                         {hub?.activeSession ? (
-                            <div className={styles.progress}>
-                                <Skeleton shouldFill />
-                            </div>
-                        ) : null}
-                        {hub?.activeSession ? (
-                            <div className={styles.activeAction}>
-                                <Skeleton shouldFill />
-                            </div>
+                            <>
+                                <div className={styles.progress}>
+                                    <Skeleton shouldFill />
+                                </div>
+                                <div className={styles.activeAction}>
+                                    <Skeleton shouldFill />
+                                </div>
+                            </>
                         ) : null}
                         {!hub?.activeSession && hub?.permissions.manageSessions ? (
                             <div className={styles.emptyActions}>
@@ -121,14 +121,12 @@ export default function PanelSkeleton({
 
 function Statistics({ isOverview = false }: { isOverview?: boolean }) {
     const count = isOverview ? CLUB_STAT_COUNT : PERSONAL_STAT_COUNT;
+    // The last few tiles hold text rather than a number.
+    const firstTextIndex = count - (isOverview ? CLUB_SMALL_STAT_COUNT : PERSONAL_SMALL_STAT_COUNT);
     return (
         <div className={styles.statistics} data-overview={isOverview || undefined}>
             {Array.from({ length: count }, (_, index) => {
-                const isText =
-                    index >=
-                    (isOverview
-                        ? CLUB_STAT_COUNT - CLUB_SMALL_STAT_COUNT
-                        : PERSONAL_STAT_COUNT - PERSONAL_SMALL_STAT_COUNT);
+                const isText = index >= firstTextIndex;
                 return (
                     <div className={styles.stat} key={index}>
                         <div className={styles.statIcon}>

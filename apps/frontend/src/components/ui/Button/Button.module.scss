@@ -316,6 +316,7 @@
     height: 32px;
 }
 
+/* One arrow glyph serves both directions: pass data-direction="next" to point it forward. */
 .button.m-navigation[data-direction='next'] svg {
     transform: rotate(180deg);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
+import { type KeyboardEvent, useId, useRef, useState } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
@@ -78,7 +78,7 @@ export default function ScaleControl({
     value,
     tone = 'accent',
 }: IScaleControlProps) {
-    const values = useMemo(() => createInclusiveScale(min, max), [max, min]);
+    const values = createInclusiveScale(min, max);
     const firstValue = values[0] ?? min;
     const initialValue = findScaleValue(values, defaultValue);
     const [internalValue, setInternalValue] = useState<number | undefined>(initialValue);
@@ -113,13 +113,16 @@ export default function ScaleControl({
                 values={values}
                 selectedValue={selectedValue}
                 presentation={presentation}
-                compact={isCompact}
+                isCompact={isCompact}
                 selectionLabel={selectionLabel}
                 tone={tone}
                 isLoading={isLoading}
             />
         );
 
+    function preview(scaleValue: number): void {
+        if (!isLocked) setPreviewValue(scaleValue);
+    }
     function select(nextValue: number): void {
         if (isLocked) {
             return;
@@ -179,17 +182,9 @@ export default function ScaleControl({
                             disabled={disabled}
                             key={scaleValue}
                             onClick={() => select(scaleValue)}
-                            onFocus={() => {
-                                if (!isLocked) {
-                                    setPreviewValue(scaleValue);
-                                }
-                            }}
+                            onFocus={() => preview(scaleValue)}
                             onKeyDown={(event) => handleKeyDown(event, scaleValue)}
-                            onMouseEnter={() => {
-                                if (!isLocked) {
-                                    setPreviewValue(scaleValue);
-                                }
-                            }}
+                            onMouseEnter={() => preview(scaleValue)}
                             ref={(node) => {
                                 if (node) {
                                     controlsRef.current.set(scaleValue, node);
@@ -251,7 +246,7 @@ function SubmittedScale({
     values,
     selectedValue,
     presentation,
-    compact,
+    isCompact,
     selectionLabel,
     tone,
     isLoading,
@@ -260,7 +255,7 @@ function SubmittedScale({
     values: readonly number[];
     selectedValue: number | undefined;
     presentation: IScaleControlProps['presentation'];
-    compact: boolean;
+    isCompact: boolean;
     selectionLabel: string;
     tone: 'accent' | 'neutral';
     isLoading: boolean;
@@ -268,7 +263,7 @@ function SubmittedScale({
     return (
         <fieldset
             className={styles.scale}
-            data-compact={compact || undefined}
+            data-compact={isCompact || undefined}
             data-submitted="true"
             data-tone={tone}
         >

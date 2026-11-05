@@ -86,7 +86,7 @@ function OpenRatingRow({ session }: { session: IClubHubSession }) {
             <div className={styles.ratingProgress}>
                 <ColorReveal shouldFill>
                     <FilmProgress
-                        compact
+                        isCompact
                         value={session.progressCount ?? 0}
                         max={session.acceptedCount}
                         label={progress}

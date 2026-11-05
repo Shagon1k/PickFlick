@@ -16,6 +16,6 @@ describe('formatInstant relative', () => {
         expect(formatInstant('2026-10-31T11:59:30Z', 'relative', undefined, now)).toBe('just now');
         expect(formatInstant('2026-10-31T10:00:00Z', 'relative', undefined, now)).toBe('2 hr. ago');
         expect(formatInstant('2026-10-30T11:00:00Z', 'relative', undefined, now)).toBe('yesterday');
-        expect(formatInstant('2026-10-31T10:00:00Z', 'relative', 'UTC', now)).toBe('Oct 31, 2026');
+        expect(formatInstant('2026-10-31T10:00:00Z', 'date', 'UTC', now)).toBe('Oct 31, 2026');
     });
 });

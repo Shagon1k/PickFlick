@@ -124,7 +124,6 @@ export default function ClubRatings({
                 <Button
                     aria-label="Previous page"
                     variant="navigation"
-                    size="icon"
                     disabled={isPending || ratings.page === 1}
                     onClick={() => navigate({ ...query, page: ratings.page - 1 })}
                 >
@@ -136,7 +135,6 @@ export default function ClubRatings({
                 <Button
                     aria-label="Next page"
                     variant="navigation"
-                    size="icon"
                     data-direction="next"
                     disabled={isPending || ratings.page === ratings.pages}
                     onClick={() => navigate({ ...query, page: ratings.page + 1 })}

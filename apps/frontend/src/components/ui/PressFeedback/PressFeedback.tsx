@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react';
 
+import { readDurationToken } from '#lib/css-duration';
+
 const CHECK_SELECTOR = 'input[type="checkbox"], input[type="radio"]';
 const CONTROL_SELECTOR = `button, summary, [role="button"], [role="menuitem"], a[data-press-feedback], ${CHECK_SELECTOR}`;
-const MILLISECONDS_PER_SECOND = 1000;
 
 function getControl(target: EventTarget | null): HTMLElement | null {
     if (!(target instanceof Element)) return null;
@@ -39,8 +40,6 @@ export default function PressFeedback() {
                 return;
             const surface = getSurface(control);
             const style = window.getComputedStyle(surface);
-            // CSS optimization may serialize the 350ms token as .35s.
-            const duration = style.getPropertyValue('--motion-action').trim();
             running.get(surface)?.cancel();
             // Individual scale preserves a control's existing translation or rotation.
             const animation = surface.animate(
@@ -53,9 +52,7 @@ export default function PressFeedback() {
                     { scale: '1' },
                 ],
                 {
-                    duration:
-                        Number.parseFloat(duration) *
-                        (duration.endsWith('ms') ? 1 : MILLISECONDS_PER_SECOND),
+                    duration: readDurationToken(style, '--motion-action'),
                     easing: style.getPropertyValue('--ease-action').trim(),
                 },
             );

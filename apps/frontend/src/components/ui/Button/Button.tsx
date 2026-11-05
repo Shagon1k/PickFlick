@@ -35,10 +35,11 @@ export interface IButtonProps
 
 const SUCCESS_DURATION_MS = 1800;
 
-function getButtonState(success?: string, isLoading?: boolean): 'success' | 'loading' | undefined {
-    if (success) {
-        return 'success';
-    }
+function getButtonState(
+    isSuccessVisible: boolean,
+    isLoading: boolean,
+): 'success' | 'loading' | undefined {
+    if (isSuccessVisible) return 'success';
     return isLoading ? 'loading' : undefined;
 }
 
@@ -83,7 +84,7 @@ export default function Button({
                     inner: styles.button__inner,
                     label: styles.button__label,
                 }}
-                data-state={getButtonState(isSuccessVisible ? success : undefined, loading)}
+                data-state={getButtonState(isSuccessVisible, loading)}
                 disabled={disabled || loading}
                 leftSection={
                     loading ? <span aria-hidden="true" className={styles.spinner} /> : undefined

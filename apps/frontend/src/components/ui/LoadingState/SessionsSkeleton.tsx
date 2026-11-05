@@ -17,21 +17,14 @@ export default function SessionsSkeleton({ hub }: { hub?: IClubHub | null }) {
                 <>
                     <section>
                         <Heading />
-                        <Rows
-                            count={Math.min(ROW_COUNT, hub.ratingSessions.length)}
-                            sessions={hub.ratingSessions}
-                            isRating
-                        />
+                        <Rows sessions={hub.ratingSessions} isRating />
                     </section>
                     <SprocketDivider variant="section" />
                 </>
             ) : null}
             <section>
                 <Heading withAction={hub?.permissions.manageSessions} />
-                <Rows
-                    count={hub ? Math.min(ROW_COUNT, hub.historySessions.length) : ROW_COUNT}
-                    sessions={hub?.historySessions}
-                />
+                <Rows sessions={hub?.historySessions} />
             </section>
         </div>
     );
@@ -57,15 +50,15 @@ function Heading({ withAction = false }: { withAction?: boolean }) {
     );
 }
 
+/** Without a Hub snapshot, a fixed number of placeholder rows stands in for the list. */
 function Rows({
-    count,
     isRating = false,
     sessions,
 }: {
-    count: number;
     isRating?: boolean;
     sessions?: IClubHubSession[];
 }) {
+    const count = sessions ? Math.min(ROW_COUNT, sessions.length) : ROW_COUNT;
     if (!count) return <Skeleton width="half" />;
     return (
         <div>

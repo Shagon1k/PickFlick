@@ -9,21 +9,20 @@ const ROW_COUNT = 4;
 type TTableSkeletonVariant = 'club-ratings' | 'ratings' | 'watchlist';
 
 function buildColumns(variant: TTableSkeletonVariant) {
-    const isClub = variant === 'club-ratings';
+    const rank = { key: 'rank', header: '#', isNumeric: true };
+    const film = { key: 'film', header: 'Film' };
+    const genre = { key: 'genre', header: 'Genre' };
+    const year = { key: 'year', header: 'Year' };
+    if (variant === 'club-ratings')
+        return [rank, film, year, genre, { key: 'value', header: 'Rating', isNumeric: true }];
     const isWatchlist = variant === 'watchlist';
     return [
-        { key: 'rank', header: '#', isNumeric: true },
-        { key: 'film', header: 'Film' },
-        ...(!isClub ? [{ key: 'genre', header: 'Genre' }] : []),
-        { key: 'year', header: 'Year' },
-        ...(isClub
-            ? [{ key: 'genre', header: 'Genre' }]
-            : [{ key: 'date', header: variant === 'watchlist' ? 'Added on' : 'Rated on' }]),
-        {
-            key: 'value',
-            header: variant === 'watchlist' ? 'Priority' : 'Rating',
-            isNumeric: !isWatchlist,
-        },
+        rank,
+        film,
+        genre,
+        year,
+        { key: 'date', header: isWatchlist ? 'Added on' : 'Rated on' },
+        { key: 'value', header: isWatchlist ? 'Priority' : 'Rating', isNumeric: !isWatchlist },
     ];
 }
 
