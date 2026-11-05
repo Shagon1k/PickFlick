@@ -29,8 +29,8 @@ test(
     },
 );
 
-async function authenticate(context: BrowserContext, scenario = '', token?: string) {
-    await signInMock(context, token ?? `valid-nomination-${scenario}-${crypto.randomUUID()}`);
+async function authenticate(context: BrowserContext, scenario = '') {
+    await signInMock(context, `valid-nomination-${scenario}-${crypto.randomUUID()}`);
 }
 
 for (const [scenario, joinCount, removedCount] of [
@@ -227,8 +227,8 @@ test(
         const actor = await browser.newContext();
         const viewer = await browser.newContext();
         const token = `valid-nomination-operator-live-${crypto.randomUUID()}`;
-        await authenticate(actor, '', token);
-        await authenticate(viewer, '', token);
+        await signInMock(actor, token);
+        await signInMock(viewer, token);
         const actorPage = await actor.newPage();
         const viewerPage = await viewer.newPage();
         try {
@@ -270,8 +270,8 @@ test('Progress polling shows another participant nomination', async ({ browser }
     const actor = await browser.newContext();
     const viewer = await browser.newContext();
     const token = `valid-nomination-live-${crypto.randomUUID()}`;
-    await authenticate(actor, '', token);
-    await authenticate(viewer, '', token);
+    await signInMock(actor, token);
+    await signInMock(viewer, token);
     const actorPage = await actor.newPage();
     const viewerPage = await viewer.newPage();
     try {
@@ -297,8 +297,8 @@ for (const projection of ['detail', 'roster']) {
             const actor = await browser.newContext();
             const viewer = await browser.newContext();
             const token = `valid-nomination-refresh-${projection}-${crypto.randomUUID()}`;
-            await authenticate(actor, '', token);
-            await authenticate(viewer, '', token);
+            await signInMock(actor, token);
+            await signInMock(viewer, token);
             const actorPage = await actor.newPage();
             const viewerPage = await viewer.newPage();
             try {

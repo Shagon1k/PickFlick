@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
@@ -9,15 +9,11 @@ import { canonicalViewports, gapViewports, screenshotViewports } from './viewpor
 const FIRST_CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const SECOND_CLUB_ID = '10000000-0000-4000-8000-000000000032';
 
-async function authenticate(context: BrowserContext, token: string) {
-    await signInMock(context, token);
-}
-
 test(
     'Club switch replaces every Hub context and saves the last used Club',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, 'valid-hub-switch');
+        await signInMock(context, 'valid-hub-switch');
         await page.goto('/app');
         await expect(page).toHaveURL(new RegExp(`/clubs/${FIRST_CLUB_ID}$`, 'u'));
         await expect(
@@ -45,7 +41,7 @@ test(
     'stale preference and direct unauthorized Hub reveal no Club data',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, 'valid-hub-revoked');
+        await signInMock(context, 'valid-hub-revoked');
         await context.addCookies([
             {
                 name: 'pickflick.last_club',
@@ -68,7 +64,7 @@ test(
     'direct authorized visits save the preference and inaccessible visits preserve it',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, 'valid-hub-preference');
+        await signInMock(context, 'valid-hub-preference');
         await page.goto(`/clubs/${SECOND_CLUB_ID}`);
         await expect(
             page.getByRole('heading', { level: 1, name: 'Second Screening Room' }),
@@ -85,7 +81,7 @@ test('Hub retries a transient backend failure without signing the member out', a
     context,
     page,
 }) => {
-    await authenticate(context, `valid-hub-transient-${crypto.randomUUID()}`);
+    await signInMock(context, `valid-hub-transient-${crypto.randomUUID()}`);
     await context.addCookies([
         { name: 'pickflick.last_club', value: FIRST_CLUB_ID, url: 'http://127.0.0.1:41730' },
     ]);
@@ -99,7 +95,7 @@ test('Hub retries a transient backend failure without signing the member out', a
 });
 
 test('archived Hub stays readable without a Session action', async ({ context, page }) => {
-    await authenticate(context, 'valid-hub-archived');
+    await signInMock(context, 'valid-hub-archived');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
 
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('read-only');
@@ -111,7 +107,7 @@ test('Club sections keep the switcher and Call Sheet above the active panel', as
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-hub-tabs');
+    await signInMock(context, 'valid-hub-tabs');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
     await page
         .locator('#hub-context')
@@ -186,7 +182,7 @@ for (const { viewport, open, current } of sectionSwitches) {
         page,
     }) => {
         await page.setViewportSize(viewport);
-        await authenticate(context, 'valid-hub-tabs');
+        await signInMock(context, 'valid-hub-tabs');
         const members = `/clubs/${FIRST_CLUB_ID}/members`;
         const isPrefetch = (headers: Record<string, string>) =>
             Object.keys(headers).some((name) => name.includes('prefetch'));
@@ -226,7 +222,7 @@ for (const { viewport, open, current } of sectionSwitches) {
 test('a sideways swipe over the Club name switches Clubs on phones', async ({ browser }) => {
     const context = await browser.newContext({ hasTouch: true, isMobile: true });
     try {
-        await authenticate(context, 'valid-hub-swipe');
+        await signInMock(context, 'valid-hub-swipe');
         const page = await context.newPage();
         await page.setViewportSize(canonicalViewports[0]);
         await page.goto(`/clubs/${FIRST_CLUB_ID}`);
@@ -258,7 +254,7 @@ test('a sideways swipe over the Club name switches Clubs on phones', async ({ br
 test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ browser }) => {
     const context = await browser.newContext({ hasTouch: true, isMobile: true });
     try {
-        await authenticate(context, 'valid-hub-touch');
+        await signInMock(context, 'valid-hub-touch');
         const page = await context.newPage();
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
             await page.setViewportSize(viewport);
@@ -295,7 +291,7 @@ test('Club carousel ends with creation and shows only the prototype caption', as
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-hub-carousel');
+    await signInMock(context, 'valid-hub-carousel');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
     await expect(page.getByText('2 members · 1 session · Est. January 2025')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Create a Club', exact: true })).toHaveCount(0);
@@ -315,7 +311,7 @@ test('Watching Call Sheet uses the Session ordinal, weekday and actual selected 
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-hub-watching');
+    await signInMock(context, 'valid-hub-watching');
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
     const sheet = page.getByRole('link', { name: 'Open Session: Selected film', exact: true });
     await expect(sheet).toContainText('Call sheet 047');
@@ -344,7 +340,7 @@ test('Watching Call Sheet uses the Session ordinal, weekday and actual selected 
 });
 
 test('Club member joins the active Session directly from Overview', async ({ context, page }) => {
-    await authenticate(context, `valid-session-roster-member-direct-hub-${crypto.randomUUID()}`);
+    await signInMock(context, `valid-session-roster-member-direct-hub-${crypto.randomUUID()}`);
     await page.goto(`/clubs/${FIRST_CLUB_ID}`);
     await page.getByRole('button', { name: 'Join me!' }).click();
     await expect(page).toHaveURL(/\/sessions\/30000000-0000-4000-8000-000000000041$/u);
@@ -356,7 +352,7 @@ for (const viewport of screenshotViewports) {
         `Club Hub matches the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-hub-visual-${viewport.name}`);
+            await signInMock(context, `valid-hub-visual-${viewport.name}`);
             await page.setViewportSize(viewport);
             await page.goto(`/clubs/${FIRST_CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);

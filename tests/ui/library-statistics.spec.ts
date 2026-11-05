@@ -105,19 +105,18 @@ test(
     'Personal statistics show empty values and recover from read failure',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        const cookie = { name: 'pickflick.session_token', domain: '127.0.0.1', path: '/' };
-        await context.addCookies([{ ...cookie, value: 'valid-empty-statistics' }]);
+        await signInMock(context, 'valid-empty-statistics');
         await page.goto('/library');
         const statistics = page.getByRole('region', { name: 'Personal statistics', exact: true });
         await expect(statistics.locator('dd')).toHaveText(['0', '0', '—', '0', '0', '—', '—', '—']);
         await expect(statistics.getByText(/Rate a film to start/u)).toBeVisible();
-        await context.addCookies([{ ...cookie, value: 'valid-library-unavailable' }]);
+        await signInMock(context, 'valid-library-unavailable');
         await page.reload();
         await expect(
             page.getByRole('region', { name: 'Personal statistics unavailable' }),
         ).toBeVisible();
         await expect(statistics).toHaveCount(0);
-        await context.addCookies([{ ...cookie, value: 'valid-empty-statistics-recovered' }]);
+        await signInMock(context, 'valid-empty-statistics-recovered');
         await page.getByRole('link', { name: 'Retry statistics', exact: true }).click();
         await expect(statistics.locator('dd').first()).toHaveText('0');
     },

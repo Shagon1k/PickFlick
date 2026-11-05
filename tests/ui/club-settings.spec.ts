@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
 import { settle } from './settle';
@@ -62,10 +62,6 @@ test(
     },
 );
 
-async function authenticate(context: BrowserContext, token: string) {
-    await signInMock(context, token);
-}
-
 async function open(
     page: Page,
     viewport: { height: number; width: number } = canonicalViewports[0],
@@ -82,7 +78,7 @@ test('Club settings redirects an unauthenticated visitor and withholds outsider 
     await page.goto(ROUTE);
     await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(ROUTE)}`);
 
-    await authenticate(context, 'valid-settings-outsider');
+    await signInMock(context, 'valid-settings-outsider');
     await page.goto(ROUTE);
     await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
     await expect(page.getByText('Midnight Society')).toHaveCount(0);
@@ -93,7 +89,7 @@ test('Admin and Member settings states have no automated accessibility violation
     page,
 }) => {
     for (const token of ['valid-settings-admin', 'valid-settings-member']) {
-        await authenticate(context, token);
+        await signInMock(context, token);
         for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await open(page, viewport);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
@@ -105,7 +101,7 @@ test('Club settings do not overflow across canonical and bridge widths', async (
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-settings-admin-overflow');
+    await signInMock(context, 'valid-settings-admin-overflow');
     for (const viewport of [
         ...canonicalViewports,
         { height: 900, name: 'bridge-640', width: 640 },
@@ -124,7 +120,7 @@ test('Club settings do not overflow across canonical and bridge widths', async (
 });
 
 test('Admin can submit settings, change a role, and confirm archive', async ({ context, page }) => {
-    await authenticate(context, 'valid-settings-admin-actions');
+    await signInMock(context, 'valid-settings-admin-actions');
     await open(page, canonicalViewports[2]);
 
     await expect(
@@ -178,7 +174,7 @@ test('avatar replacements refresh the image and removal keeps the latest status'
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-settings-admin-avatar-actions');
+    await signInMock(context, 'valid-settings-admin-avatar-actions');
     await open(page, canonicalViewports[2]);
 
     const avatarInput = page.getByLabel('Club avatar', { exact: true });
@@ -236,7 +232,7 @@ for (const state of ['admin-over-limit', 'adminless']) {
         page,
     }) => {
         for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
-            await authenticate(
+            await signInMock(
                 context,
                 `valid-settings-${state}-restricted-invitations-${viewport.name}`,
             );
@@ -271,7 +267,7 @@ test('Manage Club runs the active Session through the gear-menu dialogs', async 
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-settings-nomination-operator');
+    await signInMock(context, 'valid-settings-nomination-operator');
     await open(page, canonicalViewports[3]);
     const card = page.getByRole('region', { name: 'Active Session', exact: true });
     await card.getByRole('button', { name: 'Start next phase: Watching' }).click();
@@ -289,7 +285,7 @@ test('Manage Club runs the active Session through the gear-menu dialogs', async 
 });
 
 test('Member sees read-only controls and can confirm leaving', async ({ context, page }) => {
-    await authenticate(context, 'valid-settings-member-actions');
+    await signInMock(context, 'valid-settings-member-actions');
     await open(page);
     await expect(page.getByRole('textbox', { name: 'Club name' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Save Changes' })).toHaveCount(0);
@@ -312,7 +308,7 @@ for (const viewport of screenshotViewports) {
         `Club invitation ticket and Moderators match ${viewport.name}`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-settings-admin-dialogs-${viewport.name}`);
+            await signInMock(context, `valid-settings-admin-dialogs-${viewport.name}`);
             await open(page, viewport);
             await page.getByRole('button', { name: 'Invite members' }).click();
             await expect(
@@ -336,7 +332,7 @@ for (const viewport of screenshotViewports) {
         `Club Admin settings match the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-settings-admin-${viewport.name}`);
+            await signInMock(context, `valid-settings-admin-${viewport.name}`);
             await open(page, viewport);
             await expect(page).toHaveScreenshot(`club-settings-admin-${viewport.name}.png`, {
                 fullPage: true,
@@ -350,7 +346,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         `Club Member settings match the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-settings-member-${viewport.name}`);
+            await signInMock(context, `valid-settings-member-${viewport.name}`);
             await open(page, viewport);
             await expect(page).toHaveScreenshot(`club-settings-member-${viewport.name}.png`, {
                 fullPage: true,
@@ -362,7 +358,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
         `Archived Club settings match the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-settings-archived-${viewport.name}`);
+            await signInMock(context, `valid-settings-archived-${viewport.name}`);
             await open(page, viewport);
             await expect(page.getByRole('button', { name: 'Reactivate Club' })).toBeVisible();
             await expect(page.getByRole('button', { name: 'Invite members' })).toHaveCount(0);
@@ -385,7 +381,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
 }
 
 test('Delete Club is offered only while the Club has no Sessions', async ({ context, page }) => {
-    await authenticate(context, 'valid-settings-history');
+    await signInMock(context, 'valid-settings-history');
     await open(page, { width: 1440, height: 900 });
     await expect(page.getByRole('button', { name: 'Archive Club' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete Club' })).toBeDisabled();

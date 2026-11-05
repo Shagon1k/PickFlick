@@ -298,16 +298,10 @@ for (const viewport of screenshotViewports) {
             { tag: '@visual' },
             async ({ context, page }) => {
                 await page.setViewportSize(viewport);
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value:
-                            state === 'sign-in'
-                                ? 'forged'
-                                : `valid-visual-${state}-${viewport.name}`,
-                        url: 'http://127.0.0.1:41730',
-                    },
-                ]);
+                await signInMock(
+                    context,
+                    state === 'sign-in' ? 'forged' : `valid-visual-${state}-${viewport.name}`,
+                );
                 await page.goto(invitationPath(state === 'sign-in' ? 'valid' : state), {
                     waitUntil: 'load',
                 });

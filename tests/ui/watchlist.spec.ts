@@ -189,8 +189,7 @@ test(
     'Watchlist failures preserve unsaved state and allow recovery; Library removal restores focus',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        const cookie = { name: 'pickflick.session_token', domain: '127.0.0.1', path: '/' };
-        await context.addCookies([{ ...cookie, value: 'valid-watchlist-failure' }]);
+        await signInMock(context, 'valid-watchlist-failure');
         await page.route('**/api/movies/images/**', (route) => route.abort());
         await page.goto(`/movies/${MOVIE_ID}`);
         await context.setOffline(true);
@@ -205,7 +204,7 @@ test(
         await expect(
             dialog.getByText('We could not update your Watchlist. Try again.'),
         ).toBeVisible();
-        await context.addCookies([{ ...cookie, value: 'valid-watchlist-recovery' }]);
+        await signInMock(context, 'valid-watchlist-recovery');
         await dialog.getByRole('button', { name: 'High', exact: true }).click();
         await expect(
             page.getByRole('button', { name: 'Edit watchlist priority', exact: true }),

@@ -1,15 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 async function openNotifications(page: Page, token: string, width = 1440) {
     await page.setViewportSize({ width, height: 900 });
-    await page
-        .context()
-        .addCookies([
-            { name: 'pickflick.session_token', value: token, url: 'http://127.0.0.1:41730' },
-        ]);
+    await signInMock(page.context(), token);
     await page.goto('/app', { waitUntil: 'load' });
     const trigger =
         width < 1024

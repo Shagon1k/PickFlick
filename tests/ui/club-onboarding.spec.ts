@@ -1,13 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
-
-async function authenticate(context: BrowserContext, token: string) {
-    await signInMock(context, token);
-}
 
 async function open(page: Page, route: string, viewport: { height: number; width: number }) {
     await page.setViewportSize(viewport);
@@ -61,7 +57,7 @@ test('no-Clubs and Create Club have no automated accessibility violations', asyn
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-accessibility');
+    await signInMock(context, 'valid-accessibility');
     for (const route of ['/app', '/clubs/new']) {
         for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await open(page, route, viewport);
@@ -74,7 +70,7 @@ test('Club onboarding does not overflow across canonical and gap widths', async 
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-overflow');
+    await signInMock(context, 'valid-overflow');
     for (const route of ['/app', '/clubs/new']) {
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
             await open(page, route, viewport);
@@ -94,7 +90,7 @@ test('invalid Club values stay in the form and move focus to accessible validati
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-validation');
+    await signInMock(context, 'valid-validation');
     await open(page, '/clubs/new', canonicalViewports[0]);
 
     const name = page.getByRole('textbox', { name: 'Club name — required' });
@@ -111,7 +107,7 @@ test('a valid Club creation opens the new Free Club with its configured scale', 
     context,
     page,
 }) => {
-    await authenticate(context, `valid-create-success-${crypto.randomUUID()}`);
+    await signInMock(context, `valid-create-success-${crypto.randomUUID()}`);
     await open(page, '/clubs/new', canonicalViewports[1]);
 
     await page.getByRole('textbox', { name: 'Club name — required' }).fill('Midnight Society');
@@ -142,7 +138,7 @@ test('the no-Clubs action meets the touch target contract', async ({ browser }) 
         viewport: canonicalViewports[0],
     });
     try {
-        await authenticate(context, 'valid-touch');
+        await signInMock(context, 'valid-touch');
         const page = await context.newPage();
         await open(page, '/app', canonicalViewports[0]);
         const create = page.getByRole('link', { name: 'Create a Club' });
@@ -159,7 +155,7 @@ for (const viewport of screenshotViewports) {
         `no-Clubs matches the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-no-clubs-${viewport.name}`);
+            await signInMock(context, `valid-no-clubs-${viewport.name}`);
             await open(page, '/app', viewport);
             await expect(page).toHaveScreenshot(`no-clubs-${viewport.name}.png`, {
                 fullPage: true,
@@ -171,7 +167,7 @@ for (const viewport of screenshotViewports) {
         `Create Club matches the ${viewport.name} source-comparison capture`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-create-club-${viewport.name}`);
+            await signInMock(context, `valid-create-club-${viewport.name}`);
             await open(page, '/clubs/new', viewport);
             await expect(page).toHaveScreenshot(`create-club-${viewport.name}.png`, {
                 fullPage: true,

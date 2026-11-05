@@ -108,15 +108,14 @@ test(
     'Library exposes invalid filters, read errors, and an empty Ratings view',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        const cookie = { name: 'pickflick.session_token', domain: '127.0.0.1', path: '/' };
-        await context.addCookies([{ ...cookie, value: 'valid-empty-library' }]);
+        await signInMock(context, 'valid-empty-library');
         await page.goto('/library');
         await expect(page.getByText('No rated films yet.', { exact: false })).toBeVisible();
         await page.goto('/library?page=-1');
         await expect(page.getByRole('region', { name: 'Invalid Library filters' })).toBeVisible();
         await page.getByRole('link', { name: 'Clear filters' }).click();
         await expect(page.getByText('No rated films yet.', { exact: false })).toBeVisible();
-        await context.addCookies([{ ...cookie, value: 'valid-library-unavailable' }]);
+        await signInMock(context, 'valid-library-unavailable');
         await page.goto('/library?q=retained');
         await expect(page.getByText('Your ratings are temporarily unavailable.')).toBeVisible();
         await expect(page.getByRole('link', { name: 'Try again' })).toHaveAttribute(
@@ -181,8 +180,7 @@ test(
     'Library rating failures preserve the selection and recover',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        const cookie = { name: 'pickflick.session_token', domain: '127.0.0.1', path: '/' };
-        await context.addCookies([{ ...cookie, value: 'valid-library-errors' }]);
+        await signInMock(context, 'valid-library-errors');
         await page.goto('/library?q=Grand');
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
@@ -197,7 +195,7 @@ test(
             dialog.getByText('We could not save your rating.', { exact: false }),
         ).toBeVisible();
         await expect(nine).toBeChecked();
-        await context.addCookies([{ ...cookie, value: 'valid-library-recovered' }]);
+        await signInMock(context, 'valid-library-recovered');
         await nine.click();
         await expect(dialog).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'My Ratings', exact: true })).toBeFocused();

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
@@ -11,7 +12,7 @@ test(
     'Logged nominations use the shared film cards without inventing a Selection winner',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, 'valid-rating-history-imported-completed');
+        await signInMock(context, 'valid-rating-history-imported-completed');
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto(SESSION_ROUTE, { waitUntil: 'load' });
         const rivals = page.getByRole('region', { name: 'Nomination Rivals', exact: true });
@@ -42,25 +43,12 @@ test(
     },
 );
 
-async function authenticate(context: BrowserContext, value: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
-}
-
 for (const viewport of canonicalViewports) {
     test(
         `Completed keeps screening facts, ratings and frozen nominations at ${viewport.name}`,
         { tag: '@smoke' },
         async ({ context, page }) => {
-            await authenticate(context, 'valid-rating-history-completed');
+            await signInMock(context, 'valid-rating-history-completed');
             await page.setViewportSize(viewport);
             await page.goto(SESSION_ROUTE, { waitUntil: 'load' });
             // The long synopsis puts lazy rival posters beyond the initial loading range on phones.
@@ -109,7 +97,7 @@ for (const viewport of canonicalViewports) {
         `Hub separates a blocking Session, all Ratings and partial history at ${viewport.name}`,
         { tag: '@smoke' },
         async ({ context, page }) => {
-            await authenticate(context, 'valid-hub-history');
+            await signInMock(context, 'valid-hub-history');
             await page.setViewportSize(viewport);
             await page.goto(HUB_ROUTE, { waitUntil: 'load' });
             await settle(page);
@@ -145,7 +133,7 @@ test('Completed hidden results disclose no other comments, nominees or vote tota
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-rating-history-hidden-completed');
+    await signInMock(context, 'valid-rating-history-hidden-completed');
     await page.goto(SESSION_ROUTE);
     await expect(
         page
@@ -161,7 +149,7 @@ test('Hub history retains Club averages when individual scores are hidden', asyn
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-hub-history-hidden');
+    await signInMock(context, 'valid-hub-history-hidden');
     await page.goto(HUB_ROUTE);
     const history = page.getByRole('region', { name: 'History', exact: true });
     await expect(
@@ -176,7 +164,7 @@ test('Hub Sessions lists only the running Session and explains an empty history'
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-hub-empty');
+    await signInMock(context, 'valid-hub-empty');
     await page.goto(HUB_ROUTE);
     await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveCount(1);
     await expect(page.getByRole('region', { name: 'Open Ratings', exact: true })).toHaveCount(0);
