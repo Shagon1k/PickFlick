@@ -78,25 +78,29 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await expect(
         page
             .getByRole('group', { name: 'Film search results' })
-            .getByText('No films found. Try another title.'),
+            .getByRole('paragraph')
+            .filter({ hasText: 'No films found. Try another title.' }),
     ).toBeVisible();
     await input.fill('outage');
     await expect(
         page
             .getByRole('group', { name: 'Film search results' })
-            .getByText('The film provider is temporarily unavailable. Try again.'),
+            .getByRole('paragraph')
+            .filter({ hasText: 'The film provider is temporarily unavailable. Try again.' }),
     ).toBeVisible();
     await input.fill('limited');
     await expect(
         page
             .getByRole('group', { name: 'Film search results' })
-            .getByText('Film search is busy. Please try again shortly.'),
+            .getByRole('paragraph')
+            .filter({ hasText: 'Film search is busy. Please try again shortly.' }),
     ).toBeVisible();
     await input.fill('disabled');
     await expect(
         page
             .getByRole('group', { name: 'Film search results' })
-            .getByText('Film search is not configured yet.'),
+            .getByRole('paragraph')
+            .filter({ hasText: 'Film search is not configured yet.' }),
     ).toBeVisible();
     await input.fill('stale');
     await expect(
@@ -120,7 +124,8 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await expect(
         page
             .getByRole('group', { name: 'Film search results' })
-            .getByText('No films found. Try another title.'),
+            .getByRole('paragraph')
+            .filter({ hasText: 'No films found. Try another title.' }),
     ).toBeVisible();
     await expect(page.getByText('Old film')).toHaveCount(0);
     await page.getByRole('heading', { level: 1 }).click();
