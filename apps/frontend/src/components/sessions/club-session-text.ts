@@ -1,12 +1,21 @@
-import type { IClubHubSession } from '@pickflick/contracts';
+import type { IClubHubSession, TSessionPhase } from '@pickflick/contracts';
+
+export const SESSION_PHASE_LABELS: Record<TSessionPhase, string> = {
+    NOMINATION: 'Nomination',
+    SELECTION: 'Selection',
+    WATCHING: 'Watching',
+    RATING: 'Rating',
+    COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled',
+};
 
 /** A Hub row names the chosen film, else the Session topic. */
 export function formatHubSessionTitle(session: IClubHubSession) {
     return session.movie?.title ?? session.topic ?? 'Untitled Session';
 }
 
-export function formatSessionPhase(value: string) {
-    return value[0] + value.slice(1).toLowerCase();
+export function formatSessionPhase(phase: TSessionPhase) {
+    return SESSION_PHASE_LABELS[phase];
 }
 
 /** Every Club member may nominate; from Selection on, only the Session's participants count. */

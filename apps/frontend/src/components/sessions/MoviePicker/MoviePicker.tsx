@@ -23,7 +23,8 @@ interface IMoviePickerProps {
     required?: boolean;
     value: string | null;
     selectedTitle?: string;
-    onChange: (id: string | null, movie?: TSearchMovie) => void;
+    /** Receives the picked film, or null when the selection is removed. */
+    onChange: (movie: TSearchMovie | null) => void;
     error?: React.ReactNode;
     disabled: boolean;
     placeholder: string;
@@ -65,7 +66,7 @@ export default function MoviePicker({
     useActiveOptionVisible(id, index);
     function handleSelect(movie: TSearchMovie) {
         setSelectedMovie(movie);
-        onChange(movie.id, movie);
+        onChange(movie);
         setQuery('');
         setIndex(-1);
     }

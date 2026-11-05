@@ -177,9 +177,10 @@ export default function PastSessionForm({
                     <MoviePicker
                         value={form.values.movieId || null}
                         selectedTitle={titles[form.values.movieId]}
-                        onChange={(id, movie) => {
-                            form.setFieldValue('movieId', id ?? '');
-                            if (id && movie) {
+                        onChange={(movie) => {
+                            form.setFieldValue('movieId', movie?.id ?? '');
+                            if (movie) {
+                                const id = movie.id;
                                 setTitles({
                                     ...titles,
                                     [id]: movie.title ?? movie.originalTitle ?? 'Untitled film',

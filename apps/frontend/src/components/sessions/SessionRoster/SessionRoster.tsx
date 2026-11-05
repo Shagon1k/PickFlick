@@ -36,12 +36,10 @@ export default function SessionRoster({
         run(() => changeRosterAction(sessionId, input), {
             unreachableMessage: 'We could not reach PickFlick. Check your connection and retry.',
             onResult: (result) => {
-                if (result.ok) announceSuccess(result.message);
-                else setMessage(result.message);
-                if (result.ok) {
-                    if (dialog) restoreFocusRef.current = true;
-                    setDialog(null);
-                }
+                if (!result.ok) return setMessage(result.message);
+                announceSuccess(result.message);
+                if (dialog) restoreFocusRef.current = true;
+                setDialog(null);
             },
         });
     }

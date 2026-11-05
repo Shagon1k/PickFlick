@@ -4,15 +4,16 @@ import clsx from 'clsx';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 
+import { SESSION_PHASE_LABELS } from '../club-session-text';
 import styles from './SessionStatus.module.scss';
 
-const STATUSES: Record<TSessionPhase, { label: string; icon: TIconName }> = {
-    NOMINATION: { label: 'Nomination', icon: 'bulb' },
-    SELECTION: { label: 'Selection', icon: 'document' },
-    WATCHING: { label: 'Watching', icon: 'play' },
-    RATING: { label: 'Rating', icon: 'ratings' },
-    COMPLETED: { label: 'Completed', icon: 'check' },
-    CANCELLED: { label: 'Cancelled', icon: 'cancel' },
+const PHASE_ICONS: Record<TSessionPhase, TIconName> = {
+    NOMINATION: 'bulb',
+    SELECTION: 'document',
+    WATCHING: 'play',
+    RATING: 'ratings',
+    COMPLETED: 'check',
+    CANCELLED: 'cancel',
 };
 const LOGGED_STATUS = { label: 'Logged', icon: 'clock' } as const;
 
@@ -26,7 +27,9 @@ export default function SessionStatus({
     isLogged?: boolean;
     placement?: 'inline' | 'poster';
 }) {
-    const status = isLogged ? LOGGED_STATUS : STATUSES[phase];
+    const status = isLogged
+        ? LOGGED_STATUS
+        : { label: SESSION_PHASE_LABELS[phase], icon: PHASE_ICONS[phase] };
     return (
         <span
             className={clsx(styles.status, placement === 'poster' && styles['m-poster'])}

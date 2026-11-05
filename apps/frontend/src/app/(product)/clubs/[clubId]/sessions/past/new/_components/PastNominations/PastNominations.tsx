@@ -52,11 +52,9 @@ export default function PastNominations({
         { length: scaleMax - scaleMin + 1 },
         (_, index) => scaleMin + index,
     );
-    function handleNominationPick(
-        movieId: string | null,
-        movie?: TMovieSearchResults['movies'][number],
-    ) {
-        if (!movieId || !movie) return;
+    function handleNominationPick(movie: TMovieSearchResults['movies'][number] | null) {
+        if (!movie) return;
+        const movieId = movie.id;
         if (isNominationLimitReached) {
             setMessage('Select more attendees in "Who came?" to add another nomination.');
             return;

@@ -180,7 +180,7 @@ export default function SessionForm({
                     error={form.errors.movieId}
                     placeholder="Search films by title…"
                     value={form.values.movieId}
-                    onChange={(movieId) => form.setFieldValue('movieId', movieId)}
+                    onChange={(movie) => form.setFieldValue('movieId', movie?.id ?? null)}
                 />
             ) : null}
             <SessionFormActions

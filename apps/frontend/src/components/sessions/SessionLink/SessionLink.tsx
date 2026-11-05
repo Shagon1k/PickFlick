@@ -16,16 +16,14 @@ export default function SessionLink({ sessionId }: { sessionId: string }) {
     const [isCopied, setIsCopied] = useState(false);
     useEffect(() => {
         if (!isCopied) return;
-        const timer = setTimeout(() => {
-            setIsCopied(false);
-            setMessage('');
-        }, COPIED_LABEL_MS);
+        const timer = setTimeout(() => setIsCopied(false), COPIED_LABEL_MS);
         return () => clearTimeout(timer);
     }, [isCopied]);
     async function handleCopy() {
         try {
             await navigator.clipboard.writeText(`${window.location.origin}/sessions/${sessionId}`);
-            setMessage('Session link copied. Share it with your Club.');
+            // The Button's own success label announces the copy.
+            setMessage('');
             setIsCopied(true);
         } catch {
             setMessage(`Copy is unavailable. Open /sessions/${sessionId} and copy its address.`);

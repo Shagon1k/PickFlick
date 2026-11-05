@@ -16,7 +16,7 @@ export default function ClubStatus({ access }: { access: IClubAccess }) {
                     </InfoTip>
                 </p>
             ) : null}
-            {access.adminless ? (
+            {access.reasons.includes('ADMINLESS') ? (
                 <p>
                     This Club has no Admin.{' '}
                     <InfoTip label="About Clubs without an Admin">

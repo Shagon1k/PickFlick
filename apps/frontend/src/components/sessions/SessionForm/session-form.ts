@@ -80,15 +80,14 @@ export function validateSession(values: ISessionValues, session?: TSession) {
               type: 'Choose a Session type.',
           });
     const { scheduledAt, ...fields } = errors;
-    const dateError = scheduledAt ?? getPastDateError(values.date, session);
+    const isDurationInvalid =
+        !values.removeDeadline &&
+        Boolean(values.duration) &&
+        (!/^\d{2}:[0-5]\d$/u.test(values.duration) || values.duration === '00:00');
     return {
         ...fields,
-        ...(dateError ? { date: dateError } : {}),
-        ...(!values.removeDeadline &&
-        values.duration &&
-        (!/^\d{2}:[0-5]\d$/u.test(values.duration) || values.duration === '00:00')
-            ? { duration: 'Use hh:mm, greater than 00:00.' }
-            : {}),
+        date: scheduledAt ?? getPastDateError(values.date, session),
+        duration: isDurationInvalid ? 'Use hh:mm, greater than 00:00.' : undefined,
     };
 }
 

@@ -80,7 +80,7 @@ export default function InviteDialog({
             return;
         }
         const result = await perform(() => createInvitationAction(clubId));
-        if (result?.created) showCreated(result.created, Boolean(result.invitations), result);
+        if (result?.created) showCreated(result.created, result);
     }
 
     async function open() {
@@ -112,10 +112,9 @@ export default function InviteDialog({
     /** Shows the new link once; without a refreshed list, the new link joins the current one. */
     function showCreated(
         created: ICreatedInvitation,
-        isListed: boolean,
-        { refreshError }: { refreshError?: string },
+        { invitations, refreshError }: Extract<TInvitationResult, { ok: true }>,
     ) {
-        if (!isListed) {
+        if (!invitations) {
             setInvitations((current) => [
                 { id: created.id, expiresAt: created.expiresAt, state: 'pending' },
                 ...current,

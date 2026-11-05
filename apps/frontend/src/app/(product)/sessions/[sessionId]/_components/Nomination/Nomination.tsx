@@ -172,11 +172,11 @@ function NominationPicker({
             placeholder="Search films…"
             value={chosen?.id ?? null}
             selectedTitle={chosen?.title ?? 'Movie title unavailable'}
-            onChange={(id, movie) =>
+            onChange={(movie) =>
                 onChoose(
-                    id && movie
+                    movie
                         ? {
-                              id,
+                              id: movie.id,
                               title: movie.title ?? movie.originalTitle,
                               year: movie.releaseYear,
                               genres: movie.genres ?? [],
