@@ -105,14 +105,15 @@ describe('Selection ballots', () => {
     });
 
     it('should reject incomplete, duplicate, extra and foreign nominations atomically', async () => {
-        for (const scores of [
-            [],
-            [ballot().scores[0]],
-            [ballot().scores[0], ballot().scores[0]],
-            [...ballot().scores, { nominationId: randomUUID(), score: 1 }],
-            [ballot().scores[0], { nominationId: randomUUID(), score: 1 }],
-        ]) {
-            expect((await submit({ scores })).status).toBe(scores.length === 0 ? 400 : 409);
+        // An empty ballot fails the request schema; the others fail against the nominations.
+        for (const [scores, status] of [
+            [[], 400],
+            [[ballot().scores[0]], 409],
+            [[ballot().scores[0], ballot().scores[0]], 409],
+            [[...ballot().scores, { nominationId: randomUUID(), score: 1 }], 409],
+            [[ballot().scores[0], { nominationId: randomUUID(), score: 1 }], 409],
+        ] as const) {
+            expect((await submit({ scores })).status).toBe(status);
         }
         expect(await api.prisma.selectionBallot.count({ where: { sessionId } })).toBe(0);
         expect(await api.prisma.selectionScore.count({ where: { sessionId } })).toBe(0);

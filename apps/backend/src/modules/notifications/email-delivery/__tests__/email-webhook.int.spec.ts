@@ -1,5 +1,6 @@
 import { createHmac, randomUUID } from 'node:crypto';
 
+import { EMAIL_WORKER_ENVIRONMENT } from '../../../../testing/email-fixtures.js';
 import { createUser, type ITestApi, startTestApi } from '../../../../testing/integration.js';
 import { removeUsers } from '../../../../testing/remove-users.js';
 import type { IEmailMessage } from '../../../email/email.types.js';
@@ -14,15 +15,7 @@ describe('EmailWebhook', () => {
     let userId: string;
     let notificationId: string;
     let providerId: string;
-    const environment = {
-        databaseUrl: 'unused',
-        baseUrl: 'https://uat.pick-flick.app',
-        from: 'PickFlick UAT <uat@pick-flick.app>',
-        apiKey: 'synthetic-only',
-        deliveryEnabled: true,
-        alertTo: 'test@pick-flick.app',
-        localDelivery: null,
-    };
+    const environment = EMAIL_WORKER_ENVIRONMENT;
     const send = vi.fn<(message: IEmailMessage) => Promise<string>>();
     const log = vi.fn();
     const buildDispatcher = () => new EmailDispatcher(api.prisma, { send }, { environment, log });

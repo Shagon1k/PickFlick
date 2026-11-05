@@ -203,9 +203,15 @@ describe('Nominations', () => {
             owner: string,
             movieId: string,
             winner: string | null,
-            phase: 'COMPLETED' | 'CANCELLED' = 'COMPLETED',
-            isOtherClub = false,
-            isEarlier = true,
+            {
+                phase = 'COMPLETED',
+                isOtherClub = false,
+                isEarlier = true,
+            }: {
+                phase?: 'COMPLETED' | 'CANCELLED';
+                isOtherClub?: boolean;
+                isEarlier?: boolean;
+            } = {},
         ) {
             let historyClub = clubId;
             let membershipId = owner;
@@ -250,10 +256,10 @@ describe('Nominations', () => {
         await history(membership.id, movies[0]!, movies[1]!);
         await history(membership.id, movies[1]!, movies[1]!);
         await history(membership.id, movies[2]!, null);
-        await history(membership.id, movies[2]!, movies[1]!, 'CANCELLED');
+        await history(membership.id, movies[2]!, movies[1]!, { phase: 'CANCELLED' });
         await history(otherMembership.id, movies[2]!, movies[1]!);
-        await history(membership.id, movies[2]!, movies[1]!, 'COMPLETED', true);
-        await history(membership.id, movies[2]!, movies[1]!, 'COMPLETED', false, false);
+        await history(membership.id, movies[2]!, movies[1]!, { isOtherClub: true });
+        await history(membership.id, movies[2]!, movies[1]!, { isEarlier: false });
         const data = nominationData(await (await read()).json());
         expect(data.suggestions.map((movie) => movie.id)).toEqual([movies[0]]);
         expect((await submit(member, data.suggestions[0]?.id)).status).toBe(201);

@@ -156,15 +156,19 @@ describe('Past Selection evidence', () => {
     });
 
     it('should reject out-of-snapshot scores, unknown Movies and malformed matrices without partial writes', async () => {
-        for (const selectionScaleMin of [0, 1]) {
+        // A negative score fails the request schema; the others fail the Club's frozen scale.
+        for (const [selectionScaleMin, score, status] of [
+            [0, -1, 400],
+            [0, 6, 409],
+            [1, 0, 409],
+            [1, 6, 409],
+        ] as const) {
             await api.prisma.club.update({ where: { id: clubId }, data: { selectionScaleMin } });
-            for (const score of [selectionScaleMin - 1, 6]) {
-                const input = buildInput();
-                input.scoreMatrix = [
-                    { membershipId: memberships[0]!, scores: [{ movieId: movieIds[0]!, score }] },
-                ];
-                expect([400, 409]).toContain((await create(input)).status);
-            }
+            const input = buildInput();
+            input.scoreMatrix = [
+                { membershipId: memberships[0]!, scores: [{ movieId: movieIds[0]!, score }] },
+            ];
+            expect((await create(input)).status).toBe(status);
         }
         expect(
             (
