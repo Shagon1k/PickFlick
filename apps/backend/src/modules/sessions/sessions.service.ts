@@ -6,6 +6,7 @@ import {
     isOpenSessionPhase,
     type TCancelSession,
     type TCreateSession,
+    type TSelectionOutcome,
     type TSession,
     type TSessionProgress,
     type TUpdateSession,
@@ -42,11 +43,6 @@ export class SessionsService {
                     session,
                     membership,
                 );
-                const hasBreakdown =
-                    selectionOutcome?.source === 'LIVE'
-                        ? selectionOutcome.breakdown !== null
-                        : selectionOutcome?.source === 'IMPORTED' &&
-                          selectionOutcome.nominations !== null;
                 return {
                     ...toSession(session, membership.club.name, canManageSession),
                     rating:
@@ -57,7 +53,7 @@ export class SessionsService {
                               })
                             : null,
                     selectionOutcome,
-                    nominationAuthors: hasBreakdown
+                    nominationAuthors: namesNominators(selectionOutcome)
                         ? null
                         : await this.selection.loadAuthors(transaction, session, membership),
                     selectionScores: await this.selection.loadScores(
@@ -267,6 +263,12 @@ function toSession(
         progressVersion: session.progressVersion,
         canManage: canManageSession && isOpen,
     };
+}
+
+/** A Selection breakdown already names each nominator, so the separate author list is left out. */
+function namesNominators(outcome: TSelectionOutcome | null): boolean {
+    if (outcome?.source === 'LIVE') return outcome.breakdown !== null;
+    return outcome?.source === 'IMPORTED' && outcome.nominations !== null;
 }
 
 type TSessionDetails = Pick<

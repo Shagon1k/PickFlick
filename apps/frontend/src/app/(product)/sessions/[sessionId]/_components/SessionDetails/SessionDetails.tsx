@@ -6,7 +6,6 @@ import {
     type TMovieDetails,
     type TSession,
 } from '@pickflick/contracts';
-import Image from 'next/image';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
@@ -21,20 +20,14 @@ import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import SessionStatus from '#components/sessions/SessionStatus/SessionStatus';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
-import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
-import NominationAuthors from '../NominationRivals/NominationAuthors';
-import NominationRivals from '../NominationRivals/NominationRivals';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import YourRating from '../Rating/YourRating';
 import Selection from '../Selection/Selection';
-import SelectionScores from '../SelectionScores/SelectionScores';
-import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
-import SessionResults from '../SessionResults/SessionResults';
-import { getPhaseMascot } from './phase-mascot';
+import DetailsSection from './DetailsSection';
 
 export default function SessionDetails({
     session,
@@ -54,7 +47,6 @@ export default function SessionDetails({
         phaseRef.current = session.phase;
     }, [session.phase]);
     const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
-    const isResultsPhase = session.phase === 'RATING' || session.phase === 'COMPLETED';
     const header = (participation: ReactNode, onKick?: () => void, onClosePhase?: () => void) => (
         <SessionHeader
             session={session}
@@ -171,32 +163,7 @@ export default function SessionDetails({
                 {(participation, onKick) => (
                     <>
                         {renderPhase(participation, onKick)}
-                        {session.selectionOutcome?.source === 'LIVE' &&
-                        session.selectionOutcome.breakdown &&
-                        !isResultsPhase ? (
-                            <NominationRivals
-                                outcome={session.selectionOutcome}
-                                breakdown={session.selectionOutcome.breakdown}
-                            />
-                        ) : null}
-                        {!isResultsPhase &&
-                        session.nominationAuthors &&
-                        !(
-                            session.selectionOutcome?.source === 'LIVE' &&
-                            session.selectionOutcome.breakdown
-                        ) ? (
-                            <NominationAuthors authors={session.nominationAuthors} />
-                        ) : null}
-                        {!isResultsPhase && session.selectionScores ? (
-                            <SelectionScores data={session.selectionScores} />
-                        ) : null}
-                        <div className={styles.reelBreak} aria-hidden="true">
-                            <SprocketDivider variant="section" />
-                            <Image src={getPhaseMascot(session.phase)} alt="" />
-                        </div>
-                        <h2 className={styles.detailsTitle}>Session Details</h2>
-                        <SessionFacts session={session} roster={roster} />
-                        {isResultsPhase ? <SessionResults session={session} /> : null}
+                        <DetailsSection session={session} roster={roster} />
                     </>
                 )}
             </SessionRoster>

@@ -1,23 +1,16 @@
 import { isFilmSessionPhase, type TSession } from '@pickflick/contracts';
-import Image from 'next/image';
 
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import { buildClubNavigation } from '#components/shells/shell-navigation';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
-import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 
 import page from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
-import NominationAuthors from '../NominationRivals/NominationAuthors';
-import NominationRivals from '../NominationRivals/NominationRivals';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import YourRating from '../Rating/YourRating';
 import Selection from '../Selection/Selection';
-import SelectionScores from '../SelectionScores/SelectionScores';
-import { getPhaseMascot } from '../SessionDetails/phase-mascot';
-import SessionFacts from '../SessionFacts/SessionFacts';
-import SessionResults from '../SessionResults/SessionResults';
+import DetailsSection from '../SessionDetails/DetailsSection';
 import SessionHeaderSkeleton from './SessionHeaderSkeleton';
 import styles from './SessionLoading.module.scss';
 
@@ -84,35 +77,7 @@ function DetailsContent({ session }: { session?: TSession }) {
                 <Skeleton width="short" />
             </div>
         );
-    const isResults = session.phase === 'RATING' || session.phase === 'COMPLETED';
-    return (
-        <>
-            {!isResults ? <RivalsContent session={session} /> : null}
-            {!isResults && session.selectionScores ? (
-                <SelectionScores data={session.selectionScores} />
-            ) : null}
-            <div className={page.reelBreak}>
-                <SprocketDivider variant="section" />
-                <Image src={getPhaseMascot(session.phase)} alt="" />
-            </div>
-            <h2 className={page.detailsTitle}>Session Details</h2>
-            <SessionFacts session={session} isLoading />
-            {isResults ? <SessionResults session={session} isLoading /> : null}
-        </>
-    );
-}
-function RivalsContent({ session }: { session: TSession }) {
-    if (session.selectionOutcome?.source === 'LIVE' && session.selectionOutcome.breakdown)
-        return (
-            <NominationRivals
-                outcome={session.selectionOutcome}
-                breakdown={session.selectionOutcome.breakdown}
-                isLoading
-            />
-        );
-    if (session.nominationAuthors)
-        return <NominationAuthors authors={session.nominationAuthors} isLoading />;
-    return null;
+    return <DetailsSection session={session} isLoading />;
 }
 
 function progressText(session: TSession) {
