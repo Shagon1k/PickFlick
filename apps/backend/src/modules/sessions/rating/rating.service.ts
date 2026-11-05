@@ -3,6 +3,7 @@ import type { TCloseRating, TOpenRating, TRating, TSubmitRating } from '@pickfli
 import type { Prisma } from '@pickflick/database';
 
 import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
+import { getParticipantAvatarPath } from '../../clubs/participant-avatars/participant-avatar-path.js';
 import { Transactions } from '../../notifications/transactions.js';
 import { assertManager, predatesMembership, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
@@ -39,7 +40,11 @@ export class RatingService {
                           author: participant.membership.user.displayName,
                           avatarUrl:
                               participant.membership.user.image && participant.status === 'ACCEPTED'
-                                  ? `/api/clubs/${session.clubId}/sessions/${session.id}/participants/${participant.id}/avatar`
+                                  ? getParticipantAvatarPath(
+                                        session.clubId,
+                                        session.id,
+                                        participant.id,
+                                    )
                                   : null,
                           isOwn: participant.membershipId === membership.id,
                       },

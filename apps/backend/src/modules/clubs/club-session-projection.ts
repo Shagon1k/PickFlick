@@ -7,6 +7,7 @@ import { Prisma } from '@pickflick/database';
 
 import { canJoinSession, getOwnStatus } from '../sessions/session-access.js';
 import type { TMembership } from './access/club-access.js';
+import { getParticipantAvatarPath } from './participant-avatars/participant-avatar-path.js';
 
 export const sessionInclude = {
     movie: { select: { id: true, title: true, releaseYear: true } },
@@ -63,7 +64,11 @@ export async function createHubSessionProjection(
             id: participant.id,
             displayName: user.displayName,
             avatarUrl: user.image
-                ? `/api/clubs/${membership.club.id}/sessions/${participant.sessionId}/participants/${participant.id}/avatar`
+                ? getParticipantAvatarPath(
+                      membership.club.id,
+                      participant.sessionId,
+                      participant.id,
+                  )
                 : null,
         });
         participantsBySession.set(participant.sessionId, summaries);
