@@ -10,6 +10,16 @@ export function isMembershipEndedEvent(event: TNotificationEvent) {
     return MEMBERSHIP_ENDED_EVENTS.has(event);
 }
 
+/**
+ * Joining and leaving are always the member's own action, and nobody is notified about their own
+ * action, so these events keep their copy for stored rows but offer no preference.
+ */
+const UNSENT_EVENTS = new Set<TNotificationEvent>(['MEMBERSHIP_JOINED', 'MEMBERSHIP_LEFT']);
+
+export function hasPreference(event: TNotificationEvent) {
+    return !UNSENT_EVENTS.has(event);
+}
+
 /** Service notices the recipient cannot switch off on either channel. */
 export function isMandatoryNotification(event: TNotificationEvent) {
     return event === 'BILLING_SERVICE';

@@ -58,7 +58,12 @@ describe('Notifications', () => {
 
     it('should expose an authenticated owner-only strict preference matrix with mandatory exceptions', async () => {
         const initial = await getPreferences();
-        expect(initial.items.map((item) => item.event)).toEqual(NOTIFICATION_EVENTS);
+        // Joining and leaving are self-actions that never notify, so they offer no preference.
+        expect(initial.items.map((item) => item.event)).toEqual(
+            NOTIFICATION_EVENTS.filter(
+                (event) => event !== 'MEMBERSHIP_JOINED' && event !== 'MEMBERSHIP_LEFT',
+            ),
+        );
         await api.expectStatus(401, preferencesPath);
         await api.expectStatus(400, `${preferencesPath}?userId=${users[1]}`, { userId: users[0] });
         for (const body of [

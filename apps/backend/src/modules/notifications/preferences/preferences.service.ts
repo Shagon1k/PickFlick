@@ -6,7 +6,11 @@ import {
 } from '@pickflick/contracts';
 
 import { PrismaService } from '../../../database/prisma.service.js';
-import { getNotificationPolicy, isMandatoryNotification } from '../notification-policy.js';
+import {
+    getNotificationPolicy,
+    hasPreference,
+    isMandatoryNotification,
+} from '../notification-policy.js';
 
 @Injectable()
 export class NotificationPreferencesService {
@@ -15,7 +19,7 @@ export class NotificationPreferencesService {
     async getPreferences(userId: string): Promise<TNotificationPreferences> {
         const rows = await this.prisma.notificationPreference.findMany({ where: { userId } });
         return {
-            items: NOTIFICATION_EVENTS.map((event) =>
+            items: NOTIFICATION_EVENTS.filter(hasPreference).map((event) =>
                 getNotificationPolicy(
                     event,
                     rows.find((row) => row.event === event),
