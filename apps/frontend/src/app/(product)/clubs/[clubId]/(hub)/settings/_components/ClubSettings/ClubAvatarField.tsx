@@ -26,10 +26,14 @@ export default function ClubAvatarField({
 }) {
     const { club, permissions } = projection;
     const [preview, setPreview] = useState<string | null>(null);
-    useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
+    useEffect(() => {
+        if (!preview) return;
+        return () => URL.revokeObjectURL(preview);
+    }, [preview]);
     const version = club.avatarVersion ? `?v=${encodeURIComponent(club.avatarVersion)}` : '';
     const stored = club.hasAvatar ? `/api/clubs/${club.id}/avatar${version}` : null;
     const image = preview ?? stored;
+    const canRemove = permissions.manageSettings && club.hasAvatar && !preview;
     // The authenticated API route checks membership before streaming; the optimizer has no cookie.
     // eslint-disable-next-line @next/next/no-img-element -- see above
     const picture = image ? <img alt={`${club.name} avatar`} src={image} /> : null;
@@ -62,10 +66,10 @@ export default function ClubAvatarField({
                 {tile}
                 <div className={styles.identityField}>{children}</div>
             </div>
-            {preview || (permissions.manageSettings && club.hasAvatar) ? (
+            {preview || canRemove ? (
                 <div className={styles.avatarMeta}>
                     {preview ? <small>New image chosen. Save Changes to upload it.</small> : null}
-                    {permissions.manageSettings && club.hasAvatar && !preview ? (
+                    {canRemove ? (
                         <button
                             aria-label="Remove avatar"
                             className={styles.textButton}

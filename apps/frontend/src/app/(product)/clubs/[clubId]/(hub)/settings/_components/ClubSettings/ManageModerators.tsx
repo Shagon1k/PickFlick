@@ -50,37 +50,38 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                 <h3 className={styles.kicker}>{title}</h3>
                 {group.length ? (
                     <ul className={styles.memberList}>
-                        {group.map((member) => (
-                            <li className={styles.member} key={member.id}>
-                                <div className={styles.memberIdentity}>
-                                    <span aria-hidden="true">
-                                        {getMonogram(member.displayName)}
-                                    </span>
-                                    <strong>{member.displayName}</strong>
-                                </div>
-                                {member.role === 'ADMIN' ? (
-                                    <span className={styles.lockedRole}>Admin</span>
-                                ) : (
-                                    <Button
-                                        aria-label={`${roleOf(member) === 'MEMBER' ? 'Promote' : 'Remove'} ${member.displayName}`}
-                                        disabled={isPending}
-                                        onClick={() =>
-                                            setDraft({
-                                                ...draft,
-                                                [member.id]:
-                                                    roleOf(member) === 'MEMBER'
-                                                        ? 'MODERATOR'
-                                                        : 'MEMBER',
-                                            })
-                                        }
-                                        size="small"
-                                        variant="secondary"
-                                    >
-                                        {roleOf(member) === 'MEMBER' ? 'Promote' : 'Remove'}
-                                    </Button>
-                                )}
-                            </li>
-                        ))}
+                        {group.map((member) => {
+                            const isMember = roleOf(member) === 'MEMBER';
+                            const roleAction = isMember ? 'Promote' : 'Remove';
+                            return (
+                                <li className={styles.member} key={member.id}>
+                                    <div className={styles.memberIdentity}>
+                                        <span aria-hidden="true">
+                                            {getMonogram(member.displayName)}
+                                        </span>
+                                        <strong>{member.displayName}</strong>
+                                    </div>
+                                    {member.role === 'ADMIN' ? (
+                                        <span className={styles.lockedRole}>Admin</span>
+                                    ) : (
+                                        <Button
+                                            aria-label={`${roleAction} ${member.displayName}`}
+                                            disabled={isPending}
+                                            onClick={() =>
+                                                setDraft({
+                                                    ...draft,
+                                                    [member.id]: isMember ? 'MODERATOR' : 'MEMBER',
+                                                })
+                                            }
+                                            size="small"
+                                            variant="secondary"
+                                        >
+                                            {roleAction}
+                                        </Button>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
                 ) : (
                     <p className={styles.cardLead}>Nobody yet.</p>

@@ -156,6 +156,12 @@ const CLUB_SECTIONS: readonly {
     { section: 'manage', path: 'settings', label: 'Manage Club', icon: 'settings' },
 ];
 
+/** The Hub section a Club pathname shows; the Club root is Overview. */
+export function getHubSection(pathname: string): THubSection {
+    const lastSegment = pathname.split('/').at(-1);
+    return CLUB_SECTIONS.find(({ path }) => path && path === lastSegment)?.section ?? 'overview';
+}
+
 /** Paths `/app?section=` may open in the viewer's last Club. */
 export const CLUB_SECTION_PATHS = CLUB_SECTIONS.map(({ path }) => path);
 

@@ -3,7 +3,7 @@
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
 import { useState } from 'react';
 
-import invite from '#app/(auth)/invite/invite.module.scss';
+import styles from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
@@ -90,17 +90,17 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
     }
 
     return (
-        <div aria-busy={isPending || view.state === 'loading'} className={invite.card}>
-            <div aria-live="polite" className={invite.intro}>
+        <div aria-busy={isPending || view.state === 'loading'} className={styles.card}>
+            <div aria-live="polite" className={styles.intro}>
                 <h1>{title}</h1>
                 <p data-error={Boolean(failure)} role="status">
                     {failure || description}
                 </p>
             </div>
-            <div className={invite.preview} data-voided={STAMPS[view.state] ? true : undefined}>
+            <div className={styles.preview} data-voided={STAMPS[view.state] ? true : undefined}>
                 <PreviewContent view={view} />
             </div>
-            <div className={invite.actions}>
+            <div className={styles.actions}>
                 {view.state === 'valid' ? (
                     <>
                         <Button
@@ -153,8 +153,8 @@ function PreviewContent({ view }: { view: TView }) {
     if (stamp)
         return (
             <>
-                <span className={invite.voidKicker}>Club invitation</span>
-                <span className={invite.stamp}>{stamp}</span>
+                <span className={styles.voidKicker}>Club invitation</span>
+                <span className={styles.stamp}>{stamp}</span>
             </>
         );
     if (view.state !== 'valid')
@@ -162,11 +162,11 @@ function PreviewContent({ view }: { view: TView }) {
     return (
         <>
             <h2>{view.clubName}</h2>
-            <p className={invite.previewMeta}>
+            <p className={styles.previewMeta}>
                 <Icon name="members" />
                 {formatCount(view.memberCount, 'member')}
             </p>
-            <p className={invite.previewMeta}>
+            <p className={styles.previewMeta}>
                 <Icon name="profile" />
                 <span>
                     Invited by <strong>{view.inviterName}</strong>

@@ -2,18 +2,18 @@
 
 import type { IClubHub, IClubSummary } from '@pickflick/contracts';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import ClubStatus from '#components/clubs/ClubStatus/ClubStatus';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import SectionTabs from '#components/shells/SectionTabs/SectionTabs';
-import { buildClubNavigation, type THubSection } from '#components/shells/shell-navigation';
+import { buildClubNavigation, getHubSection } from '#components/shells/shell-navigation';
 
 import styles from '../../page.module.scss';
 import CallSheet from '../CallSheet/CallSheet';
 import ClubSwitcher from '../ClubSwitcher/ClubSwitcher';
 import HubLiveRefresh from '../HubLiveRefresh/HubLiveRefresh';
-import { HubLoadingContext, HubSnapshotContext } from '../HubPanel/HubPanel';
+import { HubSnapshotContext, PublishHubContext } from '../HubPanel/HubPanel';
 
 export default function ClubHubFrame({
     clubs,
@@ -26,9 +26,8 @@ export default function ClubHubFrame({
 }) {
     const [snapshot, setSnapshot] = useState(hub);
     const [isCreating, setIsCreating] = useState(false);
-    const publish = useCallback((value: IClubHub | null) => setSnapshot(value), []);
     const pathname = usePathname();
-    const current = getSection(pathname);
+    const current = getHubSection(pathname);
     const router = useRouter();
     const clubId = snapshot?.club.id;
     useEffect(() => {
@@ -39,16 +38,16 @@ export default function ClubHubFrame({
     }, [clubId, router]);
     if (!snapshot) {
         return (
-            <HubSnapshotContext value={publish}>
+            <PublishHubContext value={setSnapshot}>
                 <ProductFrame>
                     <main>{children}</main>
                 </ProductFrame>
-            </HubSnapshotContext>
+            </PublishHubContext>
         );
     }
     const navigation = buildClubNavigation(snapshot.club.id, current);
     return (
-        <HubSnapshotContext value={publish}>
+        <PublishHubContext value={setSnapshot}>
             <ProductFrame clubItems={navigation}>
                 <main className={styles.hub}>
                     <HubLiveRefresh />
@@ -58,6 +57,7 @@ export default function ClubHubFrame({
                             current={snapshot.club}
                             memberCount={snapshot.memberCount}
                             sessionCount={snapshot.sessionCount}
+                            isCreating={isCreating}
                             onCreateChange={setIsCreating}
                         />
                         {!isCreating ? (
@@ -76,21 +76,12 @@ export default function ClubHubFrame({
                         <>
                             <ClubStatus access={snapshot.access} />
                             <SectionTabs items={navigation} label="Club sections">
-                                <HubLoadingContext value={snapshot}>{children}</HubLoadingContext>
+                                <HubSnapshotContext value={snapshot}>{children}</HubSnapshotContext>
                             </SectionTabs>
                         </>
                     ) : null}
                 </main>
             </ProductFrame>
-        </HubSnapshotContext>
+        </PublishHubContext>
     );
-}
-
-function getSection(pathname: string): THubSection {
-    if (pathname.endsWith('/sessions')) return 'sessions';
-    if (pathname.endsWith('/ratings')) return 'ratings';
-    if (pathname.endsWith('/achievements')) return 'achievements';
-    if (pathname.endsWith('/members')) return 'members';
-    if (pathname.endsWith('/settings')) return 'manage';
-    return 'overview';
 }

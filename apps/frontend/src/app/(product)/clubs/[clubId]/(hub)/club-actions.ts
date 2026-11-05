@@ -26,6 +26,7 @@ import { readFormText } from '#lib/form-data';
 
 import type { IClubActionState } from './club-action-state';
 import { CLUB_FAILURE } from './club-errors';
+import { visibilityNames } from './settings/_components/ClubSettings/club-settings';
 
 function next(
     previous: IClubActionState,
@@ -35,8 +36,12 @@ function next(
     return { status, message, revision: previous.revision + 1 };
 }
 
-/** Runs one Club request and turns any failure into recovery copy for the form. */
+/**
+ * Runs one Club request, turns any failure into recovery copy for the form, and refreshes every
+ * Club Hub view either way, since a failed request may still have been applied.
+ */
 async function run(
+    clubId: string,
     previous: IClubActionState,
     request: () => Promise<unknown>,
     successMessage: string,
@@ -46,6 +51,8 @@ async function run(
         return next(previous, 'success', successMessage);
     } catch (error) {
         return next(previous, 'error', getFailureMessage(error, CLUB_FAILURE));
+    } finally {
+        revalidatePath(`/clubs/${clubId}`, 'layout');
     }
 }
 
@@ -61,23 +68,17 @@ export async function updateClubSettingsAction(
         ...values,
         selectionScaleMin: Number(values.selectionScaleMin),
         selectionScaleMax: Number(values.selectionScaleMax),
-        showNominationAuthorsDuring: isChecked(formData, 'showNominationAuthorsDuring'),
-        showNominationAuthorsAfter: isChecked(formData, 'showNominationAuthorsAfter'),
-        showSelectionScoresDuring: isChecked(formData, 'showSelectionScoresDuring'),
-        showSelectionScoresAfter: isChecked(formData, 'showSelectionScoresAfter'),
-        showRatingsDuring: isChecked(formData, 'showRatingsDuring'),
-        showRatingsAfter: isChecked(formData, 'showRatingsAfter'),
-        showNominationsBeforeSubmit: isChecked(formData, 'showNominationsBeforeSubmit'),
+        ...Object.fromEntries(visibilityNames.map((name) => [name, isChecked(formData, name)])),
     });
     if (!parsed.success) {
         return next(previous, 'error', 'Review the Club name, description, and Selection scale.');
     }
     const result = await run(
+        clubId,
         previous,
         () => updateClubSettings(clubId, parsed.data),
         'Club settings saved.',
     );
-    revalidatePath(`/clubs/${clubId}`, 'layout');
     revalidatePath('/app');
     revalidatePath('/sessions/[sessionId]', 'page');
     return result;
@@ -100,7 +101,8 @@ export async function changeClubMemberRolesAction(
     if (!parsed.success) {
         return next(previous, 'error', 'Choose Moderator or Member.');
     }
-    const result = await run(
+    return run(
+        clubId,
         previous,
         async () => {
             for (const { membershipId, role } of parsed.data) {
@@ -109,8 +111,6 @@ export async function changeClubMemberRolesAction(
         },
         'Moderators saved.',
     );
-    revalidatePath(`/clubs/${clubId}`, 'layout');
-    return result;
 }
 
 export async function changeClubLifecycleAction(
@@ -125,6 +125,7 @@ export async function changeClubLifecycleAction(
     }
     const confirmation = readFormText(formData, 'confirmation');
     const result = await run(
+        clubId,
         previous,
         () => changeClubLifecycle(clubId, action, confirmation),
         action === 'archive' ? 'Club archived.' : 'Club reactivated.',
@@ -133,7 +134,6 @@ export async function changeClubLifecycleAction(
     if (result.status === 'success' && (action === 'delete' || action === 'leave')) {
         redirect('/app');
     }
-    revalidatePath(`/clubs/${clubId}`, 'layout');
     return result;
 }
 
@@ -150,13 +150,12 @@ export async function saveClubInfoAction(
     }
     const saved = await updateClubSettingsAction(clubId, previous, formData);
     if (!avatar || saved.status !== 'success') return saved;
-    const result = await run(
+    return run(
+        clubId,
         saved,
         () => replaceClubAvatar(clubId, avatar),
         'Club settings and avatar saved.',
     );
-    revalidatePath(`/clubs/${clubId}`, 'layout');
-    return result;
 }
 
 function isValidAvatar(file: File): boolean {
@@ -170,9 +169,7 @@ export async function removeClubAvatarAction(
     clubId: string,
     previous: IClubActionState,
 ): Promise<IClubActionState> {
-    const result = await run(previous, () => removeClubAvatar(clubId), 'Club avatar removed.');
-    revalidatePath(`/clubs/${clubId}`, 'layout');
-    return result;
+    return run(clubId, previous, () => removeClubAvatar(clubId), 'Club avatar removed.');
 }
 
 export async function removeClubMemberAction(
@@ -181,11 +178,10 @@ export async function removeClubMemberAction(
     previous: IClubActionState,
     formData: FormData,
 ): Promise<IClubActionState> {
-    const result = await run(
+    return run(
+        clubId,
         previous,
         () => removeClubMember(clubId, membershipId, readFormText(formData, 'confirmation')),
         'Member removed. Shared history is preserved.',
     );
-    revalidatePath(`/clubs/${clubId}`, 'layout');
-    return result;
 }

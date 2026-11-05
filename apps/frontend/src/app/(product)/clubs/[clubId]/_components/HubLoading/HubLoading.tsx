@@ -5,7 +5,7 @@ import { use } from 'react';
 import LoadingState from '#components/ui/LoadingState/LoadingState';
 import type { TPanelSkeletonVariant } from '#components/ui/LoadingState/PanelSkeleton';
 
-import { HubLoadingContext } from '../HubPanel/HubPanel';
+import { HubSnapshotContext } from '../HubPanel/HubPanel';
 
 export default function HubLoading({
     variant,
@@ -14,6 +14,6 @@ export default function HubLoading({
     variant: TPanelSkeletonVariant;
     label: string;
 }) {
-    const hub = use(HubLoadingContext);
+    const hub = use(HubSnapshotContext);
     return <LoadingState variant={variant} label={label} hub={hub} />;
 }

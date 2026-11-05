@@ -3,7 +3,7 @@
 import type { IClubSummary } from '@pickflick/contracts';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useRef, useState, useTransition } from 'react';
+import { useRef, useTransition } from 'react';
 
 import { selectClubAction } from '#app/(product)/app/actions';
 import Icon from '#components/ui/Icon/Icon';
@@ -19,16 +19,18 @@ export default function ClubSwitcher({
     current,
     memberCount,
     sessionCount,
+    isCreating,
     onCreateChange,
 }: {
     clubs: IClubSummary[];
     current: IClubSummary;
     memberCount: number;
     sessionCount: number;
+    /** Owned by the Hub frame, which hides the Call Sheet and sections while creating. */
+    isCreating: boolean;
     onCreateChange: (isCreating: boolean) => void;
 }) {
     const pathname = usePathname();
-    const [isCreating, setIsCreating] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const choices = clubs.some(({ id }) => id === current.id) ? clubs : [current, ...clubs];
@@ -37,9 +39,7 @@ export default function ClubSwitcher({
     function select(nextIndex: number) {
         const club = choices[nextIndex];
         if (!club || club.id === current.id) {
-            const isCreate = !club;
-            setIsCreating(isCreate);
-            onCreateChange(isCreate);
+            onCreateChange(!club);
             return;
         }
         // Keep the create slot until navigation mounts the selected Club's frame.
