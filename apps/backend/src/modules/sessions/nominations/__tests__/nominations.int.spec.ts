@@ -154,13 +154,10 @@ describe('Nominations', () => {
             where: { id: member },
             data: { displayName: 'Private Nominator' },
         });
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showNominationsBeforeSubmit: false },
-        });
+        // The Club setting applies to the open Session at once, like the other visibility flags.
         await api.prisma.club.update({
             where: { id: clubId },
-            data: { showNominationAuthorsDuring: false },
+            data: { showNominationsBeforeSubmit: false, showNominationAuthorsDuring: false },
         });
         await submit();
         const response = await read(admin);

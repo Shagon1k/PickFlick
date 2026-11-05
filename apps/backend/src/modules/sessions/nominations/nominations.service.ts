@@ -62,7 +62,7 @@ export class NominationsService {
                 (a, b) =>
                     a.submittedAt.getTime() - b.submittedAt.getTime() || a.id.localeCompare(b.id),
             );
-        const isHidden = !session.showNominationsBeforeSubmit && !own?.nomination;
+        const isHidden = !membership.club.showNominationsBeforeSubmit && !own?.nomination;
         const canSubmit =
             membership.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
         const suggestionIds = canSubmit

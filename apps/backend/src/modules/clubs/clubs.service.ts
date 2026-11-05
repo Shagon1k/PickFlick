@@ -40,6 +40,7 @@ const VISIBILITY_FIELDS = [
     'showSelectionScoresAfter',
     'showRatingsDuring',
     'showRatingsAfter',
+    'showNominationsBeforeSubmit',
 ] as const;
 
 @Injectable()
@@ -165,9 +166,6 @@ export class ClubsService {
                 data: {
                     ...input,
                     description: input.description ?? null,
-                    showNominationAuthors: input.showNominationAuthorsDuring,
-                    showVoteResults: input.showSelectionScoresAfter,
-                    showRatingResults: input.showRatingsAfter,
                 },
             });
             if (VISIBILITY_FIELDS.some((field) => input[field] !== membership.club[field])) {
