@@ -5,16 +5,10 @@ import {
     OPEN_SESSION_PHASES,
     type TSessionInvitationPreview,
 } from '@pickflick/contracts';
-import type { Prisma } from '@pickflick/database';
 
 import { digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import {
-    assertActive,
-    lockClub,
-    recordAudit,
-    type TAuditEvent,
-} from '../../clubs/access/club-access.js';
+import { assertActive, lockClub } from '../../clubs/access/club-access.js';
 import { recordNotification } from '../../notifications/notification-store.js';
 import { Transactions } from '../../notifications/transactions.js';
 import {
@@ -24,8 +18,8 @@ import {
     getOwnStatus,
     predatesMembership,
 } from '../session-access.js';
-import { completeSessionPhase } from '../session-completion.js';
 import { lockSession, lockSessionForMember } from '../session-lock.js';
+import { recordRosterChange } from './session-departure.js';
 import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
 import { readRoster } from './session-roster-projection.js';
 
@@ -266,13 +260,4 @@ export class SessionRosterService {
                 : { state: 'declined' };
         });
     }
-}
-
-/** Records a roster event, then re-checks whether the current phase is complete. */
-async function recordRosterChange(
-    tx: Prisma.TransactionClient,
-    event: TAuditEvent & { sessionId: string },
-) {
-    await recordAudit(tx, event);
-    await completeSessionPhase(tx, event.sessionId);
 }

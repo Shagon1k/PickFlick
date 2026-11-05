@@ -1,5 +1,6 @@
 import type { Prisma } from '@pickflick/database';
 
+import { countActiveMembers } from '../../clubs/access/club-access.js';
 import { publishProgress } from '../session-progress.js';
 
 /** Like Selection and Rating, the move publishes its own progress; callers hold Club → Session locks. */
@@ -38,9 +39,7 @@ export async function completeNomination(tx: Prisma.TransactionClient, sessionId
         const nominations = participants.flatMap((participant) =>
             participant.nomination ? [participant.nomination] : [],
         );
-        const memberCount = await tx.membership.count({
-            where: { clubId: session.clubId, status: 'ACTIVE' },
-        });
+        const memberCount = await countActiveMembers(tx, session.clubId);
         // Members who have not joined yet still get their chance before automatic closure.
         const isEveryoneIn =
             participants.length >= MIN_PARTICIPANTS_TO_ADVANCE &&

@@ -102,6 +102,11 @@ export function getClubAccess(
     };
 }
 
+/** Members who count toward the Club's limit and its Nomination denominator. */
+export function countActiveMembers(database: Prisma.TransactionClient, clubId: string) {
+    return database.membership.count({ where: { clubId, status: 'ACTIVE' } });
+}
+
 /** Counts active members and checks for an active Admin, then derives the Club's access state. */
 export async function loadClubAccess(
     database: Prisma.TransactionClient,
@@ -112,7 +117,7 @@ export async function loadClubAccess(
             where: { clubId: club.id, role: 'ADMIN', status: 'ACTIVE' },
             select: { id: true },
         }),
-        database.membership.count({ where: { clubId: club.id, status: 'ACTIVE' } }),
+        countActiveMembers(database, club.id),
     ]);
     const { memberLimit } = getClubEntitlements(club.id);
     return {

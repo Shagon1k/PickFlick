@@ -10,8 +10,7 @@ export async function loadPastSelection(
     session: Prisma.SessionGetPayload<object>,
     membership: TMembership,
     moviesService: MoviesService,
-): Promise<TImportedSelectionOutcome | null> {
-    if (session.type !== 'PAST') return null;
+): Promise<TImportedSelectionOutcome> {
     const canSeeBreakdown = canViewSelectionScores(session, membership.club, false);
     const visible = canSeeBreakdown
         ? await tx.pastNomination.findMany({

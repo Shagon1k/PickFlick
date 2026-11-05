@@ -6,7 +6,11 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
+import {
+    assertActive,
+    countActiveMembers,
+    type TMembership,
+} from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
 import { Transactions } from '../../notifications/transactions.js';
 import { assertManager, recordSessionAction } from '../session-access.js';
@@ -83,9 +87,7 @@ export class NominationsService {
         const summaries = await this.movies.findSummaries(tx, ids);
         const getMovie = (movieId: string) => summaries.get(movieId)!;
         return {
-            memberCount: await tx.membership.count({
-                where: { clubId: session.clubId, status: 'ACTIVE' },
-            }),
+            memberCount: await countActiveMembers(tx, session.clubId),
             acceptedCount: participants.length,
             nominatedCount: rows.length,
             canSubmit,

@@ -22,7 +22,9 @@ export async function loadSelectionScores(
     membership: TMembership,
     moviesService: MoviesService,
 ): Promise<TSelectionScores | null> {
-    if (!canViewSelectionScores(session, membership.club, true)) return null;
+    // Skip the reads when even a viewer who has submitted could not see the scores.
+    const canSubmitterSee = canViewSelectionScores(session, membership.club, true);
+    if (!canSubmitterSee) return null;
     let source: IScoreSource | null = null;
     if (session.type === 'PAST') source = await readPastScores(tx, session.id);
     else if (session.selectionResult !== null) source = await readFrozenScores(tx, session);

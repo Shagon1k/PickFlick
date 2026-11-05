@@ -116,6 +116,8 @@ export class AchievementsService {
                 })),
             skipDuplicates: true,
         });
+        // No one is told about an award whose results the Club hides; the notification resolver
+        // also hides older notifications once a Club turns those results off.
         await recordAchievementNotifications(
             tx,
             created.filter((award) => !input.hiddenPrivateKeys?.includes(award.key)),
@@ -142,10 +144,11 @@ const PRIVATE_EXPLANATION =
 const HIDDEN_RESULTS_EXPLANATION =
     'This achievement depends on Session results hidden by the Club’s visibility settings. Its progress and award history are private.';
 
-function isHidden(input: IRecomputeInput, award: { key: string; private?: boolean }) {
-    return Boolean(
-        award.private && (input.hidePrivate || input.hiddenPrivateKeys?.includes(award.key)),
-    );
+/** Why a private achievement stays hidden from this viewer, or null when they may see it. */
+function getHiddenExplanation(input: IRecomputeInput, award: { key: string; private?: boolean }) {
+    if (!award.private) return null;
+    if (input.hiddenPrivateKeys?.includes(award.key)) return HIDDEN_RESULTS_EXPLANATION;
+    return input.hidePrivate ? PRIVATE_EXPLANATION : null;
 }
 
 /** Earned cards keep their snapshot; current definitions add pending or private placeholders. */
@@ -154,7 +157,7 @@ function toAchievementCards(
     earned: Prisma.AchievementAwardGetPayload<object>[],
     input: IRecomputeInput,
 ): TAchievement[] {
-    const visibleAwards = earned.filter((award) => !isHidden(input, award));
+    const visibleAwards = earned.filter((award) => getHiddenExplanation(input, award) === null);
     const cards: TAchievement[] = visibleAwards.map((award) => ({
         key: award.key,
         version: award.version,
@@ -168,15 +171,14 @@ function toAchievementCards(
     }));
     for (const definition of definitions) {
         const { key, version, title, description, target } = definition;
-        if (isHidden(input, definition)) {
+        const hiddenExplanation = getHiddenExplanation(input, definition);
+        if (hiddenExplanation) {
             cards.push({
                 ...{ key, version, title, description, target },
                 progress: null,
                 status: 'not-started',
                 awardedAt: null,
-                explanation: input.hiddenPrivateKeys?.includes(key)
-                    ? HIDDEN_RESULTS_EXPLANATION
-                    : PRIVATE_EXPLANATION,
+                explanation: hiddenExplanation,
             });
             continue;
         }

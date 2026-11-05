@@ -74,12 +74,11 @@ async function resolveAwardTarget(
     const award = await tx.achievementAward.findUnique({ where: { id: notification.awardId! } });
     if (!award || award.clubId !== notification.clubId) return null;
     if (award.userId !== null && award.userId !== notification.recipientId) return null;
-    if (award.clubId && award.private && role !== 'ADMIN' && role !== 'MODERATOR') return null;
-    if (
-        award.clubId &&
-        award.private &&
-        (await readHiddenResultAchievementKeys(tx, award.clubId)).some((key) => key === award.key)
-    )
-        return null;
+    if (award.clubId && award.private) {
+        if (role !== 'ADMIN' && role !== 'MODERATOR') return null;
+        // A Club may hide these results after the notification was sent.
+        const hiddenKeys = await readHiddenResultAchievementKeys(tx, award.clubId);
+        if (hiddenKeys.some((key) => key === award.key)) return null;
+    }
     return award.clubId ? `/clubs/${award.clubId}/achievements` : '/library?tab=achievements';
 }

@@ -1,7 +1,7 @@
 import { OPEN_SESSION_PHASES } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { recordAudit } from '../../clubs/access/club-access.js';
+import { recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession } from '../session-lock.js';
 import { revokePendingInvites } from './session-invites.js';
@@ -29,7 +29,7 @@ export async function departSessions(
         await lockSession(tx, participant.sessionId);
         await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
         await revokePendingInvites(tx, participant.id);
-        await recordAudit(tx, {
+        await recordRosterChange(tx, {
             clubId: participant.clubId,
             sessionId: participant.sessionId,
             actorUserId,
@@ -37,7 +37,6 @@ export async function departSessions(
             subjectMembershipId: membership.id,
             action: status === 'LEFT' ? 'SESSION_PARTICIPANT_LEFT' : 'SESSION_PARTICIPANT_REMOVED',
         });
-        await completeSessionPhase(tx, participant.sessionId);
     }
     // An unjoined member can also have been the last person holding Nomination open.
     const nomination = await tx.session.findFirst({
@@ -52,4 +51,13 @@ export async function departSessions(
         await lockSession(tx, nomination.id);
         await completeSessionPhase(tx, nomination.id);
     }
+}
+
+/** Records a roster event, then re-checks whether the current phase is complete. */
+export async function recordRosterChange(
+    tx: Prisma.TransactionClient,
+    event: TAuditEvent & { sessionId: string },
+) {
+    await recordAudit(tx, event);
+    await completeSessionPhase(tx, event.sessionId);
 }

@@ -114,7 +114,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
         );
     });
     const hot = completed
-        .filter((session) => canReadAverage(session, userId))
+        .filter((session) => isActiveMember(session, userId))
         .flatMap((session) => {
             const average = getAverage(session);
             return session.ratings
@@ -172,7 +172,8 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     };
 }
 
-function canReadAverage(session: TAchievementSession, userId: string) {
+/** Clubs the member has left no longer count, so Hot Take reads only current Memberships. */
+function isActiveMember(session: TAchievementSession, userId: string) {
     return session.club.memberships.some(
         (membership) => membership.userId === userId && membership.status === 'ACTIVE',
     );
