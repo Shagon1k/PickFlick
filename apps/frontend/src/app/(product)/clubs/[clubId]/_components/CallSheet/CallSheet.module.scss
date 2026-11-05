@@ -369,13 +369,3 @@
         padding-inline: 10px;
     }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .sheet,
-    .head,
-    .fields > div,
-    .still,
-    .image img {
-        transition: none;
-    }
-}

@@ -1,3 +1,7 @@
+import type { ReactNode } from 'react';
+
+import type { TIconName } from './Icon';
+
 /** Glyphs for menu and dialog actions. */
 export const actionGlyphs = {
     play: <path d="m5 3 16 9-16 9z" />,
@@ -29,12 +33,6 @@ export const actionGlyphs = {
             <path d="M5 15V5a2 2 0 0 1 2-2h10" />
         </>
     ),
-    lock: (
-        <>
-            <rect height="11" rx="2" width="16" x="4" y="11" />
-            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-        </>
-    ),
     'skip-forward': (
         <>
             <path d="M5 5l10 7-10 7z" />
@@ -59,4 +57,4 @@ export const actionGlyphs = {
             <path d="m18 8 5 5M23 8l-5 5" />
         </>
     ),
-};
+} satisfies Partial<Record<TIconName, ReactNode>>;

@@ -30,13 +30,10 @@
     position: absolute;
     inset: 0;
     display: grid;
+    place-items: center;
     overflow: hidden;
     pointer-events: none;
     opacity: 0;
-}
-
-.reveal__color {
-    place-items: center;
     filter: var(--color-reveal-color-filter, none);
 }
 

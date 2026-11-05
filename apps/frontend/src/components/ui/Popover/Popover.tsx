@@ -7,7 +7,6 @@ import type { ReactNode } from 'react';
 import styles from './Popover.module.scss';
 
 const POPOVER_WIDTHS = {
-    default: '380px',
     invites: '344px',
     rating: '336px',
     watchlist: '336px',
@@ -22,7 +21,7 @@ export default function Popover({
     onChange,
     label,
     id,
-    variant = 'default',
+    variant,
 }: {
     children: ReactNode;
     trigger: ReactNode;
@@ -30,14 +29,7 @@ export default function Popover({
     onChange: (open: boolean) => void;
     label: string;
     id: string;
-    variant?:
-        | 'default'
-        | 'invites'
-        | 'rating'
-        | 'review'
-        | 'selection'
-        | 'watchlist'
-        | 'participants';
+    variant: 'invites' | 'rating' | 'review' | 'selection' | 'watchlist' | 'participants';
 }) {
     let position: 'top-end' | 'bottom-end' | 'bottom-start' = 'top-end';
     if (variant === 'watchlist' || variant === 'selection') position = 'bottom-end';

@@ -12,7 +12,7 @@ export default function Skeleton({
     shouldFill = false,
     text,
 }: {
-    variant?: 'text' | 'title' | 'avatar' | 'poster' | 'control' | 'block';
+    variant?: 'text' | 'title' | 'avatar' | 'control';
     width?: 'full' | 'half' | 'short';
     tone?: 'default' | 'search';
     shouldFill?: boolean;

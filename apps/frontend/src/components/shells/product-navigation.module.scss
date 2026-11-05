@@ -255,11 +255,6 @@
     color: var(--muted);
 }
 
-.notifBody {
-    flex: 1;
-    min-width: 0;
-}
-
 .notifBody p {
     margin: 0;
     font-size: var(--fs-meta);
@@ -268,6 +263,8 @@
 
 .notifBody {
     display: block;
+    flex: 1;
+    min-width: 0;
     min-height: 44px;
     padding: 0;
     font: inherit;

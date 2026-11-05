@@ -429,10 +429,6 @@
         height: calc(clamp(40px, 5vw, 56px) * var(--lh-tight));
     }
 
-    .statistics[data-overview] .statValue[data-text] {
-        height: calc(clamp(20px, 2.5vw, 28px) * var(--lh-tight));
-    }
-
     .statistics[data-overview] .stat:nth-child(n + 5) {
         grid-column: 1/-1;
     }

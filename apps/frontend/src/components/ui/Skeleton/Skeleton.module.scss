@@ -40,10 +40,6 @@
     height: var(--hit);
 }
 
-.m-block {
-    height: 120px;
-}
-
 .m-half {
     width: 60%;
 }
@@ -57,13 +53,6 @@
     width: 40px;
     height: 40px;
     border-radius: var(--radius-pill);
-}
-
-.m-poster {
-    flex: 0 0 48px;
-    width: 48px;
-    height: 72px;
-    border-radius: 6px;
 }
 
 .m-fill {

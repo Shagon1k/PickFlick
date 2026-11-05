@@ -34,6 +34,7 @@ export default function ColorReveal({
         const surface = ref.current;
         const color = colorRef.current;
         const scope = surface.closest<HTMLElement>('[data-color-reveal-surface]');
+        // Outline layers, and reveals inside a surface, are animated by that surface's own effect.
         if (variant === 'outline' || (scope && variant !== 'surface')) return;
         const trigger = surface.closest<HTMLElement>('[data-color-reveal-trigger]') ?? surface;
         const area = variant === 'surface' ? trigger : surface;

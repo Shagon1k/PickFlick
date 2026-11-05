@@ -14,68 +14,6 @@
     letter-spacing: var(--tracking-caps);
 }
 
-/* Club Hub header: centred Club name, quiet meta, and the Club view tabs. */
-.hero {
-    display: grid;
-    gap: 4px;
-    justify-items: center;
-    text-align: center;
-}
-
-.hero h1 {
-    max-width: 700px;
-    margin: 0 0 5px;
-    font: 600 clamp(48px, 5.2vw, 72px)/0.96 var(--font-display);
-    letter-spacing: var(--tracking-tight);
-    text-wrap: balance;
-}
-
-.tabs {
-    display: none;
-    justify-content: center;
-    border-bottom: 1px solid var(--border);
-}
-
-.tabs a {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
-    padding: 14px 22px;
-    font-size: var(--fs-body-sm);
-    font-weight: 500;
-    color: var(--fg-secondary);
-    white-space: nowrap;
-    transition: color var(--motion-local) ease;
-}
-
-.tabs a::after {
-    position: absolute;
-    right: 50%;
-    bottom: -1px;
-    left: 50%;
-    height: 2px;
-    content: '';
-    background: var(--fg);
-    border-radius: var(--radius-pill);
-    transition:
-        left var(--motion-local) ease,
-        right var(--motion-local) ease;
-}
-
-.tabs a:hover,
-.tabs a:focus-visible,
-.tabs a[aria-current='page'] {
-    color: var(--fg);
-}
-
-.tabs a:hover::after,
-.tabs a:focus-visible::after,
-.tabs a[aria-current='page']::after {
-    right: 0;
-    left: 0;
-}
-
 .notice {
     padding: var(--gap-sm) var(--gap-md);
     margin: 0;
@@ -236,13 +174,6 @@
 .check:has(input:disabled) {
     color: var(--fg-secondary);
     cursor: not-allowed;
-}
-
-.formFooter {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: center;
-    min-height: 44px;
 }
 
 /* The tile spans the name field's label and input; the field's message line hangs below both. */
@@ -458,22 +389,10 @@
     gap: var(--gap-xs);
 }
 
-@media (width >= 1024px) {
-    .tabs {
-        display: flex;
-    }
-}
-
 @media (width < 1024px) {
     .grid {
         grid-template-columns: 1fr;
         gap: var(--gap-md);
-    }
-}
-
-@media (width < 768px) {
-    .hero h1 {
-        font-size: clamp(38px, 10vw, 52px);
     }
 }
 
@@ -484,24 +403,6 @@
 
     .card {
         padding: var(--gap-md);
-    }
-
-    .formFooter {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .formFooter > * {
-        width: 100%;
-    }
-
-    .roleForm {
-        justify-content: flex-start;
-        width: 100%;
-    }
-
-    .roleForm .status {
-        text-align: left;
     }
 
     .cardActions > * {

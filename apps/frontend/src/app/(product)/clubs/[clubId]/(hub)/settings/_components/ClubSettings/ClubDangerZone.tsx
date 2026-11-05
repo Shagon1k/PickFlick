@@ -19,7 +19,6 @@ function ConfirmAction({
     description,
     label,
     title,
-    variant = 'secondary-danger',
 }: {
     action: 'archive' | 'delete' | 'leave';
     clubId: string;
@@ -27,14 +26,13 @@ function ConfirmAction({
     description: string;
     label: string;
     title: string;
-    variant?: 'secondary-danger' | 'danger';
 }) {
     const serverAction = changeClubLifecycleAction.bind(null, clubId, action);
     const [state, formAction, isPending] = useActionState(serverAction, initialClubActionState);
     const [isOpen, setIsOpen] = useState(false);
     return (
         <>
-            <Button onClick={() => setIsOpen(true)} size="small" variant={variant}>
+            <Button onClick={() => setIsOpen(true)} size="small" variant="secondary-danger">
                 {label}
             </Button>
             <ConfirmDialog
@@ -75,16 +73,6 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
     const isActive = projection.club.lifecycle === 'ACTIVE';
     const isAdmin = projection.club.membershipRole === 'ADMIN';
     const clubId = projection.club.id;
-    const deleteAction = (
-        <ConfirmAction
-            action="delete"
-            clubId={clubId}
-            confirmation={projection.club.name}
-            description="This removes every active Membership and cannot be undone from the Club UI."
-            label="Delete Club"
-            title="Delete this Club?"
-        />
-    );
     return (
         <section
             aria-labelledby="club-danger-title"
@@ -113,7 +101,14 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                         <ReactivateAction clubId={clubId} />
                     )}
                     {projection.canDelete ? (
-                        deleteAction
+                        <ConfirmAction
+                            action="delete"
+                            clubId={clubId}
+                            confirmation={projection.club.name}
+                            description="This removes every active Membership and cannot be undone from the Club UI."
+                            label="Delete Club"
+                            title="Delete this Club?"
+                        />
                     ) : (
                         <Button disabled size="small" variant="secondary-danger">
                             Delete Club

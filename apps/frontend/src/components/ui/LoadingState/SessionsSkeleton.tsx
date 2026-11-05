@@ -94,7 +94,7 @@ function SessionRow({ session, isRating }: { session?: IClubHubSession; isRating
     return (
         <div className={styles.row} data-rating={isRating || undefined}>
             <div className={styles.poster}>
-                <Skeleton variant="poster" shouldFill />
+                <Skeleton shouldFill />
             </div>
             <div className={styles.copy} data-known={Boolean(session) || undefined}>
                 <div className={styles.name}>

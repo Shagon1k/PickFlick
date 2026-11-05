@@ -1,3 +1,7 @@
+import type { ReactNode } from 'react';
+
+import type { TIconName } from './Icon';
+
 export const metadataGlyphs = {
     globe: (
         <>
@@ -34,9 +38,4 @@ export const metadataGlyphs = {
             <path d="M12 11v5M12 8h.01" />
         </>
     ),
-    refresh: (
-        <>
-            <path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 2M18 17a7 7 0 0 1-12 2l-2-2" />
-        </>
-    ),
-};
+} satisfies Partial<Record<TIconName, ReactNode>>;
