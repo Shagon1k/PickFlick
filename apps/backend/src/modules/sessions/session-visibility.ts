@@ -18,15 +18,11 @@ export function canViewSelectionScores(
     return isDuring && club.showSelectionScoresDuring && hasSubmitted;
 }
 
-function canViewCompletedRatings(club: Pick<IClubVisibility, 'showRatingsAfter'>) {
-    return club.showRatingsAfter;
-}
-
 export function canViewRatingResults(
     session: { phase: TSessionPhase },
     club: IClubVisibility,
     hasSubmitted: boolean,
 ) {
-    if (session.phase === 'COMPLETED') return canViewCompletedRatings(club);
+    if (session.phase === 'COMPLETED') return club.showRatingsAfter;
     return session.phase === 'RATING' && club.showRatingsDuring && hasSubmitted;
 }

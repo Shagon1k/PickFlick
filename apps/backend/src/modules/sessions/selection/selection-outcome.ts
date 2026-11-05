@@ -3,8 +3,7 @@ import type { Prisma } from '@pickflick/database';
 
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
-import { canViewSelectionBreakdown } from '../session-access.js';
-import { canViewNominationAuthors } from '../session-visibility.js';
+import { canViewNominationAuthors, canViewSelectionScores } from '../session-visibility.js';
 import { selectionResultSchema } from './selection-result.js';
 
 export async function loadSelectionOutcome(
@@ -19,7 +18,7 @@ export async function loadSelectionOutcome(
         where: { sessionId: session.id, participant: { membershipId: membership.id } },
         select: { id: true },
     });
-    const canSeeBreakdown = canViewSelectionBreakdown(session, membership, Boolean(ownBallot));
+    const canSeeBreakdown = canViewSelectionScores(session, membership.club, Boolean(ownBallot));
     const visible = canSeeBreakdown
         ? saved.ranking
         : saved.ranking.filter((row) => row.id === saved.winnerNominationId);

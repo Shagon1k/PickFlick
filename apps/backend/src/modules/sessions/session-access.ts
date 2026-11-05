@@ -14,7 +14,6 @@ import {
     type TMembership,
 } from '../clubs/access/club-access.js';
 import { getClubPermissions } from '../clubs/access/club-permissions.js';
-import { canViewSelectionScores } from './session-visibility.js';
 
 export async function canManage(transaction: Prisma.TransactionClient, membership: TMembership) {
     const { access } = await loadClubAccess(transaction, membership.club);
@@ -37,15 +36,6 @@ export async function assertManager(
         throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
 }
 
-export function canViewSelectionBreakdown(
-    session: Prisma.SessionGetPayload<object>,
-    membership: Pick<TMembership, 'club'>,
-    hasSubmitted = false,
-) {
-    return canViewSelectionScores(session, membership.club, hasSubmitted);
-}
-
-/** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */
 /**
  * A member's standing in a Session from all their participant rows. Leaving the Club and rejoining
  * creates a new Membership, but an earlier removal or accepted participation still applies.
@@ -84,6 +74,7 @@ export function predatesMembership(session: TDatedSession, joinedAt: Date) {
     return session.phase === 'RATING' && !!session.scheduledAt && session.scheduledAt < joinedAt;
 }
 
+/** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */
 export function canJoinSession(
     session: TDatedSession,
     membership: { joinedAt: Date; club: { lifecycle: TClubLifecycle } },

@@ -3,8 +3,7 @@ import type { Prisma } from '@pickflick/database';
 
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
-import { canViewSelectionBreakdown } from '../session-access.js';
-import { canViewNominationAuthors } from '../session-visibility.js';
+import { canViewNominationAuthors, canViewSelectionScores } from '../session-visibility.js';
 
 export async function loadPastSelection(
     tx: Prisma.TransactionClient,
@@ -13,7 +12,7 @@ export async function loadPastSelection(
     moviesService: MoviesService,
 ): Promise<TImportedSelectionOutcome | null> {
     if (session.type !== 'PAST') return null;
-    const canSeeBreakdown = canViewSelectionBreakdown(session, membership);
+    const canSeeBreakdown = canViewSelectionScores(session, membership.club, false);
     const visible = canSeeBreakdown
         ? await tx.pastNomination.findMany({
               where: { sessionId: session.id },
