@@ -123,14 +123,10 @@ describe('Watching', () => {
     });
 
     it('should enforce authorization even for retries after Rating opens', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating/open`, {
-                    method: 'POST',
-                    json: { confirmation: 'OPEN', phaseVersion: 1 },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/rating/open`, {
+            method: 'POST',
+            json: { confirmation: 'OPEN', phaseVersion: 1 },
+        });
         expect((await open(users[2])).status).toBe(403);
         expect((await open(users[3])).status).toBe(404);
         expect((await open()).status).toBe(201);

@@ -78,14 +78,10 @@ describe('Watchlist', () => {
         });
         expect(await (await read()).json()).toMatchObject({ item: { priority: 'HIGH' } });
         expect(await listMovieIds(1)).toEqual([]);
-        expect(
-            (
-                await api.request(`/users/${users[0]}/watchlist/${movieId}`, {
-                    userId: users[1],
-                    method: 'DELETE',
-                })
-            ).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/users/${users[0]}/watchlist/${movieId}`, {
+            userId: users[1],
+            method: 'DELETE',
+        });
     });
 
     it('should reject malformed priorities and IDs, absent Movies and unauthenticated requests', async () => {
@@ -99,33 +95,21 @@ describe('Watchlist', () => {
             expect((await save(json)).status).toBe(400);
         }
         for (const method of ['GET', 'PUT', 'DELETE']) {
-            expect(
-                (
-                    await api.request(`/movies/${movieId}/watchlist`, {
-                        method,
-                        json: method === 'PUT' ? { priority: 'HIGH' } : undefined,
-                    })
-                ).status,
-            ).toBe(401);
-            expect(
-                (
-                    await api.request('/movies/invalid/watchlist', {
-                        userId: users[0],
-                        method,
-                        json: method === 'PUT' ? { priority: 'HIGH' } : undefined,
-                    })
-                ).status,
-            ).toBe(400);
+            await api.expectStatus(401, `/movies/${movieId}/watchlist`, {
+                method,
+                json: method === 'PUT' ? { priority: 'HIGH' } : undefined,
+            });
+            await api.expectStatus(400, '/movies/invalid/watchlist', {
+                userId: users[0],
+                method,
+                json: method === 'PUT' ? { priority: 'HIGH' } : undefined,
+            });
         }
-        expect(
-            (
-                await api.request(`/movies/${randomUUID()}/watchlist`, {
-                    userId: users[0],
-                    method: 'PUT',
-                    json: { priority: 'HIGH' },
-                })
-            ).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/movies/${randomUUID()}/watchlist`, {
+            userId: users[0],
+            method: 'PUT',
+            json: { priority: 'HIGH' },
+        });
         expect(await api.prisma.watchlistItem.count({ where: { movieId } })).toBe(0);
     });
 

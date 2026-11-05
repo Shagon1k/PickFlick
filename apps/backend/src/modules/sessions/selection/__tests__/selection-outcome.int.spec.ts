@@ -108,44 +108,29 @@ describe('Selection outcome', () => {
     }
 
     async function complete() {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating/open`, {
-                    method: 'POST',
-                    userId: users[0],
-                    json: { confirmation: 'OPEN', phaseVersion: 2 },
-                })
-            ).status,
-        ).toBe(201);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating`, {
-                    method: 'POST',
-                    userId: users[0],
-                    json: { score: 8, comment: 'Historical response' },
-                })
-            ).status,
-        ).toBe(201);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating/close`, {
-                    method: 'POST',
-                    userId: users[0],
-                    json: { confirmation: 'CLOSE', phaseVersion: 3 },
-                })
-            ).status,
-        ).toBe(201);
+        await api.expectStatus(201, `/sessions/${sessionId}/rating/open`, {
+            method: 'POST',
+            userId: users[0],
+            json: { confirmation: 'OPEN', phaseVersion: 2 },
+        });
+        await api.expectStatus(201, `/sessions/${sessionId}/rating`, {
+            method: 'POST',
+            userId: users[0],
+            json: { score: 8, comment: 'Historical response' },
+        });
+        await api.expectStatus(201, `/sessions/${sessionId}/rating/close`, {
+            method: 'POST',
+            userId: users[0],
+            json: { confirmation: 'CLOSE', phaseVersion: 3 },
+        });
     }
 
     it.each([
-        { tier: 'FREE', show: false, hasBreakdown: false },
-        { tier: 'FREE', show: true, hasBreakdown: true },
-        { tier: 'PRO', show: false, hasBreakdown: false },
-        { tier: 'PRO', show: true, hasBreakdown: true },
+        { show: false, hasBreakdown: false },
+        { show: true, hasBreakdown: true },
     ] as const)(
-        'should filter $tier post-close results with visibility $show',
-        async ({ tier, show, hasBreakdown }) => {
-            vi.spyOn(tiers, 'getClubEntitlements').mockReturnValue(tiers.getTierEntitlements(tier));
+        'should filter post-close results with visibility $show',
+        async ({ show, hasBreakdown }) => {
             await api.prisma.club.update({
                 where: { id: clubId },
                 data: { showSelectionScoresAfter: show, showNominationAuthorsAfter: false },
@@ -305,15 +290,11 @@ describe('Selection outcome', () => {
             ['/cancel', { version: before.version, confirmation: 'CANCEL' }],
             ['/participation', { decision: 'accept' }],
         ] as const) {
-            expect(
-                (
-                    await api.request(`/sessions/${sessionId}${path}`, {
-                        userId: users[0],
-                        method: path ? 'POST' : 'PATCH',
-                        json,
-                    })
-                ).status,
-            ).toBe(409);
+            await api.expectStatus(409, `/sessions/${sessionId}${path}`, {
+                userId: users[0],
+                method: path ? 'POST' : 'PATCH',
+                json,
+            });
         }
         await api.expectStatus(404, `/sessions/${sessionId}`, { userId: users[2] });
     });

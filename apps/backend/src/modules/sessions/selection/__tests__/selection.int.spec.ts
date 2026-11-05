@@ -201,14 +201,10 @@ describe('Selection ballots', () => {
     });
 
     it('should deny unauthenticated, nonmember and unaccepted participants and archived or closed writes', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/selection`, {
-                    method: 'POST',
-                    json: ballot(),
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/selection`, {
+            method: 'POST',
+            json: ballot(),
+        });
         expect((await submit(ballot(), outsider)).status).toBe(404);
         for (const status of ['INVITED', 'DECLINED', 'LEFT', 'REMOVED'] as const) {
             await api.prisma.sessionParticipant.update({
@@ -239,15 +235,11 @@ describe('Selection ballots', () => {
 
     it('should preserve a departed participants own ballot and deny access after Club departure', async () => {
         expect((await submit()).status).toBe(201);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/leave`, {
-                    method: 'POST',
-                    userId: member,
-                    json: { confirmation: 'LEAVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/sessions/${sessionId}/leave`, {
+            method: 'POST',
+            userId: member,
+            json: { confirmation: 'LEAVE' },
+        });
         const data = await read();
         expect(data).toMatchObject({ acceptedCount: 1, submittedCount: 0, canSubmit: false });
         expect(data.submittedAt).not.toBeNull();
@@ -293,15 +285,11 @@ describe('Selection ballots', () => {
             data: { sessionId, participantId: departed.id, movieId },
         });
         for (const userId of [admin, member])
-            expect(
-                (
-                    await api.request(`/sessions/${sessionId}/nominations`, {
-                        method: 'POST',
-                        userId,
-                        json: { movieId },
-                    })
-                ).status,
-            ).toBe(201);
+            await api.expectStatus(201, `/sessions/${sessionId}/nominations`, {
+                method: 'POST',
+                userId,
+                json: { movieId },
+            });
         await api.expectStatus(201, `/sessions/${sessionId}/nominations/close`, {
             method: 'POST',
             userId: admin,
@@ -311,15 +299,11 @@ describe('Selection ballots', () => {
         expect(data.nominations).toHaveLength(2);
         nominationIds = data.nominations.map((row) => row.id);
         expect((await submit()).status).toBe(201);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/leave`, {
-                    method: 'POST',
-                    userId: admin,
-                    json: { confirmation: 'LEAVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/sessions/${sessionId}/leave`, {
+            method: 'POST',
+            userId: admin,
+            json: { confirmation: 'LEAVE' },
+        });
         const saved = await api.prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
         expect(saved.phase).toBe('WATCHING');
         expect(saved.selectionResult).toMatchObject({

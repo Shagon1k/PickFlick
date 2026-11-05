@@ -44,24 +44,16 @@ describe('Inbox', () => {
         await api.expectStatus(404, `/notifications?cursor=${foreign.id}`, { userId: users[0] });
         expect((await list()).items.map((item) => item.id)).toContain(own.id);
         expect((await list()).items.map((item) => item.id)).not.toContain(foreign.id);
-        expect(
-            (
-                await api.request(`/notifications/${foreign.id}/read`, {
-                    userId: users[0],
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(404);
-        expect(
-            (
-                await api.request('/notifications/read', {
-                    userId: users[0],
-                    method: 'POST',
-                    json: { userId: users[1] },
-                })
-            ).status,
-        ).toBe(400);
+        await api.expectStatus(404, `/notifications/${foreign.id}/read`, {
+            userId: users[0],
+            method: 'POST',
+            json: {},
+        });
+        await api.expectStatus(400, '/notifications/read', {
+            userId: users[0],
+            method: 'POST',
+            json: { userId: users[1] },
+        });
         await api.expectStatus(400, '/notifications/stream?userId=other', { userId: users[0] });
     });
 
@@ -119,15 +111,11 @@ describe('Inbox', () => {
             rows.map((row) => row!.id).sort((a, b) => b.localeCompare(a)),
         );
         expect(first.items.map((item) => item.id)).not.toContain(suppressed!.id);
-        expect(
-            (
-                await api.request(`/notifications/${suppressed!.id}/read`, {
-                    userId: users[0],
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/notifications/${suppressed!.id}/read`, {
+            userId: users[0],
+            method: 'POST',
+            json: {},
+        });
     });
 
     it('should preserve the first read timestamp across concurrent reads and synchronize all-read state', async () => {
@@ -146,15 +134,11 @@ describe('Inbox', () => {
         expect(
             (await api.prisma.notification.findUniqueOrThrow({ where: { id: row.id } })).readAt,
         ).toEqual(first.readAt);
-        expect(
-            (
-                await api.request('/notifications/read', {
-                    userId: users[0],
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, '/notifications/read', {
+            userId: users[0],
+            method: 'POST',
+            json: {},
+        });
         expect((await list()).unreadCount).toBe(0);
         expect((await list('', users[1])).unreadCount).toBeGreaterThan(0);
         const fresh = (await create())!;

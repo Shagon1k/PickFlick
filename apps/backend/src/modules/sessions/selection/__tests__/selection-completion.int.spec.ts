@@ -196,15 +196,15 @@ describe('Selection completion', () => {
 
     it('should evaluate the roster after operator removal', async () => {
         await submit();
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/participants/${participants[1]}/remove`, {
-                    method: 'POST',
-                    userId: users[2],
-                    json: { confirmation: 'REMOVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(
+            204,
+            `/sessions/${sessionId}/participants/${participants[1]}/remove`,
+            {
+                method: 'POST',
+                userId: users[2],
+                json: { confirmation: 'REMOVE' },
+            },
+        );
         expect(await state()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
     });
 
@@ -220,15 +220,11 @@ describe('Selection completion', () => {
 
     it('should pause completion while archived and evaluate it on reactivation', async () => {
         await submit();
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/archive`, {
-                    method: 'POST',
-                    userId: users[0],
-                    json: { confirmation: 'ARCHIVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/archive`, {
+            method: 'POST',
+            userId: users[0],
+            json: { confirmation: 'ARCHIVE' },
+        });
         await leave();
         expect(await state()).toMatchObject({ phase: 'SELECTION', selectionResult: null });
         await api.expectStatus(204, `/clubs/${clubId}/reactivate`, {
@@ -330,26 +326,18 @@ describe('Selection completion', () => {
     });
 
     it('should enforce operator authorization, strict input, phase version and Club lifecycle', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/selection/close`, {
-                    method: 'POST',
-                    json: { confirmation: 'CLOSE', phaseVersion: 1 },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/selection/close`, {
+            method: 'POST',
+            json: { confirmation: 'CLOSE', phaseVersion: 1 },
+        });
         expect((await close(users[3])).status).toBe(404);
         expect((await close(users[1])).status).toBe(403);
         expect((await close(users[0], 2)).status).toBe(409);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/selection/close`, {
-                    method: 'POST',
-                    userId: users[0],
-                    json: { confirmation: 'YES', phaseVersion: 1 },
-                })
-            ).status,
-        ).toBe(400);
+        await api.expectStatus(400, `/sessions/${sessionId}/selection/close`, {
+            method: 'POST',
+            userId: users[0],
+            json: { confirmation: 'YES', phaseVersion: 1 },
+        });
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await close()).status).toBe(409);
         expect(await state()).toMatchObject({ phase: 'SELECTION', selectionResult: null });

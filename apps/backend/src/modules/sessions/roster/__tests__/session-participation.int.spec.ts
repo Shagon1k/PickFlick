@@ -239,14 +239,10 @@ describe('Session participation', () => {
 
     it('should enforce membership, Club lifecycle, input and operator removal', async () => {
         expect((await participate(outsider)).status).toBe(404);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/participation`, {
-                    method: 'POST',
-                    json: { decision: 'accept' },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/participation`, {
+            method: 'POST',
+            json: { decision: 'accept' },
+        });
         expect((await participate(member, 'invalid')).status).toBe(400);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await participate()).status).toBe(409);

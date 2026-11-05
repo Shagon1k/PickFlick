@@ -137,15 +137,11 @@ describe('Library statistics API', () => {
         }
         expect(await read()).toMatchObject({ filmsRated: 2, ratedThisYear: 2, averageRating: 9 });
         for (let retry = 0; retry < 2; retry++) {
-            expect(
-                (
-                    await api.request(`/movies/${movieIds[1]}/watchlist`, {
-                        userId: users[0],
-                        method: 'PUT',
-                        json: { priority: 'HIGH' },
-                    })
-                ).status,
-            ).toBe(200);
+            await api.expectStatus(200, `/movies/${movieIds[1]}/watchlist`, {
+                userId: users[0],
+                method: 'PUT',
+                json: { priority: 'HIGH' },
+            });
         }
         const after = await read();
         expect(after).toMatchObject({ filmsRated: 2, watchlistCount: 2, averageRating: 9 });

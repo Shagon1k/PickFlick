@@ -93,15 +93,11 @@ describe('NotificationSignals', () => {
             }
             expect(foreign).not.toHaveBeenCalled();
             const readUpdates = tabs.map((tab) => tab.nextRefresh());
-            expect(
-                (
-                    await first.request(`/notifications/${row.id}/read`, {
-                        userId: users[0],
-                        method: 'POST',
-                        json: {},
-                    })
-                ).status,
-            ).toBe(204);
+            await first.expectStatus(204, `/notifications/${row.id}/read`, {
+                userId: users[0],
+                method: 'POST',
+                json: {},
+            });
             await Promise.all(readUpdates);
             const state = await second.request('/notifications', { userId: users[0] });
             expect(await state.json()).toMatchObject({ unreadCount: 0 });
@@ -109,15 +105,11 @@ describe('NotificationSignals', () => {
             await record();
             await Promise.all(createdUpdates);
             const allReadUpdates = tabs.map((tab) => tab.nextRefresh());
-            expect(
-                (
-                    await first.request('/notifications/read', {
-                        userId: users[0],
-                        method: 'POST',
-                        json: {},
-                    })
-                ).status,
-            ).toBe(204);
+            await first.expectStatus(204, '/notifications/read', {
+                userId: users[0],
+                method: 'POST',
+                json: {},
+            });
             await Promise.all(allReadUpdates);
             const afterAllRead = await second.request('/notifications', { userId: users[0] });
             expect(await afterAllRead.json()).toMatchObject({ unreadCount: 0 });

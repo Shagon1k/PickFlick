@@ -149,15 +149,11 @@ describe('Past Sessions', () => {
         await expect(
             api.prisma.sessionRating.update({ where: { id: rating.id }, data: { score: 1 } }),
         ).rejects.toThrow('immutable');
-        expect(
-            (
-                await api.request(`/sessions/${session.id}/rating`, {
-                    userId: users[0],
-                    method: 'POST',
-                    json: { score: 1 },
-                })
-            ).status,
-        ).toBe(403);
+        await api.expectStatus(403, `/sessions/${session.id}/rating`, {
+            userId: users[0],
+            method: 'POST',
+            json: { score: 1 },
+        });
     });
     it('should preserve repeat viewings of one Movie alongside a blocking Session', async () => {
         await createSession(api.prisma, clubId, {

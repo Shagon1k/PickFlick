@@ -142,33 +142,21 @@ describe('PersonalRating', () => {
             expect((await save(json)).status).toBe(400);
         }
         await api.expectStatus(401, `/movies/${movieId}/personal-rating`);
-        expect(
-            (
-                await api.request(`/movies/${movieId}/personal-rating`, {
-                    method: 'PUT',
-                    json: { score: 8 },
-                })
-            ).status,
-        ).toBe(401);
-        expect(
-            (
-                await api.request(`/movies/${randomUUID()}/personal-rating`, {
-                    userId: users[0],
-                    method: 'PUT',
-                    json: { score: 8 },
-                })
-            ).status,
-        ).toBe(404);
+        await api.expectStatus(401, `/movies/${movieId}/personal-rating`, {
+            method: 'PUT',
+            json: { score: 8 },
+        });
+        await api.expectStatus(404, `/movies/${randomUUID()}/personal-rating`, {
+            userId: users[0],
+            method: 'PUT',
+            json: { score: 8 },
+        });
         await api.expectStatus(400, '/movies/invalid/personal-rating', { userId: users[0] });
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating`, {
-                    userId: users[1],
-                    method: 'POST',
-                    json: { score: 8 },
-                })
-            ).status,
-        ).toBe(404);
+        await api.expectStatus(404, `/sessions/${sessionId}/rating`, {
+            userId: users[1],
+            method: 'POST',
+            json: { score: 8 },
+        });
         expect(await api.prisma.personalMovieRating.count({ where: { movieId } })).toBe(0);
     });
 

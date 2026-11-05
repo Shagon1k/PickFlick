@@ -133,14 +133,10 @@ describe('Session roster', () => {
         expect((await preview(invitation.token)).headers.get('Cache-Control')).toBe(
             'private, no-store',
         );
-        expect(
-            (
-                await api.request('/session-invitations/preview', {
-                    method: 'POST',
-                    json: { token: invitation.token },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, '/session-invitations/preview', {
+            method: 'POST',
+            json: { token: invitation.token },
+        });
         await api.expectStatus(404, `/sessions/${sessionId}/roster`, { userId: outsider });
         await api.request(`/clubs/${clubId}/leave`, {
             userId: member,
@@ -201,24 +197,20 @@ describe('Session roster', () => {
         expect((await remove(participant.id, member)).status).toBe(403);
         expect((await revoke(invitation.id, member)).status).toBe(403);
         expect((await remove(participant.id, outsider)).status).toBe(404);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/leave`, {
-                    userId: member,
-                    method: 'POST',
-                    json: { confirmation: 'wrong' },
-                })
-            ).status,
-        ).toBe(400);
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/participants/${participant.id}/remove`, {
-                    userId: admin,
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(400);
+        await api.expectStatus(400, `/sessions/${sessionId}/leave`, {
+            userId: member,
+            method: 'POST',
+            json: { confirmation: 'wrong' },
+        });
+        await api.expectStatus(
+            400,
+            `/sessions/${sessionId}/participants/${participant.id}/remove`,
+            {
+                userId: admin,
+                method: 'POST',
+                json: {},
+            },
+        );
         expect(await accepted()).toBe(1);
     });
     it('should leave or remove once and prevent old accepted links from restoring participation', async () => {

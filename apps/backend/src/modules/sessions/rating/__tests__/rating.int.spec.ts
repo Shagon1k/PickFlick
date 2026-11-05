@@ -244,14 +244,10 @@ describe('Rating', () => {
     });
 
     it('should enforce authentication, Membership, participation and operator access including retries', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating`, {
-                    method: 'POST',
-                    json: { score: 8 },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/rating`, {
+            method: 'POST',
+            json: { score: 8 },
+        });
         expect((await submit(4)).status).toBe(404);
         expect((await submit(3)).status).toBe(403);
         expect((await close(2)).status).toBe(403);

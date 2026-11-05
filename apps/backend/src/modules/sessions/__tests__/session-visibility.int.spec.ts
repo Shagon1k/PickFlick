@@ -165,7 +165,6 @@ describe('Live Club visibility', () => {
                 const session = await detail(sessionId, index);
                 expect(session.rating?.results?.average).toBe(8);
                 expect(session.selectionScores?.ballots).toHaveLength(3);
-                expect(session.selectionOutcome?.source).toBe('IMPORTED');
                 expect(session.selectionOutcome).toMatchObject({
                     source: 'IMPORTED',
                     nominations: [{ author: 'Test User' }],

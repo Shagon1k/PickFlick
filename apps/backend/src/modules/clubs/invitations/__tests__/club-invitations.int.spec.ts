@@ -105,31 +105,19 @@ describe('Club invitations', () => {
         ]) {
             await api.expectStatus(404, path, { userId: outsider, method: 'POST', json: {} });
         }
-        expect(
-            (
-                await api.request('/club-invitations/preview', {
-                    method: 'POST',
-                    json: { token: invitation.token },
-                })
-            ).status,
-        ).toBe(401);
-        expect(
-            (
-                await api.request('/club-invitations/respond', {
-                    method: 'POST',
-                    json: { token: invitation.token, decision: 'accept' },
-                })
-            ).status,
-        ).toBe(401);
-        expect(
-            (
-                await api.request('/club-invitations/preview', {
-                    userId: recipient,
-                    method: 'POST',
-                    json: { token: 'bad' },
-                })
-            ).status,
-        ).toBe(400);
+        await api.expectStatus(401, '/club-invitations/preview', {
+            method: 'POST',
+            json: { token: invitation.token },
+        });
+        await api.expectStatus(401, '/club-invitations/respond', {
+            method: 'POST',
+            json: { token: invitation.token, decision: 'accept' },
+        });
+        await api.expectStatus(400, '/club-invitations/preview', {
+            userId: recipient,
+            method: 'POST',
+            json: { token: 'bad' },
+        });
         const listed = await api.request(`/clubs/${clubId}/invitations`, { userId: admin });
         expect(await listed.text()).not.toContain(invitation.token);
     });
@@ -138,14 +126,10 @@ describe('Club invitations', () => {
         const original = await create();
         for (let index = 0; index < 20; index++) {
             const newer = await create();
-            expect(
-                (
-                    await api.request(`/clubs/${clubId}/invitations/${newer.id}/revoke`, {
-                        userId: admin,
-                        method: 'POST',
-                    })
-                ).status,
-            ).toBe(204);
+            await api.expectStatus(204, `/clubs/${clubId}/invitations/${newer.id}/revoke`, {
+                userId: admin,
+                method: 'POST',
+            });
         }
 
         const response = await api.request(`/clubs/${clubId}/invitations`, { userId: admin });
@@ -155,14 +139,10 @@ describe('Club invitations', () => {
                 { id: original.id, expiresAt: original.expiresAt, state: 'pending' },
             ]),
         );
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations/${original.id}/revoke`, {
-                    userId: admin,
-                    method: 'POST',
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/invitations/${original.id}/revoke`, {
+            userId: admin,
+            method: 'POST',
+        });
         expect(await preview(original.token)).toEqual({ state: 'revoked' });
     });
 
@@ -212,14 +192,10 @@ describe('Club invitations', () => {
         expect(await denied.json()).toMatchObject({
             error: { reason: 'INVITATION_LIMIT_REACHED' },
         });
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations/${invitations[0]!.id}/revoke`, {
-                    userId: admin,
-                    method: 'POST',
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/invitations/${invitations[0]!.id}/revoke`, {
+            userId: admin,
+            method: 'POST',
+        });
         await create();
         expect(
             await api.prisma.clubInvite.count({
@@ -288,14 +264,10 @@ describe('Club invitations', () => {
     it('should revoke idempotently and show only safe invalid, expired, and revoked states', async () => {
         const invitation = await create();
         for (let index = 0; index < 2; index++) {
-            expect(
-                (
-                    await api.request(`/clubs/${clubId}/invitations/${invitation.id}/revoke`, {
-                        userId: admin,
-                        method: 'POST',
-                    })
-                ).status,
-            ).toBe(204);
+            await api.expectStatus(204, `/clubs/${clubId}/invitations/${invitation.id}/revoke`, {
+                userId: admin,
+                method: 'POST',
+            });
         }
         expect(await preview(invitation.token)).toEqual({ state: 'revoked' });
         expect(await respond(invitation.token)).toEqual({ state: 'revoked' });
@@ -320,23 +292,15 @@ describe('Club invitations', () => {
     it('should refuse read-only and deleted Clubs and require manager authorization', async () => {
         const invitation = await create();
         await addMember(api.prisma, clubId, recipient);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations`, {
-                    userId: recipient,
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(403);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations/${invitation.id}/revoke`, {
-                    userId: recipient,
-                    method: 'POST',
-                })
-            ).status,
-        ).toBe(403);
+        await api.expectStatus(403, `/clubs/${clubId}/invitations`, {
+            userId: recipient,
+            method: 'POST',
+            json: {},
+        });
+        await api.expectStatus(403, `/clubs/${clubId}/invitations/${invitation.id}/revoke`, {
+            userId: recipient,
+            method: 'POST',
+        });
         expect(await preview(invitation.token)).toEqual({ state: 'already-member', clubId });
         await api.prisma.membership.updateMany({
             where: { clubId, userId: recipient },
@@ -353,15 +317,11 @@ describe('Club invitations', () => {
         });
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect(await respond(invitation.token)).toEqual({ state: 'unavailable' });
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations`, {
-                    userId: admin,
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(409);
+        await api.expectStatus(409, `/clubs/${clubId}/invitations`, {
+            userId: admin,
+            method: 'POST',
+            json: {},
+        });
         await api.prisma.club.update({ where: { id: clubId }, data: { deletedAt: new Date() } });
         expect(await preview(invitation.token)).toEqual({ state: 'invalid' });
     });
@@ -423,15 +383,11 @@ describe('Club invitations', () => {
             where: { clubId, userId: recipient, status: 'ACTIVE' },
             data: { role: 'MODERATOR' },
         });
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations`, {
-                    userId: recipient,
-                    method: 'POST',
-                    json: {},
-                })
-            ).status,
-        ).toBe(201);
+        await api.expectStatus(201, `/clubs/${clubId}/invitations`, {
+            userId: recipient,
+            method: 'POST',
+            json: {},
+        });
     });
 
     it('should close the links of a Moderator who can no longer invite', async () => {

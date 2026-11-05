@@ -131,14 +131,10 @@ describe('Nominations', () => {
         });
     });
     it('should reject unauthenticated, nonmember, nonparticipant, invalid and unknown Movie submissions', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/nominations`, {
-                    method: 'POST',
-                    json: { movieId: movies[0] },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/nominations`, {
+            method: 'POST',
+            json: { movieId: movies[0] },
+        });
         expect((await submit(outsider)).status).toBe(404);
         await api.prisma.sessionParticipant.update({
             where: { id: memberParticipant },

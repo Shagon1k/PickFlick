@@ -208,15 +208,11 @@ describe('Session progress', () => {
         await submit();
         await joinThird();
         await submit(users[2]);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/archive`, {
-                    userId: users[0],
-                    method: 'POST',
-                    json: { confirmation: 'ARCHIVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/archive`, {
+            userId: users[0],
+            method: 'POST',
+            json: { confirmation: 'ARCHIVE' },
+        });
         await leave();
         expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
         await api.expectStatus(204, `/clubs/${clubId}/reactivate`, {
@@ -251,15 +247,15 @@ describe('Session progress', () => {
         const participant = await api.prisma.sessionParticipant.findFirstOrThrow({
             where: { sessionId, membershipId: memberships[1] },
         });
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/participants/${participant.id}/remove`, {
-                    userId: users[0],
-                    method: 'POST',
-                    json: { confirmation: 'REMOVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(
+            204,
+            `/sessions/${sessionId}/participants/${participant.id}/remove`,
+            {
+                userId: users[0],
+                method: 'POST',
+                json: { confirmation: 'REMOVE' },
+            },
+        );
         expect(await state()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
         expect((await events()).at(-1)).toMatchObject({
             kind: 'PROGRESS',
