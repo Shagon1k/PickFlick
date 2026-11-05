@@ -86,10 +86,6 @@ for (const viewport of canonicalViewports) {
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/completed-history-${viewport.name}.png`,
-                fullPage: true,
-            });
         },
     );
 
@@ -121,10 +117,6 @@ for (const viewport of canonicalViewports) {
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/hub-history-${viewport.name}.png`,
-                fullPage: true,
-            });
         },
     );
 }

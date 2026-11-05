@@ -386,10 +386,6 @@ for (const viewport of canonicalViewports) {
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                 ).toBe(true);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await page.screenshot({
-                    path: `test-results/past-form-${viewport.name}.png`,
-                    fullPage: true,
-                });
                 await logSession(page);
                 await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
                 // A logged Session carries one LOGGED note instead of per-section caveats.
@@ -425,10 +421,6 @@ for (const viewport of canonicalViewports) {
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                 ).toBe(true);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await page.screenshot({
-                    path: `test-results/past-completed-${viewport.name}.png`,
-                    fullPage: true,
-                });
                 await journey.signInMember();
                 await page.reload();
                 await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();

@@ -175,10 +175,6 @@ for (const viewport of canonicalViewports) {
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        await page.screenshot({
-            path: `test-results/session-create-${viewport.name}.png`,
-            fullPage: true,
-        });
         await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
@@ -188,10 +184,6 @@ for (const viewport of canonicalViewports) {
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        await page.screenshot({
-            path: `test-results/session-detail-${viewport.name}.png`,
-            fullPage: true,
-        });
     });
 }
 

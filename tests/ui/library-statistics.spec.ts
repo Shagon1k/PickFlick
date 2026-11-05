@@ -46,10 +46,6 @@ for (const width of [390, 768, 1024, 1440]) {
                     );
                 expect(columns).toBe(width < 1024 ? 2 : 4);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await page.screenshot({
-                    path: `test-results/library-statistics-${width}.png`,
-                    fullPage: true,
-                });
                 await page.goto('/library?tab=watchlist');
                 await expect(page).toHaveURL(/tab=watchlist/u);
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');

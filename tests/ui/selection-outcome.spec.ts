@@ -87,10 +87,6 @@ for (const viewport of canonicalViewports) {
                     () => document.documentElement.scrollWidth <= window.innerWidth,
                 ),
             ).toBe(true);
-            await page.screenshot({
-                path: test.info().outputPath('selection-result.png'),
-                fullPage: true,
-            });
         });
     }
 
@@ -112,10 +108,6 @@ for (const viewport of canonicalViewports) {
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         await page.keyboard.press('Tab');
         await expect(page.getByRole('dialog').locator(':focus')).toHaveCount(1);
-        await page.screenshot({
-            path: test.info().outputPath('selection-confirmation.png'),
-            fullPage: true,
-        });
         await page.keyboard.press('Escape');
         await expect(trigger).toBeFocused();
     });

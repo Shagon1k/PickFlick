@@ -72,10 +72,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 expect(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                 ).toBe(true);
-                await page.screenshot({
-                    path: `test-results/personal-rating-${width}.png`,
-                    fullPage: true,
-                });
                 await page.keyboard.press('Escape');
                 await page.reload();
                 await expect(

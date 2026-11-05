@@ -50,7 +50,7 @@ const STATES = [
     {
         name: 'club-ratings-populated',
         path: `${CLUB_PATH}/ratings`,
-        token: 'valid-hub-ratings-pro-visual',
+        token: 'valid-hub-ratings-visual',
         ready: 'Synthetic film 28',
     },
     {

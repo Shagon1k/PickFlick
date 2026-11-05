@@ -30,7 +30,6 @@ export function buildHubProjection(
             historyNextCursor: null,
         };
     }
-    if (token?.includes('ratings-pro')) club = { ...club, tier: 'PRO' };
     const isSecondClub = club.id === SECOND_CLUB_ID;
     const session: IClubHubSession = {
         id: isSecondClub

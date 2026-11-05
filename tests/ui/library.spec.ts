@@ -40,10 +40,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 });
                 await page.evaluate(() => window.scrollTo(0, 0));
                 await settle(page);
-                await page.screenshot({
-                    path: `test-results/library-ratings-${width}.png`,
-                    fullPage: true,
-                });
                 await page.getByRole('link', { name: 'Next page', exact: true }).tap();
                 await expect(page).toHaveURL(/page=2/u);
                 await expect(page.getByRole('row')).toHaveCount(4);

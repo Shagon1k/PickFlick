@@ -145,10 +145,6 @@ for (const viewport of canonicalViewports) {
         await page.goto(INVITATION_PATH, { waitUntil: 'load' });
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        await page.screenshot({
-            path: test.info().outputPath('session-invitation.png'),
-            fullPage: true,
-        });
         await page.goto(`/sessions/${SESSION_ID}`, { waitUntil: 'load' });
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

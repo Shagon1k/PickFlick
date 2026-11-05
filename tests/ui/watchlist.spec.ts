@@ -129,10 +129,6 @@ for (const width of [390, 768, 1024, 1440]) {
                     await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth),
                 ).toBe(true);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await page.screenshot({
-                    path: `test-results/watchlist-movie-${width}.png`,
-                    fullPage: true,
-                });
                 await page.keyboard.press('Escape');
                 await expect(saved).toBeFocused();
                 await page.goto('/library?tab=watchlist', { waitUntil: 'load' });
@@ -155,10 +151,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 expect(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                 ).toBe(true);
-                await page.screenshot({
-                    path: `test-results/watchlist-library-${width}.png`,
-                    fullPage: true,
-                });
                 await row.getByRole('link').click();
                 await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
                 await page

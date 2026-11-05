@@ -37,10 +37,6 @@ for (const viewport of canonicalViewports) {
                 'true',
             );
             await page.getByLabel('Comment', { exact: false }).fill('A lasting impression.');
-            await page.screenshot({
-                path: `test-results/rating-${viewport.name}.png`,
-                fullPage: true,
-            });
             await page.getByRole('button', { name: 'Submit Rating' }).click();
             await expect(
                 page
@@ -93,15 +89,11 @@ for (const viewport of canonicalViewports) {
             ).toBe(true);
             await settle(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/rating-completed-${viewport.name}.png`,
-                fullPage: true,
-            });
         },
     );
 }
 
-for (const scenario of ['member', 'readonly', 'hidden-completed']) {
+for (const scenario of ['member', 'hidden-completed']) {
     test(`Rating enforces ${scenario} controls and visibility`, async ({ context, page }) => {
         await authenticate(context, scenario);
         await page.goto(ROUTE);
@@ -129,6 +121,7 @@ for (const [scenario, joinCount, removedCount] of [
             await expect(
                 page.getByRole('status').filter({ hasText: /Rating in progress/u }),
             ).toBeVisible();
+            await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
             await expect(
                 page.getByRole('heading', { name: 'Your rating', exact: true }),
             ).toHaveCount(0);

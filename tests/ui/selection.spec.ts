@@ -158,7 +158,6 @@ for (const viewport of canonicalViewports) {
         const bounds = await target.boundingBox();
         expect(bounds?.width).toBeGreaterThanOrEqual(44);
         expect(bounds?.height).toBeGreaterThanOrEqual(44);
-        await page.screenshot({ path: test.info().outputPath('selection.png'), fullPage: true });
     });
 }
 

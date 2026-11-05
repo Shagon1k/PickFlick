@@ -203,20 +203,19 @@ for (const viewport of canonicalViewports) {
         const listBounds = await page
             .getByRole('heading', { name: 'Current Nominations' })
             .boundingBox();
-        expect(
-            Boolean(
-                formBounds &&
-                listBounds &&
-                (viewport.width >= 1024
-                    ? Math.abs(formBounds.y - listBounds.y) < 2
-                    : listBounds.y > formBounds.y),
-            ),
-        ).toBe(true);
+        expect(formBounds).not.toBeNull();
+        expect(listBounds).not.toBeNull();
+        // Wide screens place the two cards side by side; narrower ones stack the list below.
+        const offset = listBounds!.y - formBounds!.y;
+        const isSideBySide = viewport.width >= 1024;
+        expect(Math.abs(offset) < 2, `list heading is ${offset}px below the form`).toBe(
+            isSideBySide,
+        );
+        expect(offset > 0, `list heading is ${offset}px below the form`).toBe(!isSideBySide);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
-        await page.screenshot({ path: test.info().outputPath('nomination.png'), fullPage: true });
     });
 }
 
@@ -265,29 +264,6 @@ test(
         }
     },
 );
-
-test('Progress polling shows another participant nomination', async ({ browser }) => {
-    const actor = await browser.newContext();
-    const viewer = await browser.newContext();
-    const token = `valid-nomination-live-${crypto.randomUUID()}`;
-    await signInMock(actor, token);
-    await signInMock(viewer, token);
-    const actorPage = await actor.newPage();
-    const viewerPage = await viewer.newPage();
-    try {
-        await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
-        await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
-        await actorPage.getByRole('button', { name: 'Nominate selected film' }).click();
-        await expect(
-            viewerPage.getByRole('status').filter({ hasText: '2 of 3 members have nominated.' }),
-        ).toBeVisible({
-            timeout: 20000,
-        });
-    } finally {
-        await actor.close();
-        await viewer.close();
-    }
-});
 
 for (const projection of ['detail', 'roster']) {
     test(

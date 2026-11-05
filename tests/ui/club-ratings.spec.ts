@@ -17,7 +17,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await signInMock(context, `valid-hub-ratings-pro-${width}`);
+                await signInMock(context, `valid-hub-ratings-${width}`);
                 const page = await context.newPage();
                 await page.goto(PATH, { waitUntil: 'load' });
                 await expect(page.getByRole('row')).toHaveCount(26);
@@ -40,10 +40,6 @@ for (const width of [390, 768, 1024, 1440]) {
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
                 await region.evaluate((element) => {
                     element.scrollLeft = 0;
-                });
-                await page.screenshot({
-                    path: `test-results/club-ratings-${width}.png`,
-                    fullPage: true,
                 });
                 await page.getByRole('button', { name: 'Next page', exact: true }).tap();
                 await expect(page).toHaveURL(/page=2/u);
@@ -80,11 +76,11 @@ for (const width of [390, 768, 1024, 1440]) {
 }
 
 test(
-    'Club Ratings empty, Free, invalid and unavailable states',
+    'Club Ratings empty, invalid and unavailable states',
     { tag: '@smoke' },
     async ({ context, page }) => {
         for (const [token, copy] of [
-            ['valid-hub-ratings-pro-empty', 'No rated films yet.'],
+            ['valid-hub-ratings-empty', 'No rated films yet.'],
             ['valid-hub-ratings-unavailable', 'Club Ratings are temporarily unavailable'],
             ['valid-hub-ratings-denied', 'Club access unavailable'],
         ]) {
@@ -105,11 +101,11 @@ test('Club Ratings sign-in preserves the requested sort and page', async ({ page
     expect(new URL(page.url()).searchParams.get('returnTo')).toBe(`${PATH}?sort=title&page=2`);
 });
 
-test('Club Ratings can retry an API failure and Overview follows the plan', async ({
+test('Club Ratings can retry an API failure and Overview shows every statistic', async ({
     context,
     page,
 }) => {
-    await signInMock(context, `valid-hub-ratings-pro-ratings-transient-${crypto.randomUUID()}`);
+    await signInMock(context, `valid-hub-ratings-ratings-transient-${crypto.randomUUID()}`);
     await page.goto(PATH);
     await expect(
         page.getByRole('heading', { name: 'Club Ratings are temporarily unavailable' }),
@@ -121,19 +117,13 @@ test('Club Ratings can retry an API failure and Overview follows the plan', asyn
     await expect(
         page.getByRole('region', { name: 'Club statistics' }).locator('strong'),
     ).toHaveCount(7);
-    // Free Clubs show every statistic too.
-    await signInMock(context, 'valid-hub-ratings-free');
-    await page.reload();
-    await expect(
-        page.getByRole('region', { name: 'Club statistics' }).locator('strong'),
-    ).toHaveCount(7);
 });
 
 test('Ratings navigation keeps the Hub frame and shows its loading boundary', async ({
     context,
     page,
 }) => {
-    await signInMock(context, 'valid-hub-ratings-pro-loading');
+    await signInMock(context, 'valid-hub-ratings-loading');
     const isPrefetch = (headers: Record<string, string>) =>
         Object.keys(headers).some((name) => name.includes('prefetch'));
     const prefetched = page.waitForResponse(

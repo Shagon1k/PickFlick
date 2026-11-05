@@ -71,10 +71,6 @@ for (const width of [390, 768, 1024, 1440]) {
                     await expect(shelf.getByRole('article')).toHaveCount(6);
                     await page.evaluate(() => window.scrollTo(0, 0));
                     await settle(page);
-                    await page.screenshot({
-                        path: `test-results/achievements-${path.startsWith('/library') ? 'library' : 'club'}-${width}.png`,
-                        fullPage: true,
-                    });
                 }
             } finally {
                 await context.close();

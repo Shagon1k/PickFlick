@@ -196,7 +196,7 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
 test('Maximum-length Club names keep invitation geometry after acceptance and decline', async ({
     context,
     page,
-}, testInfo) => {
+}) => {
     for (const viewport of [...canonicalViewports, ...gapViewports]) {
         await page.setViewportSize(viewport);
         for (const decision of ['accept', 'decline'] as const) {
@@ -215,10 +215,6 @@ test('Maximum-length Club names keep invitation geometry after acceptance and de
             expect(await name.evaluate((heading) => heading.scrollWidth)).toBeGreaterThan(
                 await name.evaluate((heading) => heading.clientWidth),
             );
-            await page.screenshot({
-                path: testInfo.outputPath(`long-name-${decision}-${viewport.name}.png`),
-                fullPage: true,
-            });
             await page
                 .getByRole('button', {
                     name: decision === 'accept' ? 'Accept Invitation' : "No thanks, I'll pass",

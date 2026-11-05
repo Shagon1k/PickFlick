@@ -39,10 +39,6 @@ for (const viewport of canonicalViewports) {
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/watching-${viewport.name}.png`,
-                fullPage: true,
-            });
             const settings = page.getByRole('button', { name: 'Session settings' });
             await settings.focus();
             await page.keyboard.press('Enter');
@@ -55,9 +51,6 @@ for (const viewport of canonicalViewports) {
             ).toBeDisabled();
             await expect(dialog).toHaveCSS('opacity', '1');
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/open-rating-${viewport.name}.png`,
-            });
             await page.keyboard.press('Escape');
             await expect(dialog).toHaveCount(0);
             await expect(settings).toBeFocused();
