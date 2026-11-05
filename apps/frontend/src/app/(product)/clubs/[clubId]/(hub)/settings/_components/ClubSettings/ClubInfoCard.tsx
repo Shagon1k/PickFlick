@@ -18,7 +18,6 @@ import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 
 import styles from '../../page.module.scss';
-import { isWritable } from './club-settings';
 import ClubAvatarField from './ClubAvatarField';
 import SaveRow from './SaveRow';
 import StoredVisibility from './StoredVisibility';
@@ -30,7 +29,7 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
     const remove = removeClubAvatarAction.bind(null, projection.club.id);
     const [saveState, formAction, isSaving] = useActionState(save, initialClubActionState);
     const [removeState, removeAction, isRemoving] = useActionState(remove, initialClubActionState);
-    const canEdit = isWritable(projection);
+    const canEdit = projection.permissions.manageSettings;
     return (
         <section aria-labelledby="club-info-title" className={styles.card}>
             <div className={styles.cardTitle}>
@@ -81,7 +80,7 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     rows={DESCRIPTION_ROWS}
                 />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} isPending={isSaving} state={saveState} />
+                    <SaveRow isPending={isSaving} state={saveState} />
                 ) : null}
             </form>
         </section>

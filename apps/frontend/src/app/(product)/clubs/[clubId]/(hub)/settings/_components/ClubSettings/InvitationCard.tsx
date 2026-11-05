@@ -12,8 +12,7 @@ import ManageModerators from './ManageModerators';
 /** The Members card: invitation links live in a dialog so the card stays one row of actions. */
 export default function InvitationCard({ projection }: { projection: IClubSettings }) {
     const isAllowed = projection.permissions.manageMembers;
-    const canManageRoles =
-        projection.club.membershipRole === 'ADMIN' && projection.club.lifecycle === 'ACTIVE';
+    const canManageRoles = projection.permissions.manageRoles;
     return (
         <section aria-labelledby="club-members-title" className={styles.card}>
             <div className={styles.cardTitle}>

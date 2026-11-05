@@ -7,11 +7,9 @@ import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 
 export default function SaveRow({
-    disabled,
     isPending,
     state,
 }: {
-    disabled: boolean;
     isPending: boolean;
     state: IClubActionState;
 }) {
@@ -19,7 +17,6 @@ export default function SaveRow({
         <div className={styles.saveRow}>
             <div className={styles.saveButton}>
                 <Button
-                    disabled={disabled}
                     fullWidth
                     loading={isPending}
                     size="small"

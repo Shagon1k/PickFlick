@@ -15,7 +15,7 @@ const SESSION_KINDS = ['active', 'ratings'] as const;
 
 export default function SettingsSkeleton({ hub }: { hub?: IClubHub | null }) {
     const canEdit = hub?.permissions.manageSettings;
-    const canManageRoles = hub?.club.membershipRole === 'ADMIN' && hub.club.lifecycle === 'ACTIVE';
+    const canManageRoles = hub?.permissions.manageRoles;
     return (
         <div className={styles.layout}>
             {hub && hub.club.membershipRole !== 'ADMIN' ? (

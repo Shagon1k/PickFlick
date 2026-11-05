@@ -10,14 +10,14 @@ import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Tabs from '#components/ui/Tabs/Tabs';
 
 import styles from '../../page.module.scss';
-import { isWritable, visibilityOptions } from './club-settings';
+import { visibilityOptions } from './club-settings';
 import SaveRow from './SaveRow';
 import StoredClubInfo from './StoredClubInfo';
 
 export default function VisibilityCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
     const [state, formAction, isPending] = useActionState(action, initialClubActionState);
-    const canEdit = isWritable(projection);
+    const canEdit = projection.permissions.manageSettings;
     return (
         <section aria-labelledby="club-visibility-title" className={styles.card}>
             <div className={styles.cardTitle}>
@@ -69,7 +69,7 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                     min={projection.club.selectionScaleMin}
                 />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} isPending={isPending} state={state} />
+                    <SaveRow isPending={isPending} state={state} />
                 ) : null}
             </form>
         </section>

@@ -1,4 +1,4 @@
-import type { IClubSettings, IClubVisibility } from '@pickflick/contracts';
+import type { IClubVisibility } from '@pickflick/contracts';
 
 export const visibilityOptions: {
     label: string;
@@ -22,7 +22,3 @@ export const visibilityNames: (keyof IClubVisibility)[] = [
     ...visibilityOptions.flatMap(({ during, after }) => [during, after]),
     'showNominationsBeforeSubmit',
 ];
-
-export function isWritable(projection: IClubSettings): boolean {
-    return projection.permissions.manageSettings && projection.club.lifecycle === 'ACTIVE';
-}

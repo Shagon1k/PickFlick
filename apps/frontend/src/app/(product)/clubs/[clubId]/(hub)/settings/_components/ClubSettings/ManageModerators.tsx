@@ -32,7 +32,6 @@ export default function ManageModerators({ projection }: { projection: IClubSett
         },
         initialClubActionState,
     );
-    const canEdit = projection.permissions.manageRoles && projection.club.lifecycle === 'ACTIVE';
     const roleOf = (member: IClubMember) => draft[member.id] ?? member.role;
     const changed = projection.members.filter(
         (member) => member.role !== 'ADMIN' && roleOf(member) !== member.role,
@@ -64,7 +63,7 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                                 ) : (
                                     <Button
                                         aria-label={`${roleOf(member) === 'MEMBER' ? 'Promote' : 'Remove'} ${member.displayName}`}
-                                        disabled={!canEdit || isPending}
+                                        disabled={isPending}
                                         onClick={() =>
                                             setDraft({
                                                 ...draft,
@@ -107,7 +106,7 @@ export default function ManageModerators({ projection }: { projection: IClubSett
                             />
                         ))}
                         <Button
-                            disabled={!canEdit || !changed.length}
+                            disabled={!changed.length}
                             fullWidth
                             loading={isPending}
                             success={state.status === 'success' ? 'Saved' : ''}
