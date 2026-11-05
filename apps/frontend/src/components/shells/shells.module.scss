@@ -480,9 +480,7 @@
     .sessionHero {
         grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
     }
-}
 
-@media (width >= 768px) {
     .publicFooterInner {
         gap: var(--gap-lg);
         padding-block: var(--gap-lg);
@@ -500,9 +498,7 @@
     .publicFooter nav span {
         display: inline;
     }
-}
 
-@media (width >= 768px) {
     .publicNav {
         display: flex;
     }
