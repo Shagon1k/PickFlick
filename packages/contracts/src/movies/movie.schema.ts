@@ -71,13 +71,14 @@ export const movieTrailerUrlSchema = z
             ((['www.youtube.com', 'youtube.com'].includes(url.hostname) &&
                 url.pathname === '/watch' &&
                 [...url.searchParams.keys()].length === 1 &&
-                /^[a-zA-Z0-9_-]{6,64}$/u.test(url.searchParams.get('v') ?? '')) ||
+                youtubeVideoIdSchema.safeParse(url.searchParams.get('v')).success) ||
                 (['www.youtube.com', 'youtube.com'].includes(url.hostname) &&
                     !url.search &&
-                    /^\/embed\/[a-zA-Z0-9_-]{6,64}$/u.test(url.pathname)) ||
+                    url.pathname.startsWith('/embed/') &&
+                    youtubeVideoIdSchema.safeParse(url.pathname.slice('/embed/'.length)).success) ||
                 (url.hostname === 'youtu.be' &&
                     !url.search &&
-                    /^\/[a-zA-Z0-9_-]{6,64}$/u.test(url.pathname)))
+                    youtubeVideoIdSchema.safeParse(url.pathname.slice(1)).success))
         );
     });
 export const movieProviderReasonSchema = z.enum([

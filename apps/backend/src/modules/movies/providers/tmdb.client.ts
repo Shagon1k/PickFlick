@@ -7,6 +7,7 @@ import {
     type TMovieExternalId,
     type TMovieSearch,
     type TTmdbMovie,
+    youtubeVideoIdSchema,
 } from '@pickflick/contracts';
 import type { z } from 'zod';
 
@@ -156,7 +157,7 @@ export class TmdbClient implements IMovieProvider {
                         (video) =>
                             video.site === 'YouTube' &&
                             video.type === 'Trailer' &&
-                            /^[a-zA-Z0-9_-]{6,64}$/u.test(video.key),
+                            youtubeVideoIdSchema.safeParse(video.key).success,
                     )
                     .map((video) => ({
                         url: `https://www.youtube.com/watch?v=${video.key}`,

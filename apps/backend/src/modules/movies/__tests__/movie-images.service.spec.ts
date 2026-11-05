@@ -66,6 +66,27 @@ describe('MovieImagesService', () => {
             signal: expect.any(AbortSignal),
         });
     });
+    it('should fetch a trailer thumbnail only from the fixed YouTube image path', async () => {
+        await expect(service.storeTrailerThumbnail('dQw4w9WgXcQ')).resolves.toMatch(
+            /^\/api\/movies\/images\/[a-f0-9]{64}$/u,
+        );
+        expect(request).toHaveBeenCalledWith('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg', {
+            redirect: 'error',
+            signal: expect.any(AbortSignal),
+        });
+        await expect(service.storeTrailerThumbnail('../evil')).rejects.toThrow();
+        expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not fetch a catalog image from a host outside the allowlist', async () => {
+        const result = await service.storeMedia({
+            ...buildCanonicalDetails(),
+            posterUrl: 'https://example.invalid/poster.jpg',
+        });
+        expect(result.posterUrl).toBeNull();
+        expect(request).not.toHaveBeenCalled();
+    });
+
     it('should reuse stored media without downloading again and serve the stored object', async () => {
         storage.exists.mockResolvedValue(true);
         storage.get.mockResolvedValue({ body: png, contentType: 'image/png' });
