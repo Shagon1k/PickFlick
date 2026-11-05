@@ -51,7 +51,6 @@ export function sessionHub(token: string | undefined): IClubHub {
         permissions: settings.permissions,
         memberCount: 3,
         sessionCount: sessions.filter(({ phase }) => phase !== 'CANCELLED').length,
-        completedSessionCount: 0,
         memberLimit: 8,
         members: settings.members,
         statistics: {

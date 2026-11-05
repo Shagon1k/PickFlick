@@ -13,7 +13,6 @@ export function buildHubProjection(
             permissions: projection.permissions,
             memberCount: 1,
             sessionCount: 0,
-            completedSessionCount: 0,
             memberLimit: 8,
             members: projection.members,
             statistics: {
@@ -59,7 +58,6 @@ export function buildHubProjection(
         permissions: projection.permissions,
         memberCount: isSecondClub ? 4 : 2,
         sessionCount,
-        completedSessionCount: isSecondClub ? 3 : 0,
         memberLimit: 8,
         members: projection.members,
         statistics: {

@@ -7,11 +7,9 @@ type TAuditAction = Prisma.ClubAuditEventGetPayload<object>['action'];
 type TSessionPhase = Prisma.SessionGetPayload<object>['phase'];
 
 const AUDIT_EVENTS: Partial<Record<TAuditAction, TNotificationEvent>> = {
-    MEMBERSHIP_JOINED: 'MEMBERSHIP_JOINED',
     MEMBERSHIP_ROLE_CHANGED: 'MEMBERSHIP_ROLE_CHANGED',
     ADMIN_TRANSFERRED: 'MEMBERSHIP_ROLE_CHANGED',
     MEMBERSHIP_REMOVED: 'MEMBERSHIP_REMOVED',
-    MEMBERSHIP_LEFT: 'MEMBERSHIP_LEFT',
     CLUB_ARCHIVED: 'CLUB_ARCHIVED',
     CLUB_REACTIVATED: 'CLUB_REACTIVATED',
 };
@@ -43,7 +41,7 @@ export async function recordAuditNotifications(
         await recordClubNotifications(tx, input, audit.actorUserId);
         return;
     }
-    // Nobody is told about what they just did themselves, such as leaving or joining.
+    // Nobody is told about what they just did themselves.
     if (audit.subjectUserId !== audit.actorUserId)
         await recordNotification(tx, { ...input, recipientId: audit.subjectUserId });
     if (audit.action === 'ADMIN_TRANSFERRED' && audit.actorUserId !== audit.subjectUserId) {

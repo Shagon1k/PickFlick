@@ -66,10 +66,8 @@ describe('buildPersonalAchievements', () => {
         expect(buildPersonalAchievements(facts)).toEqual({ metrics, evidence });
     });
 
-    it('should use Club averages despite hidden entries and ignore unrelated or unproven evidence', () => {
+    it('should use Club averages and ignore unrelated or unproven evidence', () => {
         const facts = buildFacts();
-        facts.sessions[0]!.club.memberships[0]!.role = 'MEMBER';
-        facts.sessions[0]!.club.showRatingsAfter = false;
         facts.sessions[0]!.progressEvents = [];
         facts.sessions[0]!.scheduledAt = new Date('2026-10-01');
         const { metrics } = buildPersonalAchievements(facts);

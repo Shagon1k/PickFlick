@@ -17,15 +17,12 @@ export async function readAchievementSessions(
             selectionResult: true,
             club: {
                 select: {
-                    showRatingsAfter: true,
-                    showSelectionScoresAfter: true,
                     memberships: {
                         select: {
                             id: true,
                             userId: true,
                             joinedAt: true,
                             leftAt: true,
-                            role: true,
                             status: true,
                         },
                     },

@@ -12,15 +12,12 @@ export function buildScreening(overrides: Partial<TAchievementSession> = {}): TA
         scheduledAt: new Date('2026-10-01T23:30:00Z'),
         selectionResult: null,
         club: {
-            showRatingsAfter: true,
-            showSelectionScoresAfter: true,
             memberships: [
                 {
                     id: 'member-1',
                     userId: 'user-1',
                     joinedAt: new Date('2020-01-01'),
                     leftAt: null,
-                    role: 'ADMIN',
                     status: 'ACTIVE',
                 },
             ],

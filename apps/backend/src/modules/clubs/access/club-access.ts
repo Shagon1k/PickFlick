@@ -14,17 +14,13 @@ const clubColumns = {
     lifecycle: true,
     selectionScaleMin: true,
     selectionScaleMax: true,
-    showNominationAuthors: true,
     showNominationsBeforeSubmit: true,
-    showVoteResults: true,
-    showRatingResults: true,
     showNominationAuthorsDuring: true,
     showNominationAuthorsAfter: true,
     showSelectionScoresDuring: true,
     showSelectionScoresAfter: true,
     showRatingsDuring: true,
     showRatingsAfter: true,
-    useMonochromeMedia: true,
 } as const;
 
 /**

@@ -67,14 +67,12 @@ describe('Club Hub projection', () => {
             club: { id: first, name: 'First Club' },
             memberCount: 1,
             sessionCount: 1,
-            completedSessionCount: 0,
             activeSession: { topic: 'First Club private Session' },
         });
         expect(secondHub).toMatchObject({
             club: { id: second, name: 'Second Club' },
             memberCount: 2,
             sessionCount: 1,
-            completedSessionCount: 1,
             recentSessions: [{ topic: 'Second Club private Session' }],
         });
         expect(JSON.stringify(secondHub)).not.toContain('First Club private Session');

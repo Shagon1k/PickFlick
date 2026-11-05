@@ -135,7 +135,6 @@ export interface IClubHub {
     club: IClubSummary;
     memberCount: number;
     sessionCount: number;
-    completedSessionCount: number;
     memberLimit: number;
     members: IClubMember[];
     statistics: {
