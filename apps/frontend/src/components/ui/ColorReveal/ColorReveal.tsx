@@ -127,8 +127,8 @@ export default function ColorReveal({
                 }
                 if (time < 1) frame = window.requestAnimationFrame(draw);
             }
+            // draw schedules its own next frame, so stop() can cancel the one running loop.
             draw(start);
-            frame = window.requestAnimationFrame(draw);
         }
 
         function handlePointerEnter(event: PointerEvent) {
