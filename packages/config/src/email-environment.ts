@@ -19,8 +19,10 @@ interface IEmailEnvironment {
     LOCAL_EMAIL_SEND_AFTER: string;
 }
 
+type TReject = (hasFailure: boolean, variable: string, message: string) => void;
+
 export function validateEmailEnvironment(env: IEmailEnvironment, context: z.RefinementCtx) {
-    const reject = (hasFailure: boolean, variable: string, message: string) => {
+    const reject: TReject = (hasFailure, variable, message) => {
         if (hasFailure) context.addIssue({ code: 'custom', path: [variable], message });
     };
     const isDeployed = env.APP_ENV === 'uat' || env.APP_ENV === 'production';
@@ -36,7 +38,7 @@ export function validateEmailEnvironment(env: IEmailEnvironment, context: z.Refi
         'RESEND_API_KEY',
         `must be ${LOCAL_DISABLED_KEY} outside live or preview delivery`,
     );
-    validateLocalEmailEnvironment(env, context, isLocalLive);
+    validateLocalEmailEnvironment(env, reject, isLocalLive);
     reject(
         isDeployed && mode === 'disabled',
         'RESEND_DELIVERY_MODE',
@@ -84,17 +86,16 @@ export function validateEmailEnvironment(env: IEmailEnvironment, context: z.Refi
     );
 }
 
+function parseRecipients(value: string): string[] {
+    return value ? value.split(',').map((address) => address.trim().toLowerCase()) : [];
+}
+
 function validateLocalEmailEnvironment(
     env: IEmailEnvironment,
-    context: z.RefinementCtx,
+    reject: TReject,
     isLocalLive: boolean,
 ) {
-    const reject = (hasFailure: boolean, variable: string, message: string) => {
-        if (hasFailure) context.addIssue({ code: 'custom', path: [variable], message });
-    };
-    const recipients = env.LOCAL_EMAIL_RECIPIENTS
-        ? env.LOCAL_EMAIL_RECIPIENTS.split(',').map((address) => address.trim().toLowerCase())
-        : [];
+    const recipients = parseRecipients(env.LOCAL_EMAIL_RECIPIENTS);
     reject(
         isLocalLive &&
             (!recipients.length ||
@@ -124,9 +125,7 @@ function validateLocalEmailEnvironment(
 export function getLocalEmailDelivery(env: IEmailEnvironment) {
     if (env.APP_ENV !== 'local' || env.RESEND_DELIVERY_MODE !== 'live') return null;
     return {
-        recipients: env.LOCAL_EMAIL_RECIPIENTS.split(',').map((address) =>
-            address.trim().toLowerCase(),
-        ),
+        recipients: parseRecipients(env.LOCAL_EMAIL_RECIPIENTS),
         sendAfter: new Date(env.LOCAL_EMAIL_SEND_AFTER),
     };
 }

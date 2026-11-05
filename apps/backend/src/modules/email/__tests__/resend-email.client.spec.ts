@@ -17,10 +17,10 @@ describe('ResendEmailClient', () => {
         const notificationId = randomUUID();
         fetchProvider.mockResolvedValue(Response.json({ id: providerId }));
         expect(
-            await new ResendEmailClient(
-                'synthetic-only',
-                'PickFlick UAT <uat@pick-flick.app>',
-            ).send({
+            await new ResendEmailClient({
+                apiKey: 'synthetic-only',
+                from: 'PickFlick UAT <uat@pick-flick.app>',
+            }).send({
                 to: 'test@pick-flick.app',
                 subject: 'Update',
                 text: 'Plain text',
@@ -64,7 +64,10 @@ describe('ResendEmailClient', () => {
                 Response.json({ name, message: 'PRIVATE provider content' }, { status }),
             );
             await expect(
-                new ResendEmailClient('synthetic-only', 'sender@example.invalid').send({
+                new ResendEmailClient({
+                    apiKey: 'synthetic-only',
+                    from: 'sender@example.invalid',
+                }).send({
                     to: 'test@example.invalid',
                     subject: 'Update',
                     text: 'Update',
@@ -75,11 +78,11 @@ describe('ResendEmailClient', () => {
 
     it('should send local mail to each approved account with a local subject prefix', async () => {
         const recipients = ['first@example.invalid', 'second@example.invalid'];
-        const client = new ResendEmailClient(
-            'synthetic-only',
-            'sender@example.invalid',
-            recipients,
-        );
+        const client = new ResendEmailClient({
+            apiKey: 'synthetic-only',
+            from: 'sender@example.invalid',
+            localDelivery: { recipients },
+        });
         fetchProvider.mockImplementation(() =>
             Promise.resolve(Response.json({ id: randomUUID() })),
         );
@@ -115,9 +118,11 @@ describe('ResendEmailClient', () => {
     });
 
     it('should reject unapproved local recipients before contacting the provider', async () => {
-        const client = new ResendEmailClient('synthetic-only', 'sender@example.invalid', [
-            'approved@example.invalid',
-        ]);
+        const client = new ResendEmailClient({
+            apiKey: 'synthetic-only',
+            from: 'sender@example.invalid',
+            localDelivery: { recipients: ['approved@example.invalid'] },
+        });
 
         await expect(
             client.send({ to: 'other@example.invalid', subject: 'Update', text: 'Update' }),
@@ -129,7 +134,10 @@ describe('ResendEmailClient', () => {
         fetchProvider
             .mockRejectedValueOnce(new Error('PRIVATE timeout details'))
             .mockResolvedValueOnce(Response.json({ wrong: true }));
-        const client = new ResendEmailClient('synthetic-only', 'sender@example.invalid');
+        const client = new ResendEmailClient({
+            apiKey: 'synthetic-only',
+            from: 'sender@example.invalid',
+        });
         const message = { to: 'test@example.invalid', subject: 'Update', text: 'Update' };
         await expect(client.send(message)).rejects.toEqual(
             new EmailDeliveryError('network_or_timeout', true),

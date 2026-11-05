@@ -184,6 +184,14 @@ const RUNTIME_ENVIRONMENT_RULES: {
             Boolean(env.APPLE_SIGN_IN_ENABLED) && !env[variable],
     })),
     {
+        variable: 'RESEND_WEBHOOK_SECRET',
+        message: 'is required in live mode',
+        broken: (env) =>
+            env.RESEND_DELIVERY_MODE === 'live' &&
+            env.APP_ENV !== 'local' &&
+            !env.RESEND_WEBHOOK_SECRET,
+    },
+    {
         variable: 'APPLE_PRIVATE_KEY',
         // The API signs Apple's client secret at startup, so a bad key must fail validation first.
         message: 'must be a valid EC P-256 PKCS#8 PEM private key',
@@ -197,17 +205,6 @@ const RUNTIME_ENVIRONMENT_RULES: {
 export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     .superRefine((env, context) => {
         validateEmailEnvironment(env, context);
-        if (
-            env.RESEND_DELIVERY_MODE === 'live' &&
-            env.APP_ENV !== 'local' &&
-            !env.RESEND_WEBHOOK_SECRET
-        ) {
-            context.addIssue({
-                code: 'custom',
-                path: ['RESEND_WEBHOOK_SECRET'],
-                message: 'is required in live mode',
-            });
-        }
         for (const rule of RUNTIME_ENVIRONMENT_RULES) {
             if (rule.broken(env)) {
                 context.addIssue({ code: 'custom', path: [rule.variable], message: rule.message });
