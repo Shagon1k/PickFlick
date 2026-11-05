@@ -55,7 +55,6 @@ export default function SessionDetails({
             renderedAt={renderedAt}
             onKick={onKick}
             onClosePhase={onClosePhase}
-            closePhaseLabel={getClosePhaseLabel(session.phase)}
             headingRef={headingRef}
             onEdit={() => setDialog('edit')}
             onCancel={() => setDialog('cancel')}
@@ -213,11 +212,4 @@ function ScreeningFilm({ movie, session }: { movie: TMovieDetails | null; sessio
             {movieId ? <Link href={`/movies/${movieId}`}>View selected Movie</Link> : null}
         </Alert>
     );
-}
-
-function getClosePhaseLabel(phase: TSession['phase']) {
-    if (phase === 'RATING') return 'Close Rating early';
-    if (phase === 'WATCHING') return 'Open Rating';
-    if (phase === 'NOMINATION') return 'Close nominations early';
-    return 'Close Selection early';
 }

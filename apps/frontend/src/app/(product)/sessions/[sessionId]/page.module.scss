@@ -307,6 +307,14 @@
     color: var(--fg-secondary);
 }
 
+.facts dt svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
 .facts dd {
     margin: 0;
     line-height: 1.4;
@@ -347,14 +355,28 @@
     letter-spacing: var(--tracking-caps);
 }
 
+.metaLine {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: flex-start;
+}
+
+.metaLine svg {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    opacity: 0.7;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
 @media (width < 768px) {
     /* Phones end the page above the footer without the desktop's long tail. */
     .main {
         padding-bottom: var(--gap-lg);
     }
-}
 
-@media (width < 768px) {
     .header {
         grid-template-areas:
             'copy'
@@ -383,33 +405,7 @@
     .metric {
         padding: var(--gap-md);
     }
-}
 
-.facts dt svg {
-    flex: 0 0 18px;
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    stroke-width: 1.6;
-}
-
-.metaLine {
-    display: flex;
-    gap: var(--gap-xs);
-    align-items: flex-start;
-}
-
-.metaLine svg {
-    flex: 0 0 16px;
-    width: 16px;
-    height: 16px;
-    margin-top: 2px;
-    opacity: 0.7;
-    stroke: currentColor;
-    stroke-width: 1.6;
-}
-
-@media (width < 768px) {
     .metaLine {
         justify-content: center;
     }

@@ -18,55 +18,68 @@ export default function ImportedNominations({
     movieId: string | null;
     isLoading?: boolean;
 }) {
-    const hasDifferentScoreCounts =
-        new Set(evidence.nominations?.map((row) => row.scoreCount)).size > 1;
     return (
         <section className={styles.rivals} aria-labelledby="rivals-heading">
             <div className={styles.header}>
                 <h2 id="rivals-heading">Nomination Rivals</h2>
             </div>
-            {evidence.nominations === null ? <p>Votes are hidden for this Session.</p> : null}
-            {evidence.nominations?.length === 0 ? <p>No votes were recorded.</p> : null}
-            {evidence.nominations?.length ? (
-                <NominationMovieList label="Logged nominations">
-                    {evidence.nominations.map((row) => (
-                        <li key={row.movie.id}>
-                            <NominationMovieCard
-                                movie={row.movie}
-                                author={row.author}
-                                badge={row.movie.id === movieId ? 'Watched' : undefined}
-                                isLoading={isLoading}
-                                score={
-                                    <div className={styles.recordedScore}>
-                                        <strong>
-                                            {isLoading ? (
-                                                <Skeleton text={row.total ?? '—'} />
-                                            ) : (
-                                                <ColorReveal variant="accent">
-                                                    {row.total ?? '—'}
-                                                </ColorReveal>
-                                            )}
-                                        </strong>
-                                        <small>
-                                            total
-                                            <span
-                                                className={
-                                                    hasDifferentScoreCounts
-                                                        ? undefined
-                                                        : 'visually-hidden'
-                                                }
-                                            >
-                                                {' · '}
-                                                {formatCount(row.scoreCount, 'score')}
-                                            </span>
-                                        </small>
-                                    </div>
-                                }
-                            />
-                        </li>
-                    ))}
-                </NominationMovieList>
-            ) : null}
+            <LoggedNominations
+                nominations={evidence.nominations}
+                movieId={movieId}
+                isLoading={isLoading}
+            />
         </section>
+    );
+}
+
+function LoggedNominations({
+    nominations,
+    movieId,
+    isLoading,
+}: {
+    nominations: TImportedSelectionOutcome['nominations'];
+    movieId: string | null;
+    isLoading: boolean;
+}) {
+    if (nominations === null) return <p>Votes are hidden for this Session.</p>;
+    if (!nominations.length) return <p>No votes were recorded.</p>;
+    const hasDifferentScoreCounts = new Set(nominations.map((row) => row.scoreCount)).size > 1;
+    return (
+        <NominationMovieList label="Logged nominations">
+            {nominations.map((row) => (
+                <li key={row.movie.id}>
+                    <NominationMovieCard
+                        movie={row.movie}
+                        author={row.author}
+                        badge={row.movie.id === movieId ? 'Watched' : undefined}
+                        isLoading={isLoading}
+                        score={
+                            <div className={styles.recordedScore}>
+                                <strong>
+                                    {isLoading ? (
+                                        <Skeleton text={row.total ?? '—'} />
+                                    ) : (
+                                        <ColorReveal variant="accent">
+                                            {row.total ?? '—'}
+                                        </ColorReveal>
+                                    )}
+                                </strong>
+                                <small>
+                                    total
+                                    <span
+                                        className={
+                                            hasDifferentScoreCounts ? undefined : 'visually-hidden'
+                                        }
+                                    >
+                                        {' · '}
+                                        {formatCount(row.scoreCount, 'score')}
+                                    </span>
+                                </small>
+                            </div>
+                        }
+                    />
+                </li>
+            ))}
+        </NominationMovieList>
     );
 }

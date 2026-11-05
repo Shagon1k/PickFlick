@@ -20,7 +20,7 @@ export default function SessionFacts({
     const date = session.scheduledAt
         ? new Intl.DateTimeFormat('en', {
               dateStyle: 'long',
-              ...(toScreeningTime(session.scheduledAt) ? { timeStyle: 'short' } : {}),
+              timeStyle: toScreeningTime(session.scheduledAt) ? 'short' : undefined,
               timeZone: 'UTC',
           }).format(new Date(session.scheduledAt))
         : 'Not scheduled';

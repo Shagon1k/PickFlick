@@ -24,7 +24,6 @@ export default function SessionHeader({
     renderedAt,
     onKick,
     onClosePhase,
-    closePhaseLabel,
     headingRef,
     onEdit,
     onCancel,
@@ -35,19 +34,12 @@ export default function SessionHeader({
     renderedAt: number;
     onKick?: () => void;
     onClosePhase?: () => void;
-    closePhaseLabel: string;
     headingRef: RefObject<HTMLHeadingElement | null>;
     onEdit: () => void;
     onCancel: () => void;
 }) {
-    const items = getMenuItems(session, {
-        onKick,
-        onClosePhase,
-        closePhaseLabel,
-        onEdit,
-        onCancel,
-    });
-    const isDecisionPhase = session.phase === 'NOMINATION' || session.phase === 'SELECTION';
+    const items = getMenuItems(session, { onKick, onClosePhase, onEdit, onCancel });
+    const isDecisionPhase = isDecision(session.phase);
     const title = movie?.title ?? movie?.originalTitle ?? 'Untitled film';
     const filmHref = movie && session.movieId ? `/movies/${session.movieId}` : null;
     return (
@@ -127,10 +119,9 @@ function SessionLines({
     hasMovie: boolean;
     renderedAt: number;
 }) {
-    const isDecisionPhase = session.phase === 'NOMINATION' || session.phase === 'SELECTION';
     return (
         <>
-            {session.topic && isDecisionPhase ? (
+            {session.topic && isDecision(session.phase) ? (
                 <p className={styles.metaLine}>
                     <Icon name="bulb" />
                     {session.topic}
@@ -152,12 +143,23 @@ function SessionLines({
     );
 }
 
+/** Nomination and Selection decide the film; the header shows the film only after them. */
+function isDecision(phase: TSession['phase']) {
+    return phase === 'NOMINATION' || phase === 'SELECTION';
+}
+
+function getClosePhaseLabel(phase: TSession['phase']) {
+    if (phase === 'RATING') return 'Close Rating early';
+    if (phase === 'WATCHING') return 'Open Rating';
+    if (phase === 'NOMINATION') return 'Close nominations early';
+    return 'Close Selection early';
+}
+
 function getMenuItems(
     session: TSession,
     actions: {
         onKick?: () => void;
         onClosePhase?: () => void;
-        closePhaseLabel: string;
         onEdit: () => void;
         onCancel: () => void;
     },
@@ -166,7 +168,7 @@ function getMenuItems(
     if (actions.onClosePhase)
         items.push({
             id: 'next-phase',
-            label: actions.closePhaseLabel,
+            label: getClosePhaseLabel(session.phase),
             icon: 'skip-forward',
             onSelect: actions.onClosePhase,
         });

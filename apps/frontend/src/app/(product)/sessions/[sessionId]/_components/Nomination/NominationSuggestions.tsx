@@ -73,51 +73,52 @@ function SuggestionList({
             {movies.length ? (
                 <HorizontalScroll label={`${title} suggestions`} variant="plain">
                     <ul className={styles.suggestions}>
-                        {movies.map((movie) => (
-                            <li key={movie.id}>
-                                <button
-                                    className={styles.suggestion}
-                                    aria-label={[
-                                        'Select',
-                                        movie.title ?? 'Movie title unavailable',
-                                        movie.year ? `(${movie.year})` : '',
-                                    ]
-                                        .filter(Boolean)
-                                        .join(' ')}
-                                    data-color-reveal-trigger
-                                    data-color-reveal-surface
-                                    disabled={disabled}
-                                    onClick={() => onChoose(movie)}
-                                    type="button"
-                                >
-                                    <ColorReveal variant="surface" />
-                                    <SearchPoster
-                                        className={styles.suggestionPoster}
-                                        url={getPosterPath(movie.id)}
-                                        withColorReveal
-                                        isLoading={isLoading}
-                                    />
-                                    <strong>
-                                        {isLoading ? (
-                                            <Skeleton
-                                                text={movie.title ?? 'Movie title unavailable'}
-                                            />
-                                        ) : (
-                                            (movie.title ?? 'Movie title unavailable')
-                                        )}
-                                    </strong>
-                                    {movie.year ? (
-                                        <span className={styles.suggestionYear}>
+                        {movies.map((movie) => {
+                            const movieTitle = movie.title ?? 'Movie title unavailable';
+                            return (
+                                <li key={movie.id}>
+                                    <button
+                                        className={styles.suggestion}
+                                        aria-label={[
+                                            'Select',
+                                            movieTitle,
+                                            movie.year ? `(${movie.year})` : '',
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ')}
+                                        data-color-reveal-trigger
+                                        data-color-reveal-surface
+                                        disabled={disabled}
+                                        onClick={() => onChoose(movie)}
+                                        type="button"
+                                    >
+                                        <ColorReveal variant="surface" />
+                                        <SearchPoster
+                                            className={styles.suggestionPoster}
+                                            url={getPosterPath(movie.id)}
+                                            withColorReveal
+                                            isLoading={isLoading}
+                                        />
+                                        <strong>
                                             {isLoading ? (
-                                                <Skeleton text={movie.year} />
+                                                <Skeleton text={movieTitle} />
                                             ) : (
-                                                movie.year
+                                                movieTitle
                                             )}
-                                        </span>
-                                    ) : null}
-                                </button>
-                            </li>
-                        ))}
+                                        </strong>
+                                        {movie.year ? (
+                                            <span className={styles.suggestionYear}>
+                                                {isLoading ? (
+                                                    <Skeleton text={movie.year} />
+                                                ) : (
+                                                    movie.year
+                                                )}
+                                            </span>
+                                        ) : null}
+                                    </button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </HorizontalScroll>
             ) : (

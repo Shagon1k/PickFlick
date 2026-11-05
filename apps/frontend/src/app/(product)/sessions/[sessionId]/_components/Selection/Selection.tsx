@@ -47,6 +47,8 @@ export default function Selection({
                 : { scores: 'Choose a score for every nomination.' },
     });
     const scoredCount = form.values.scores.filter((row) => row.score !== undefined).length;
+    const isSubmitted = Boolean(data.submittedAt);
+    const canScore = data.canSubmit && !isSubmitted;
     function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
         form.onSubmit(
             (values) => {
@@ -82,21 +84,18 @@ export default function Selection({
                 <div className={styles.headingRow}>
                     <div className={styles.headingGroup}>
                         <h2 id="selection-heading" ref={headingRef} tabIndex={-1}>
-                            {data.canSubmit || data.submittedAt ? 'Your scores' : 'Nominated films'}
+                            {data.canSubmit || isSubmitted ? 'Your scores' : 'Nominated films'}
                         </h2>
                         <InfoTip label="About scoring">
                             Score every film from {data.scaleMin} to {data.scaleMax}. You submit
                             once; scores cannot be changed afterwards.
                         </InfoTip>
                     </div>
-                    {data.canSubmit && !data.submittedAt && data.nominations.length ? (
+                    {canScore && data.nominations.length ? (
                         <ScoredProgress scoredCount={scoredCount} total={data.nominations.length} />
                     ) : null}
                 </div>
-                <SubmissionStatus
-                    submitted={Boolean(data.submittedAt)}
-                    canSubmit={data.canSubmit}
-                />
+                <SubmissionStatus isSubmitted={isSubmitted} canSubmit={data.canSubmit} />
             </div>
             {!data.nominations.length ? (
                 <p>No nominations are available for Selection.</p>
@@ -125,23 +124,21 @@ export default function Selection({
                                         min={data.scaleMin}
                                         max={data.scaleMax}
                                         value={
-                                            data.submittedAt
+                                            isSubmitted
                                                 ? (row.ownScore ?? undefined)
                                                 : form.values.scores[index]?.score
                                         }
                                         onChange={(score) =>
                                             form.setFieldValue(`scores.${index}.score`, score)
                                         }
-                                        disabled={
-                                            isPending || (!data.canSubmit && !data.submittedAt)
-                                        }
-                                        isSubmitted={Boolean(data.submittedAt)}
+                                        disabled={isPending || (!data.canSubmit && !isSubmitted)}
+                                        isSubmitted={isSubmitted}
                                     />
                                 </div>
                             </li>
                         ))}
                     </ul>
-                    {data.canSubmit && !data.submittedAt ? (
+                    {canScore ? (
                         <div className={styles.submit}>
                             <Button type="submit" loading={isPending} disabled={isLoading}>
                                 {isLoading ? <Skeleton text="Submit scores" /> : 'Submit scores'}
@@ -168,6 +165,7 @@ function SelectionMovie({
     author: string | null;
     isLoading: boolean;
 }) {
+    const title = movie.title ?? 'Movie title unavailable';
     return (
         <Link className={styles.film} href={`/movies/${movie.id}`} prefetch={false}>
             <SearchPoster
@@ -178,13 +176,7 @@ function SelectionMovie({
             />
             <div className={styles.info}>
                 <div className={styles.filmHeading}>
-                    <h3>
-                        {isLoading ? (
-                            <Skeleton text={movie.title ?? 'Movie title unavailable'} />
-                        ) : (
-                            (movie.title ?? 'Movie title unavailable')
-                        )}
-                    </h3>
+                    <h3>{isLoading ? <Skeleton text={title} /> : title}</h3>
                     {movie.year !== null ? (
                         <span className={styles.year}>
                             {isLoading ? <Skeleton text={movie.year} /> : movie.year}
@@ -222,8 +214,14 @@ function ScoredProgress({ scoredCount, total }: { scoredCount: number; total: nu
     );
 }
 
-function SubmissionStatus({ submitted, canSubmit }: { submitted: boolean; canSubmit: boolean }) {
-    if (submitted)
+function SubmissionStatus({
+    isSubmitted,
+    canSubmit,
+}: {
+    isSubmitted: boolean;
+    canSubmit: boolean;
+}) {
+    if (isSubmitted)
         return (
             <p className={styles.confirmation} role="status">
                 <Icon name="check" />

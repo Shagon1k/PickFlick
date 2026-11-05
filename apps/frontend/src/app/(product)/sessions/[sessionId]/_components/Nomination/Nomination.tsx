@@ -52,11 +52,13 @@ export default function Nomination({
     ) : (
         <NominationPicker
             chosen={chosen}
-            disabled={isPending}
+            isPending={isPending}
             onChoose={setChosen}
             onSubmit={handleSubmit}
         />
     );
+    // Once the viewer has nominated, the card shows their Movie instead of the picker.
+    const submittedMovie = data.canSubmit ? null : data.ownMovie;
     return (
         <section className={styles.nomination} aria-label="Movie nomination">
             <PhaseProgress>
@@ -66,25 +68,25 @@ export default function Nomination({
             </PhaseProgress>
             {header}
             <div className={styles.columns}>
-                {data.canSubmit || data.ownMovie ? (
+                {data.canSubmit || submittedMovie ? (
                     <section
-                        className={clsx(styles.card, !data.canSubmit && styles.submittedCard)}
+                        className={clsx(styles.card, submittedMovie && styles.submittedCard)}
                         aria-labelledby="nominate-heading"
                     >
                         <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
-                            {data.canSubmit ? 'Find & Nominate a Movie' : 'Your nomination'}
+                            {submittedMovie ? 'Your nomination' : 'Find & Nominate a Movie'}
                         </h2>
-                        {data.canSubmit ? (
-                            picker
+                        {submittedMovie ? (
+                            <SubmittedMovie movie={submittedMovie} isLoading={isLoading} />
                         ) : (
-                            <SubmissionState movie={data.ownMovie} isLoading={isLoading} />
+                            picker
                         )}
                         <StatusLine
                             className={styles.feedback}
                             isSuccess={isSuccess}
                             message={message}
                         />
-                        {data.canSubmit ? (
+                        {submittedMovie ? null : (
                             <NominationSuggestions
                                 past={data.suggestions}
                                 watchlist={data.watchlist}
@@ -92,7 +94,7 @@ export default function Nomination({
                                 isLoading={isLoading}
                                 onChoose={setChosen}
                             />
-                        ) : null}
+                        )}
                     </section>
                 ) : null}
                 <section
@@ -107,14 +109,8 @@ export default function Nomination({
     );
 }
 
-function SubmissionState({
-    movie,
-    isLoading,
-}: {
-    movie: TNominationMovie | null;
-    isLoading: boolean;
-}) {
-    return movie ? (
+function SubmittedMovie({ movie, isLoading }: { movie: TNominationMovie; isLoading: boolean }) {
+    return (
         <>
             <p className={styles.submissionStatus}>
                 <Icon name="check" />
@@ -127,7 +123,7 @@ function SubmissionState({
                 isLoading={isLoading}
             />
         </>
-    ) : null;
+    );
 }
 
 function NominationList({ data, isLoading }: { data: TNominations; isLoading: boolean }) {
@@ -159,18 +155,18 @@ function NominationList({ data, isLoading }: { data: TNominations; isLoading: bo
 
 function NominationPicker({
     chosen,
-    disabled,
+    isPending,
     onChoose,
     onSubmit,
 }: {
     chosen: TNominationMovie | null;
-    disabled: boolean;
+    isPending: boolean;
     onChoose: (movie: TNominationMovie | null) => void;
     onSubmit: () => void;
 }) {
     return (
         <MoviePicker
-            disabled={disabled}
+            disabled={isPending}
             isLabelHidden
             shouldReserveMessage={false}
             placeholder="Search films…"
@@ -192,8 +188,8 @@ function NominationPicker({
                 <Button
                     aria-label="Nominate selected film"
                     title="Nominate selected film"
-                    disabled={disabled || !chosen}
-                    loading={disabled}
+                    disabled={isPending || !chosen}
+                    loading={isPending}
                     size="icon"
                     variant="subtle"
                     onClick={onSubmit}

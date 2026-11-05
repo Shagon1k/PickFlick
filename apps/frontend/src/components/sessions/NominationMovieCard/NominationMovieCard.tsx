@@ -47,13 +47,7 @@ export default function NominationMovieCard({
                 />
                 <div className={styles.info}>
                     <h3>
-                        <span>
-                            {isLoading ? (
-                                <Skeleton text={movie.title ?? 'Movie title unavailable'} />
-                            ) : (
-                                (movie.title ?? 'Movie title unavailable')
-                            )}
-                        </span>
+                        <span>{isLoading ? <Skeleton text={title} /> : title}</span>
                         {badge ? (
                             <span className={styles.badge}>
                                 {isLoading ? <Skeleton text={badge} /> : badge}
