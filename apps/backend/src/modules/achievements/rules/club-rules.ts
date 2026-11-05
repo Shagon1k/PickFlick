@@ -80,9 +80,10 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     );
     const genres = new Set(screenings.flatMap(({ details }) => details?.genres ?? []));
     const selections = sessions.flatMap((session) => {
-        if (session.type !== 'FULL_CYCLE') return [];
-        const parsed = selectionResultSchema.safeParse(session.selectionResult);
-        return parsed.success ? [{ id: session.id, ranking: parsed.data.ranking }] : [];
+        if (session.type !== 'FULL_CYCLE' || session.selectionResult === null) return [];
+        // Our own Selection closure writes this snapshot, so a malformed one is corrupt data.
+        const { ranking } = selectionResultSchema.parse(session.selectionResult);
+        return [{ id: session.id, ranking }];
     });
     const hasMargin = selections.some(
         ({ ranking }) => ranking.length > 1 && ranking[0]!.total - ranking[1]!.total === 1,

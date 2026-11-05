@@ -4,7 +4,7 @@ import type { Prisma } from '@pickflick/database';
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
 import { canViewNominationAuthors } from '../session-visibility.js';
-import { selectionScoresSnapshotSchema } from './selection-result.js';
+import { selectionResultSchema } from './selection-result.js';
 
 /** Authors can be visible independently of Selection totals and named scores. */
 export async function loadNominationAuthors(
@@ -60,7 +60,7 @@ async function readLiveAuthors(
     const frozen =
         session.selectionResult === null
             ? null
-            : selectionScoresSnapshotSchema.parse(session.selectionResult).inputs.nominations;
+            : selectionResultSchema.parse(session.selectionResult).inputs.nominations;
     const nominations = await tx.nomination.findMany({
         where: {
             sessionId: session.id,

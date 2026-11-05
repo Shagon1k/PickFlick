@@ -57,7 +57,15 @@ export function buildSelectionSnapshot() {
         closedAt: '2026-10-01T20:00:00.000Z',
         closure: { kind: 'AUTOMATIC' },
         reason: 'TOTAL',
-        inputs: { scaleMin: 0, scaleMax: 10, ballots: [] },
+        inputs: {
+            scaleMin: 0,
+            scaleMax: 10,
+            nominations: [
+                { id: first, movieId: first },
+                { id: second, movieId: second },
+            ],
+            ballots: [],
+        },
         ranking: [
             { id: first, movieId: first, total: 10, maximumCount: 1, supporterCount: 1 },
             { id: second, movieId: second, total: 9, maximumCount: 0, supporterCount: 1 },

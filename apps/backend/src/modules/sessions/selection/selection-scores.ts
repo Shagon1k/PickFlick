@@ -4,7 +4,7 @@ import type { Prisma } from '@pickflick/database';
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
 import { canViewSelectionScores } from '../session-visibility.js';
-import { selectionScoresSnapshotSchema } from './selection-result.js';
+import { selectionResultSchema } from './selection-result.js';
 
 interface IScoreSource {
     films: { nominationId: string; movieId: string }[];
@@ -90,7 +90,7 @@ async function readFrozenScores(
     tx: Prisma.TransactionClient,
     session: Prisma.SessionGetPayload<object>,
 ): Promise<IScoreSource> {
-    const { inputs } = selectionScoresSnapshotSchema.parse(session.selectionResult);
+    const { inputs } = selectionResultSchema.parse(session.selectionResult);
     const participants = await tx.sessionParticipant.findMany({
         where: {
             sessionId: session.id,

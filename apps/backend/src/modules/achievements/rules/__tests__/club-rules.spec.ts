@@ -199,14 +199,11 @@ describe('buildClubAchievements', () => {
         });
     });
 
-    it('should ignore malformed frozen live snapshots without failing the read', () => {
+    it('should fail on a malformed frozen live snapshot instead of hiding corrupt data', () => {
         const session = buildScreening({
             type: 'FULL_CYCLE',
             selectionResult: { ranking: [{ total: 10 }, { total: 9 }] },
         });
-        expect(buildClubAchievements([session])).toMatchObject({
-            metrics: { 'perfect-split': 0 },
-            evidence: { selections: [] },
-        });
+        expect(() => buildClubAchievements([session])).toThrow();
     });
 });

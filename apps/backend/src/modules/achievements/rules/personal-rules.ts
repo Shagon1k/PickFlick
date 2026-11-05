@@ -67,13 +67,12 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
         ),
     );
     const wins = sessions.flatMap((session) => {
-        if (session.type !== 'FULL_CYCLE') return [];
-        const result = selectionResultSchema.safeParse(session.selectionResult);
-        return result.success
-            ? nominations
-                  .filter((nomination) => nomination.id === result.data.winnerNominationId)
-                  .map((nomination) => nomination.id)
-            : [];
+        if (session.type !== 'FULL_CYCLE' || session.selectionResult === null) return [];
+        // Our own Selection closure writes this snapshot, so a malformed one is corrupt data.
+        const { winnerNominationId } = selectionResultSchema.parse(session.selectionResult);
+        return nominations
+            .filter((nomination) => nomination.id === winnerNominationId)
+            .map((nomination) => nomination.id);
     });
     const evidence = {
         ballots: ballots.map((ballot) => ({
