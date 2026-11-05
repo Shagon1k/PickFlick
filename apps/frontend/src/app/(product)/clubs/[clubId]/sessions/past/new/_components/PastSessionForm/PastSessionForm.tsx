@@ -95,7 +95,8 @@ export default function PastSessionForm({
             const parsed = createPastSessionSchema.safeParse(buildInput(values));
             // The schema allows for every zone; the viewer's own calendar decides "in the past".
             const isFuture = values.date > new Date().toLocaleDateString('en-CA');
-            if (parsed.success) return isFuture ? { date: 'Choose a valid date in the past.' } : {};
+            const futureDateError = isFuture ? 'Choose a valid date in the past.' : undefined;
+            if (parsed.success) return { date: futureDateError };
             const { scheduledAt, ...errors } = toFieldErrors(parsed.error, {
                 scheduledAt: 'Choose a valid date in the past.',
                 location: 'Use 1–200 characters on one line.',
@@ -105,7 +106,7 @@ export default function PastSessionForm({
                 nominations:
                     'Use at most one nomination per selected attendee, with each film and nominator chosen once.',
             });
-            return { ...errors, date: scheduledAt };
+            return { ...errors, date: scheduledAt ?? futureDateError };
         },
     });
     function setAttendance(membershipId: string, isAttending: boolean) {

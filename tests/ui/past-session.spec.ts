@@ -103,3 +103,20 @@ for (const viewport of screenshotViewports) {
         },
     );
 }
+
+test('Past Session flags a future date together with other missing fields', async ({
+    context,
+    page,
+}) => {
+    // Late on 5 November UTC, the 6th is within the schema's first-time-zone lead but still in
+    // the viewer's future, so only the form's own calendar check can catch it.
+    await page.clock.setFixedTime(new Date('2026-11-05T20:00:00Z'));
+    await signInMock(context, 'valid-settings-admin-future-date');
+    await page.goto(ROUTE, { waitUntil: 'load' });
+    const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
+    const date = form.getByLabel('Date', { exact: true });
+    await expect(date).toBeEnabled();
+    await date.fill('2026-11-06');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(date).toHaveAccessibleDescription(/Choose a valid date in the past\./u);
+});
