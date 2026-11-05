@@ -18,6 +18,7 @@ import { formatAverage, formatCount } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 import { getNextTableSort } from '#lib/table-sort';
 
+import { buildClubRatingsPath } from '../../ratings-path';
 import styles from './ClubRatings.module.scss';
 
 export default function ClubRatings({
@@ -32,17 +33,14 @@ export default function ClubRatings({
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [message, setMessage] = useState('');
-    function navigate(next: TClubRatingsQuery, shouldReplace = false) {
+    function navigate(next: TClubRatingsQuery, { shouldReplace = false } = {}) {
         const offline = getOfflineMessage();
         if (offline) {
             setMessage(offline);
             return;
         }
         setMessage('');
-        const search = new URLSearchParams({ sort: next.sort, page: String(next.page) });
-        if (next.q) search.set('q', next.q);
-        if (next.direction) search.set('direction', next.direction);
-        const path = `/clubs/${clubId}/ratings?${search}`;
+        const path = buildClubRatingsPath(clubId, next);
         startTransition(() => {
             if (shouldReplace) router.replace(path, { scroll: false });
             else router.push(path, { scroll: false });
@@ -78,7 +76,7 @@ export default function ClubRatings({
                 maxLength={CLUB_RATINGS_SEARCH_MAX_LENGTH}
                 onSearch={(search) => {
                     if (search.trim() !== (query.q ?? ''))
-                        navigate({ ...query, q: search, page: 1 }, true);
+                        navigate({ ...query, q: search, page: 1 }, { shouldReplace: true });
                 }}
             />
             <p className={message ? undefined : 'visually-hidden'} role="status">

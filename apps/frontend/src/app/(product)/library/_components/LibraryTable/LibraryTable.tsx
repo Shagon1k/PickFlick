@@ -36,18 +36,18 @@ export default function LibraryTable({
     const [isPending, startTransition] = useTransition();
     const [navigationMessage, setNavigationMessage] = useState('');
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const [message, setMessage] = useState('');
+    const [savedMessage, setSavedMessage] = useState('');
     const shouldFocusHeadingRef = useRef(false);
     useEffect(() => {
         if (!shouldFocusHeadingRef.current) return;
         headingRef.current?.focus({ preventScroll: true });
         shouldFocusHeadingRef.current = false;
-    }, [library, message]);
-    function handleSaved(message: string) {
+    }, [library, savedMessage]);
+    function handleSaved(nextMessage: string) {
         shouldFocusHeadingRef.current = true;
-        setMessage(message);
+        setSavedMessage(nextMessage);
     }
-    function navigate(next: TLibraryQuery, shouldReplace = false) {
+    function navigate(next: TLibraryQuery, { shouldReplace = false } = {}) {
         const offline = getOfflineMessage();
         if (offline) {
             setNavigationMessage(offline);
@@ -145,7 +145,8 @@ export default function LibraryTable({
                 label={isWatchlist ? 'Search watchlist…' : 'Search rated films…'}
                 maxLength={LIBRARY_SEARCH_MAX_LENGTH}
                 onSearch={(search) => {
-                    if (search.trim() !== query.q) navigate({ ...query, q: search, page: 1 }, true);
+                    if (search.trim() !== query.q)
+                        navigate({ ...query, q: search, page: 1 }, { shouldReplace: true });
                 }}
             />
             {query.score || query.priority ? (
@@ -161,7 +162,7 @@ export default function LibraryTable({
                 </ButtonLink>
             ) : null}
             <p className="visually-hidden" role="status">
-                {isPending ? 'Loading films…' : message || countLabel}
+                {isPending ? 'Loading films…' : savedMessage || countLabel}
             </p>
             <p hidden={!navigationMessage} role="status">
                 {navigationMessage}
