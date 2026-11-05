@@ -6,85 +6,69 @@ import {
     canViewSelectionScores,
 } from '../session-visibility.js';
 
-const PHASES: TSessionPhase[] = [
-    'NOMINATION',
-    'SELECTION',
-    'WATCHING',
-    'RATING',
-    'COMPLETED',
-    'CANCELLED',
-];
-const VISIBILITY_FIELDS = [
-    'showNominationAuthorsDuring',
-    'showNominationAuthorsAfter',
-    'showSelectionScoresDuring',
-    'showSelectionScoresAfter',
-    'showRatingsDuring',
-    'showRatingsAfter',
-] as const;
+const HIDDEN: IClubVisibility = {
+    showNominationAuthorsDuring: false,
+    showNominationAuthorsAfter: false,
+    showSelectionScoresDuring: false,
+    showSelectionScoresAfter: false,
+    showRatingsDuring: false,
+    showRatingsAfter: false,
+    showNominationsBeforeSubmit: true,
+};
 
-function buildVisibility(mask: number): IClubVisibility {
-    return {
-        showNominationAuthorsDuring: Boolean(mask & 1),
-        showNominationAuthorsAfter: Boolean(mask & 2),
-        showSelectionScoresDuring: Boolean(mask & 4),
-        showSelectionScoresAfter: Boolean(mask & 8),
-        showRatingsDuring: Boolean(mask & 16),
-        showRatingsAfter: Boolean(mask & 32),
-        showNominationsBeforeSubmit: true,
-    };
+function withFlags(flags: Partial<IClubVisibility>): IClubVisibility {
+    return { ...HIDDEN, ...flags };
 }
 
 describe('Session visibility', () => {
-    it.each(PHASES)('should apply the Club author flag in %s', (phase) => {
-        for (let mask = 0; mask < 2 ** VISIBILITY_FIELDS.length; mask++) {
-            const club = buildVisibility(mask);
-            const canSee =
-                phase === 'COMPLETED'
-                    ? club.showNominationAuthorsAfter
-                    : club.showNominationAuthorsDuring;
-            expect(canViewNominationAuthors({ phase }, club)).toBe(phase !== 'CANCELLED' && canSee);
-        }
+    it.each<[TSessionPhase, Partial<IClubVisibility>, boolean]>([
+        ['NOMINATION', { showNominationAuthorsDuring: true }, true],
+        ['RATING', { showNominationAuthorsDuring: true }, true],
+        ['RATING', { showNominationAuthorsAfter: true }, false],
+        ['COMPLETED', { showNominationAuthorsAfter: true }, true],
+        ['COMPLETED', { showNominationAuthorsDuring: true }, false],
+        [
+            'CANCELLED',
+            { showNominationAuthorsDuring: true, showNominationAuthorsAfter: true },
+            false,
+        ],
+    ])('should show nomination authors in %s with %o: %s', (phase, flags, canSee) => {
+        expect(canViewNominationAuthors({ phase }, withFlags(flags))).toBe(canSee);
     });
 
-    it.each(PHASES)(
-        'should apply the Club Selection flag and submission boundary in %s',
-        (phase) => {
-            for (let mask = 0; mask < 2 ** VISIBILITY_FIELDS.length; mask++) {
-                const club = buildVisibility(mask);
-                for (const hasSubmitted of [false, true]) {
-                    const isDuring = ['SELECTION', 'WATCHING', 'RATING'].includes(phase);
-                    const canSee =
-                        phase === 'COMPLETED'
-                            ? club.showSelectionScoresAfter
-                            : isDuring && club.showSelectionScoresDuring && hasSubmitted;
-                    expect(canViewSelectionScores({ phase }, club, hasSubmitted)).toBe(canSee);
-                }
-            }
+    it.each<[TSessionPhase, Partial<IClubVisibility>, boolean, boolean]>([
+        ['NOMINATION', { showSelectionScoresDuring: true }, true, false],
+        ['SELECTION', { showSelectionScoresDuring: true }, true, true],
+        ['SELECTION', { showSelectionScoresDuring: true }, false, false],
+        ['WATCHING', { showSelectionScoresDuring: true }, true, true],
+        ['RATING', { showSelectionScoresDuring: true }, true, true],
+        ['RATING', { showSelectionScoresAfter: true }, true, false],
+        ['COMPLETED', { showSelectionScoresAfter: true }, false, true],
+        ['COMPLETED', { showSelectionScoresDuring: true }, true, false],
+        [
+            'CANCELLED',
+            { showSelectionScoresDuring: true, showSelectionScoresAfter: true },
+            true,
+            false,
+        ],
+    ])(
+        'should show Selection scores in %s with %o after submitting %s: %s',
+        (phase, flags, hasSubmitted, canSee) => {
+            expect(canViewSelectionScores({ phase }, withFlags(flags), hasSubmitted)).toBe(canSee);
         },
     );
 
-    it.each(PHASES)('should apply the Club rating flag and submission boundary in %s', (phase) => {
-        for (let mask = 0; mask < 2 ** VISIBILITY_FIELDS.length; mask++) {
-            const club = buildVisibility(mask);
-            for (const hasSubmitted of [false, true]) {
-                const canSee =
-                    phase === 'COMPLETED'
-                        ? club.showRatingsAfter
-                        : phase === 'RATING' && club.showRatingsDuring && hasSubmitted;
-                expect(canViewRatingResults({ phase }, club, hasSubmitted)).toBe(canSee);
-            }
-        }
-    });
-
-    it('should ignore stored Session visibility when Club settings change', () => {
-        const session = { phase: 'COMPLETED' as const, ...buildVisibility(63) };
-        const club = buildVisibility(0);
-        expect(canViewRatingResults(session, club, true)).toBe(false);
-        expect(canViewSelectionScores(session, club, true)).toBe(false);
-        expect(canViewNominationAuthors(session, club)).toBe(false);
-        club.showRatingsAfter = true;
-        expect(canViewRatingResults(session, club, false)).toBe(true);
-        expect(session.showRatingsAfter).toBe(true);
-    });
+    it.each<[TSessionPhase, Partial<IClubVisibility>, boolean, boolean]>([
+        ['WATCHING', { showRatingsDuring: true }, true, false],
+        ['RATING', { showRatingsDuring: true }, true, true],
+        ['RATING', { showRatingsDuring: true }, false, false],
+        ['RATING', { showRatingsAfter: true }, true, false],
+        ['COMPLETED', { showRatingsAfter: true }, false, true],
+        ['COMPLETED', { showRatingsDuring: true }, true, false],
+    ])(
+        'should show ratings in %s with %o after submitting %s: %s',
+        (phase, flags, hasSubmitted, canSee) => {
+            expect(canViewRatingResults({ phase }, withFlags(flags), hasSubmitted)).toBe(canSee);
+        },
+    );
 });

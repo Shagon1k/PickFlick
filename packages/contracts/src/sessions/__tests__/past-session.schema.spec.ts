@@ -58,12 +58,6 @@ describe('createPastSessionSchema', () => {
         const input = { ...minimal, attendees: [{ membershipId }], nominations: [{ movieId }] };
         for (const patch of [
             { nominations: [{ movieId }, { movieId, nominatorMembershipId: membershipId }] },
-            {
-                nominations: [
-                    { movieId, nominatorMembershipId: membershipId },
-                    { movieId: randomUUID(), nominatorMembershipId: membershipId },
-                ],
-            },
             { nominations: [movieId] },
             { nominations: [{ movieId, nominatorMembershipId: 'invalid' }] },
             { nominations: [{ movieId, nominatorMembershipId: null }] },
@@ -100,6 +94,20 @@ describe('createPastSessionSchema', () => {
         expect(createPastSessionSchema.safeParse({ ...minimal, topic: 'one\ntwo' }).success).toBe(
             false,
         );
+    });
+    it('should let each attendee nominate only one Movie', () => {
+        const membershipId = randomUUID();
+        const result = createPastSessionSchema.safeParse({
+            ...minimal,
+            attendees: [{ membershipId }, { membershipId: randomUUID() }],
+            nominations: [
+                { movieId: randomUUID(), nominatorMembershipId: membershipId },
+                { movieId: randomUUID(), nominatorMembershipId: membershipId },
+            ],
+        });
+        expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+            'Choose each nominator for one Movie only.',
+        ]);
     });
     it('should reject future dates, missing Movies, repeated attendees and invented phases', () => {
         const attendee = { membershipId: randomUUID() };

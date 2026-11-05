@@ -117,7 +117,8 @@ describe('buildClubAchievements', () => {
     it('should ignore imported score matrices as Selection outcome evidence', () => {
         expect(
             buildClubAchievements([
-                buildScreening({ selectionResult: { ranking: [{ total: 9 }, { total: 8 }] } }),
+                // A valid snapshot that would earn Perfect Split on a live Session.
+                buildScreening({ type: 'PAST', selectionResult: buildSelectionSnapshot() }),
             ]).metrics['perfect-split'],
         ).toBe(0);
     });
