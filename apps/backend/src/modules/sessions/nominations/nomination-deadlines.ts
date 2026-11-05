@@ -33,29 +33,17 @@ export class NominationDeadlines {
     ) {}
 
     async runOnce(now = new Date(), signal?: AbortSignal): Promise<void> {
-        const candidates = await this.prisma.session.findMany({
+        // A decided deadline is cleared or leaves Nomination, so every row here is still undecided;
+        // execute() re-checks inside its transaction for a concurrent worker.
+        const due = await this.prisma.session.findMany({
             where: {
                 phase: 'NOMINATION',
                 deadlineAt: { lte: now },
                 club: { lifecycle: 'ACTIVE', deletedAt: null },
             },
-            select: {
-                id: true,
-                deadlineAt: true,
-                deadlineVersion: true,
-                // Versions only grow, so the newest decision tells whether this deadline is handled.
-                deadlineDecisions: {
-                    select: { deadlineVersion: true },
-                    orderBy: { deadlineVersion: 'desc' },
-                    take: 1,
-                },
-            },
+            select: { id: true, deadlineAt: true, deadlineVersion: true },
             orderBy: [{ deadlineAt: 'asc' }, { id: 'asc' }],
         });
-        // An empty deadline stays open with its decision; it is due again only after an edit.
-        const due = candidates.filter(
-            (session) => session.deadlineDecisions[0]?.deadlineVersion !== session.deadlineVersion,
-        );
         this.log({ event: 'deadline.cycle', due: due.length });
         for (const session of due) {
             if (signal?.aborted) return;
