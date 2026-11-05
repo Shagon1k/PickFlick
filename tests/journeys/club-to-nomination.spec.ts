@@ -6,7 +6,7 @@ import {
     connectJourneyBackend,
     type IJourneyBackend,
 } from '../../apps/backend/src/testing/journeys.ts';
-import { acceptedParticipants } from '../ui/session-facts';
+import { acceptedParticipants, expectSessionPhase } from '../ui/session-facts';
 import { settle } from '../ui/settle';
 import { openVisitor } from './visitors';
 
@@ -106,9 +106,7 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await admin.getByRole('button', { name: 'Confirm close' }).click();
         for (const page of [member, admin]) {
             await page.reload();
-            await expect(
-                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
             await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
                 'href',
                 `/movies/${movie.id}`,

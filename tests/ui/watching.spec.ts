@@ -3,7 +3,7 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
-import { acceptedParticipants } from './session-facts';
+import { acceptedParticipants, expectSessionPhase } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
@@ -21,9 +21,7 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
             await settle(page);
-            await expect(
-                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
             await expect(
                 page.getByRole('status').filter({
                     hasText: '1 of 3 members have joined the screening.',
@@ -53,9 +51,7 @@ for (const viewport of canonicalViewports) {
             await page.keyboard.press('Escape');
             await expect(dialog).toHaveCount(0);
             await expect(settings).toBeFocused();
-            await expect(
-                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
             await settings.click();
             await expect(page.getByRole('menuitem', { name: 'Open Rating' })).toBeFocused();
             await settle(page);
@@ -63,14 +59,10 @@ for (const viewport of canonicalViewports) {
             await dialog.getByLabel('Type OPEN to confirm').fill('OPEN');
             await dialog.getByLabel('Type OPEN to confirm').press('Enter');
             await expect(dialog).toHaveCount(0);
-            await expect(
-                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Rating');
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
             await page.reload();
-            await expect(
-                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Rating');
         },
     );
 }
@@ -82,15 +74,11 @@ for (const scenario of ['member', 'readonly']) {
     }) => {
         await authenticate(context, scenario);
         await page.goto(ROUTE);
-        await expect(
-            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-        ).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
         await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
         await page.reload();
-        await expect(
-            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-        ).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
     });
 }
 

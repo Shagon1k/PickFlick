@@ -22,7 +22,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await expect(page.getByRole('row')).toHaveCount(26);
                 await expect(
                     page.getByRole('status').filter({ hasText: '28 rated films' }),
-                ).toContainText('28 rated films');
+                ).toBeAttached();
                 await expect(page.getByLabel('Previous page', { exact: true })).toHaveAttribute(
                     'aria-disabled',
                     'true',

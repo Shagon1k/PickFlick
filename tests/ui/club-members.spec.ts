@@ -192,7 +192,7 @@ test('pending invitations show recoverable loading failures and an explicit empt
     const dialog = page.getByRole('dialog', { name: 'Pending invites' });
     await expect(
         dialog.getByRole('status').filter({ hasText: 'could not be loaded' }),
-    ).toContainText('could not be loaded');
+    ).toBeAttached();
     await expect(dialog.getByRole('button', { name: 'Retry invites' })).toBeVisible();
     await signInMock(context, 'valid-empty-invites');
     await page.goto('/app');

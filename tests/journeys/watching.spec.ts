@@ -4,6 +4,7 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
+import { expectSessionPhase } from '../ui/session-facts';
 import { openVisitor } from './visitors';
 
 test('Only Club operators open Rating and both clients see the manual transition', async ({
@@ -42,9 +43,7 @@ test('Only Club operators open Rating and both clients see the manual transition
         const memberPage = await contexts[2]!.newPage();
         for (const page of [adminPage, operatorPage, memberPage]) {
             await page.goto(`/sessions/${session.id}`);
-            await expect(
-                page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
             await page.getByRole('button', { name: 'Join Session', exact: true }).click();
             await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
         }

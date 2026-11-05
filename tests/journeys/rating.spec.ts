@@ -4,6 +4,7 @@ import { type Browser, type BrowserContext, expect, test } from '@playwright/tes
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
+import { expectSessionPhase } from '../ui/session-facts';
 import { openVisitor } from './visitors';
 
 async function createRatingJourney(browser: Browser) {
@@ -52,9 +53,7 @@ async function createRatingJourney(browser: Browser) {
         const pages = await Promise.all(contexts.map((context) => context.newPage()));
         for (const page of pages) {
             await page.goto(`/sessions/${session.id}`);
-            await expect(
-                page.getByText('Rating', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Rating');
         }
         return { session, prisma, contexts, pages, cleanup };
     } catch (error) {
@@ -249,9 +248,7 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
         const historySession = history.locator(`a[href="/sessions/${session.id}"]`);
         await expect(historySession).toBeVisible();
         await historySession.click();
-        await expect(
-            page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
-        ).toBeVisible();
+        await expectSessionPhase(page, 'Completed');
         await expect(page.getByText('No ratings were received.')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
     } finally {

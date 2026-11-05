@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
+import { expectSessionPhase } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
@@ -116,9 +117,7 @@ test(
         );
         await expect(page.locator('script').filter({ hasText: 'alert(1)' })).toHaveCount(0);
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(
-            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-        ).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
         await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(
             'href',
             '/movies/10000000-0000-4000-8000-000000000037',
@@ -132,9 +131,7 @@ test(
         ).toContainText('Watching');
         await activeSession.focus();
         await page.keyboard.press('Enter');
-        await expect(
-            page.getByText('Watching', { exact: true }).filter({ visible: true }).first(),
-        ).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
     },
 );
 

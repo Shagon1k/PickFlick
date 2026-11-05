@@ -269,8 +269,11 @@ test('Club Admin creates, copies, and revokes a link through Manage Club', async
     await expect(page.getByLabel('Invitation link')).toHaveValue(
         /\/invite\/club\/[A-Za-z0-9_-]{43}$/,
     );
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.getByRole('button', { name: 'Copy link' }).click();
-    await expect(page.getByRole('status').last()).toHaveText(/copied|Copy is unavailable/);
+    await expect(page.getByRole('status').last()).toHaveText('Link copied.');
+    const link = await page.getByLabel('Invitation link').inputValue();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
     await page.getByText(/^Recent links/u).click();
     await page.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveCount(0);

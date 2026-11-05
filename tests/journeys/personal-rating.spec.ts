@@ -7,6 +7,7 @@ import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.t
 import { buildCanonicalDetails } from '../../apps/backend/src/testing/movie-fixtures.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
 import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
+import { expectSessionPhase } from '../ui/session-facts';
 import { openVisitor } from './visitors';
 
 test('A Session Rating becomes an editable personal opinion while Completed history stays unchanged', async ({
@@ -60,9 +61,7 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
         await page.goto(`/sessions/${session.id}`);
         await page.getByRole('radio', { name: '8 of 10' }).click();
         await page.getByRole('button', { name: 'Submit Rating' }).click();
-        await expect(
-            page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
-        ).toBeVisible();
+        await expectSessionPhase(page, 'Completed');
         const historical = await prisma.sessionRating.findFirstOrThrow({
             where: { sessionId: session.id },
         });

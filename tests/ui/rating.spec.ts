@@ -3,6 +3,7 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
+import { expectSessionPhase } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
@@ -73,9 +74,7 @@ for (const viewport of canonicalViewports) {
             await dialog.getByLabel('Type CLOSE to confirm').fill('CLOSE');
             await dialog.getByRole('button', { name: 'Complete Session' }).click();
             await expect(dialog).toHaveCount(0);
-            await expect(
-                page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
-            ).toBeVisible();
+            await expectSessionPhase(page, 'Completed');
             await expect(page.getByRole('list', { name: 'Session ratings' })).toContainText(
                 'A lasting impression.',
             );

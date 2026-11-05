@@ -308,7 +308,10 @@ export default [
         rules: {
             ...playwright.configs['flat/recommended'].rules,
             // Shared helpers such as expectNoPageOverflow assert on the test's behalf.
-            'playwright/expect-expect': ['warn', { assertFunctionNames: ['expectNoPageOverflow'] }],
+            'playwright/expect-expect': [
+                'warn',
+                { assertFunctionNames: ['expectNoPageOverflow', 'expectSessionPhase'] },
+            ],
         },
     },
     {

@@ -55,7 +55,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await page.getByRole('columnheader', { name: /^Film/u }).getByRole('button').tap();
                 await expect(
                     page.getByRole('status').filter({ hasText: /offline/iu }),
-                ).toContainText('offline');
+                ).toBeAttached();
                 await context.setOffline(false);
                 await page.getByRole('columnheader', { name: /^Film/u }).getByRole('button').tap();
                 await expect(page).toHaveURL(/sort=title.*direction=desc/u);
