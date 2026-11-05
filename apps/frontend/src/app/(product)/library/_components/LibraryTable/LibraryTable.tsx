@@ -149,7 +149,8 @@ export default function LibraryTable({
                         navigate({ ...query, q: search, page: 1 }, { shouldReplace: true });
                 }}
             />
-            {query.score || query.priority ? (
+            {/* The same rule as the empty copy: search text or this tab's own value filter. */}
+            {hasFilters ? (
                 <ButtonLink
                     href={`/library?tab=${query.tab}`}
                     variant="subtle"

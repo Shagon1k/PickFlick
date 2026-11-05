@@ -258,3 +258,17 @@ test(
         }
     },
 );
+
+test('Library offers Clear filters only for filters the current tab applies', async ({
+    context,
+    page,
+}) => {
+    await signInMock(context, 'valid-empty-library');
+    const clear = page.getByRole('link', { name: 'Clear filters' });
+    // A score filter belongs to My Ratings; the Watchlist ignores it.
+    await page.goto('/library?tab=watchlist&score=5');
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(clear).toHaveCount(0);
+    await page.goto('/library?q=nothing');
+    await expect(clear).toBeVisible();
+});
