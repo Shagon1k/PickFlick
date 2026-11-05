@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page, Request } from '@playwright/test';
 
 /**
  * Waits until the page looks final: fonts loaded, rendered images decoded, and every finite
@@ -35,4 +35,35 @@ export async function settle(page: Page) {
             .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity);
         await Promise.all(finite.map((animation) => animation.finished.catch(() => undefined)));
     });
+}
+
+/** Opens a route at a viewport and waits for it to settle, as layout and pixel checks need. */
+export async function openAt(
+    page: Page,
+    route: string,
+    viewport: { height: number; width: number },
+) {
+    await page.setViewportSize(viewport);
+    await page.goto(route, { waitUntil: 'load' });
+    await settle(page);
+}
+
+/**
+ * Holds requests matching `url` until the returned `release` is called, so a test can look at the
+ * screen mid-request. Requests that `shouldHold` rejects, such as prefetches, pass straight through.
+ */
+export async function holdRoute(
+    page: Page,
+    url: string | RegExp,
+    shouldHold: (request: Request) => boolean = () => true,
+) {
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    await page.route(url, async (route) => {
+        if (shouldHold(route.request())) await held;
+        await route.continue();
+    });
+    return release;
 }

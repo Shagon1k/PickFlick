@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { signInMock } from './mock-session';
-import { settle } from './settle';
+import { holdRoute, settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const tokens = {
@@ -83,14 +83,9 @@ test('Club invitation waits for hydration before accepting keyboard input', asyn
     page,
 }) => {
     await signIn(context, `hydration-${test.info().repeatEachIndex}-${test.info().retry}`);
-    let releaseScripts!: () => void;
-    const scriptsReady = new Promise<void>((resolve) => {
-        releaseScripts = resolve;
-    });
-    await page.route('**/_next/static/chunks/*.js', async (route) => {
-        await scriptsReady;
-        await route.continue();
-    });
+
+    // Withholding the scripts keeps the page unhydrated until the test releases them.
+    const releaseScripts = await holdRoute(page, '**/_next/static/chunks/*.js');
     await page.goto(invitationPath(), { waitUntil: 'commit' });
     const accept = page.getByRole('button', { name: 'Accept Invitation' });
     await expect(accept).toBeVisible();

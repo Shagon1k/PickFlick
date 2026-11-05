@@ -4,7 +4,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
-import { settle } from './settle';
+import { holdRoute, settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const FIRST_CLUB_ID = '10000000-0000-4000-8000-000000000031';
@@ -197,14 +197,11 @@ for (const { viewport, open, current } of sectionSwitches) {
         // The route-tree prefetch arrives before the request containing the loading boundary.
         await prefetched;
         // Hold only the navigation; the prefetched loading boundary must render without it.
-        let release = () => {};
-        const held = new Promise<void>((resolve) => {
-            release = resolve;
-        });
-        await page.route(`**${members}**`, async (route) => {
-            if (!isPrefetch(route.request().headers())) await held;
-            await route.continue();
-        });
+        const release = await holdRoute(
+            page,
+            `**${members}**`,
+            (request) => !isPrefetch(request.headers()),
+        );
         const skeleton = page.getByRole('status').filter({ hasText: 'Loading Club members' });
         try {
             await open(page);

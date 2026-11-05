@@ -8,7 +8,7 @@ import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/cata
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
 import { expectNoPageOverflow } from '../ui/layout';
-import { settle } from '../ui/settle.ts';
+import { holdRoute, settle } from '../ui/settle.ts';
 import { canonicalViewports } from '../ui/viewports.ts';
 import { openVisitor } from './visitors';
 
@@ -145,14 +145,9 @@ test('A minimal past Session waits for hydration, retains input after a request 
     const page = await context.newPage();
     const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
     const path = `/clubs/${clubId}/sessions/past/new`;
-    let releaseScripts!: () => void;
-    const scriptsReady = new Promise<void>((resolve) => {
-        releaseScripts = resolve;
-    });
-    await page.route('**/_next/static/chunks/*.js', async (route) => {
-        await scriptsReady;
-        await route.continue();
-    });
+
+    // Withholding the scripts keeps the page unhydrated until the test releases them.
+    const releaseScripts = await holdRoute(page, '**/_next/static/chunks/*.js');
     try {
         await page.goto(path, { waitUntil: 'commit' });
         await expect(form.getByLabel('Date')).toBeDisabled();

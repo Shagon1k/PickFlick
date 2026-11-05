@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
-import { settle } from './settle';
+import { holdRoute, settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
     test(
@@ -215,14 +215,7 @@ test(
             element.scrollLeft = element.scrollWidth;
         });
         const scrollLeft = await region.evaluate((element) => element.scrollLeft);
-        let release = () => {};
-        const held = new Promise<void>((resolve) => {
-            release = resolve;
-        });
-        await page.route(/\/library\?.*q=Grand/u, async (route) => {
-            await held;
-            await route.continue();
-        });
+        const release = await holdRoute(page, /\/library\?.*q=Grand/u);
         try {
             await search.fill('Grand');
             await search.press('Enter');
@@ -252,14 +245,7 @@ test(
         await signInMock(context, 'valid-library-pending-page');
         await page.goto('/library');
         await expect(page.getByRole('row')).toHaveCount(26);
-        let release = () => {};
-        const held = new Promise<void>((resolve) => {
-            release = resolve;
-        });
-        await page.route(/\/library\?.*page=2/u, async (route) => {
-            await held;
-            await route.continue();
-        });
+        const release = await holdRoute(page, /\/library\?.*page=2/u);
         try {
             await page.getByRole('link', { name: 'Next page', exact: true }).click();
             const table = page.getByRole('table');

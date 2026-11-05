@@ -3,7 +3,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
-import { settle } from './settle';
+import { holdRoute, settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 async function openLogin(
@@ -169,15 +169,9 @@ test(
     'Login waits for hydration before accepting a sign-in click',
     { tag: '@smoke' },
     async ({ page }) => {
-        let releaseScripts!: () => void;
-        const scriptsReady = new Promise<void>((resolve) => {
-            releaseScripts = resolve;
-        });
         let requestBody: Record<string, unknown> | undefined;
-        await page.route('**/_next/static/chunks/*.js', async (route) => {
-            await scriptsReady;
-            await route.continue();
-        });
+        // Withholding the scripts keeps the page unhydrated until the test releases them.
+        const releaseScripts = await holdRoute(page, '**/_next/static/chunks/*.js');
         await page.route('**/api/auth/sign-in/social', async (route) => {
             requestBody = route.request().postDataJSON() as Record<string, unknown>;
             await route.fulfill({ json: { redirect: false } });

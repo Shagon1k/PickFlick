@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
-import { settle } from './settle';
+import { holdRoute, settle } from './settle';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const PATH = `/clubs/${CLUB_ID}/ratings`;
@@ -130,14 +130,11 @@ test('Ratings navigation keeps the Hub frame and shows its loading boundary', as
     );
     await page.goto(`/clubs/${CLUB_ID}`);
     await prefetched;
-    let release = () => {};
-    const held = new Promise<void>((resolve) => {
-        release = resolve;
-    });
-    await page.route(`**${PATH}**`, async (route) => {
-        if (!isPrefetch(route.request().headers())) await held;
-        await route.continue();
-    });
+    const release = await holdRoute(
+        page,
+        `**${PATH}**`,
+        (request) => !isPrefetch(request.headers()),
+    );
     await page
         .getByRole('navigation', { name: 'Club sections' })
         .getByRole('link', { name: 'Ratings', exact: true })
