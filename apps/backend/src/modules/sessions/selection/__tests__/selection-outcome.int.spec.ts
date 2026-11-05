@@ -207,21 +207,10 @@ describe('Selection outcome', () => {
         await api.expectStatus(200, `/sessions/${sessionId}/progress`, { userId: users[2] });
     });
 
-    it('should apply current Club visibility to native legacy outcomes without tier or role bypass', async () => {
+    it('should apply current Club visibility to outcomes without tier or role bypass', async () => {
         const entitlement = vi
             .spyOn(tiers, 'getClubEntitlements')
             .mockReturnValue(tiers.getTierEntitlements('PRO'));
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: {
-                showNominationAuthorsDuring: null,
-                showNominationAuthorsAfter: null,
-                showSelectionScoresDuring: null,
-                showSelectionScoresAfter: null,
-                showRatingsDuring: null,
-                showRatingsAfter: null,
-            },
-        });
         await close();
         await complete();
         await api.prisma.club.update({
@@ -256,9 +245,6 @@ describe('Selection outcome', () => {
             where: { id: clubId },
             data: {
                 selectionScaleMax: 10,
-                showVoteResults: false,
-                showNominationAuthors: false,
-                showRatingResults: false,
             },
         });
         await api.prisma.selectionScore.updateMany({ where: { sessionId }, data: { score: 0 } });

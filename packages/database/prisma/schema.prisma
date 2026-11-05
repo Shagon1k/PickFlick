@@ -174,17 +174,13 @@ model Club {
   lifecycle                   ClubLifecycle      @default(ACTIVE)
   selectionScaleMin           Int                @default(0)
   selectionScaleMax           Int                @default(5)
-  showNominationAuthors       Boolean            @default(true)
   showNominationsBeforeSubmit Boolean            @default(true)
-  showVoteResults             Boolean            @default(false)
-  showRatingResults           Boolean            @default(true)
   showNominationAuthorsDuring Boolean            @default(true)
   showNominationAuthorsAfter  Boolean            @default(true)
   showSelectionScoresDuring   Boolean            @default(false)
   showSelectionScoresAfter    Boolean            @default(false)
   showRatingsDuring           Boolean            @default(false)
   showRatingsAfter            Boolean            @default(true)
-  useMonochromeMedia          Boolean            @default(true)
   deletedAt                   DateTime?          @db.Timestamptz(3)
   createdAt                   DateTime           @default(now()) @db.Timestamptz(3)
   updatedAt                   DateTime           @updatedAt @db.Timestamptz(3)
@@ -287,18 +283,6 @@ model Session {
   selectionScaleMin           Int
   selectionScaleMax           Int
   selectionResult             Json?
-  showNominationAuthors       Boolean
-  showNominationsBeforeSubmit Boolean
-  showVoteResults             Boolean
-  showRatingResults           Boolean
-  // Null period flags preserve the disclosure policy of pre-existing Sessions.
-  showNominationAuthorsDuring Boolean?
-  showNominationAuthorsAfter  Boolean?
-  showSelectionScoresDuring   Boolean?
-  showSelectionScoresAfter    Boolean?
-  showRatingsDuring           Boolean?
-  showRatingsAfter            Boolean?
-  useMonochromeMedia          Boolean
   createdAt                   DateTime                     @default(now()) @db.Timestamptz(3)
   updatedAt                   DateTime                     @updatedAt @db.Timestamptz(3)
   club                        Club                         @relation(fields: [clubId], references: [id], onDelete: Restrict)

@@ -321,9 +321,8 @@ same screening time. Midnight remains indistinguishable from a date-only entry.
 
 **Global visibility:** Saving Club visibility settings changes disclosure for existing, historical
 and new Sessions on subsequent reads. All roles and plans follow the same current During/After
-flags, including Sessions created before period-specific snapshots. Stored Session visibility fields
-remain historical data and do not authorize disclosure. Selection scales, frozen scores and Session
-Ratings remain unchanged. Existing Session pages refresh through their version poll after a settings
+flags and the same pre-submission nomination-list flag; Sessions keep no visibility copies of their
+own. Selection scales, frozen scores and Session Ratings remain unchanged. Existing Session pages refresh through their version poll after a settings
 change; Hub views reread on navigation or return to the tab. Per-Session Admin sharing is Deferred
 in [#204](https://github.com/Shagon1k/PickFlick/issues/204). This owner decision on 2026-11-04
 supersedes the earlier snapshot-only disclosure rule; hosted acceptance remains part of Phase 18.
@@ -1712,6 +1711,7 @@ the MVP
 | Nomination closure amendment       | Product owner | Supersedes the 2026-10-31 automatic-closure rule: every active Club member must have joined and nominated, and at least two participants must be accepted. Unjoined active members keep Nomination open; deadline and operator closure retain their rules.                                    | Owner alignment request, 2026-11-01.                                                                                                              |
 | Rating and action feedback         | Product owner | Own and historical ratings omit visible N/10 labels. Save and Copy use temporary animated feedback inside the existing button; Watchlist pending and success narration stays assistive-only. Existing selected Phase 18 compositions remain authoritative.                                    | Owner alignment request, 2026-11-01; [DES-017](DESIGN.md#7-design-decisions).                                                                     |
 | Local email verification           | Product owner | Allow explicitly opted-in local live email only to approved test accounts, with an activation cutoff and [LOCAL] subjects. Exclude existing notification backlog and operator alerts; keep test and preview delivery disabled.                                                                | Owner alignment request, 2026-11-01; [ADR-020 amendment](_docs/decisions/README.md#adr-020-amendment--scoped-local-live-verification-2026-11-01). |
+| Session visibility copies          | Product owner | Sessions store only their Selection scale. Every visibility rule, including the pre-submission nomination list, reads the current Club settings; the never-read Session flags and the legacy single Club flags were dropped before launch.                                                    | Simplification audit, 2026-11-05; migration `20261106000000_drop_unread_visibility_columns`.                                                      |
 
 ### Achievement criteria clarification
 

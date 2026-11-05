@@ -50,10 +50,7 @@ describe('Live Club visibility', () => {
             showRatingsAfter: false,
             showNominationsBeforeSubmit: true,
         };
-        sessionIds = [];
-        for (const isLegacy of [true, false]) {
-            sessionIds.push(await createRecordedSession(isLegacy));
-        }
+        sessionIds = [await createRecordedSession()];
     });
     afterEach(async () => {
         await removeUsers(api.prisma, users);
@@ -63,18 +60,11 @@ describe('Live Club visibility', () => {
         await api.close();
     });
 
-    async function createRecordedSession(isLegacy: boolean) {
+    async function createRecordedSession() {
         const session = await createSession(api.prisma, clubId, {
             type: 'PAST',
             phase: 'COMPLETED',
             movieId,
-            showRatingResults: true,
-            showNominationAuthorsDuring: isLegacy ? null : true,
-            showNominationAuthorsAfter: isLegacy ? null : true,
-            showSelectionScoresDuring: isLegacy ? null : true,
-            showSelectionScoresAfter: isLegacy ? null : true,
-            showRatingsDuring: isLegacy ? null : true,
-            showRatingsAfter: isLegacy ? null : true,
         });
         const nomination = await api.prisma.pastNomination.create({
             data: { sessionId: session.id, movieId, nominatorMembershipId: memberships[0]! },
@@ -125,7 +115,7 @@ describe('Live Club visibility', () => {
         return sessionSchema.parse(await response.json());
     }
 
-    it('should apply saved global switches to legacy and existing Sessions for every role', async () => {
+    it('should apply saved global switches to existing Sessions for every role', async () => {
         const before = await api.prisma.session.findMany({ where: { clubId } });
         const saved = await saveSettings();
         expect(saved.visibility).toMatchObject({
@@ -152,7 +142,6 @@ describe('Live Club visibility', () => {
         for (const session of after) {
             const original = before.find((row) => row.id === session.id)!;
             expect(session.progressVersion).toBe(original.progressVersion + 1);
-            expect(session.showRatingsAfter).toBe(original.showRatingsAfter);
             expect(session.updatedAt).toEqual(original.updatedAt);
             expect(session.selectionScaleMax).toBe(original.selectionScaleMax);
         }
@@ -178,10 +167,10 @@ describe('Live Club visibility', () => {
             average: 8,
             entries: null,
         });
-        expect((await detail(sessionIds[1]!, 2)).selectionScores).toBeNull();
+        expect((await detail(sessionIds[0]!, 2)).selectionScores).toBeNull();
         expect(
             await api.prisma.sessionRating.count({ where: { sessionId: { in: sessionIds } } }),
-        ).toBe(6);
+        ).toBe(3);
     });
 
     it('should keep During ratings hidden until own submission and use After only at Completed', async () => {

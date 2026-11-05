@@ -213,20 +213,16 @@ The unresolved choice among excess administered Clubs is not implemented.
 
 Session persistence, live creation, editing/cancellation, member-only joining, Nomination,
 deadlines and Selection outcomes are Active. Manual Watching → Rating, Session Rating submission and completion are Active.
-Each new Session requires its own score bounds, six During/After visibility flags and the independent
-pre-submission nomination-list flag. The legacy monochrome field is retained in persisted snapshots
-but is no longer edited through Club settings. The internal
-`snapshotSessionSettings` helper locks the Club and reads those fields; creation must call it
-inside the same transaction as the Session insert. Club settings edits do not change saved Session
-fields. Migration 14 backfills skeleton Sessions from current Club settings because their original
+Each new Session stores its own Selection scale bounds; it keeps no visibility settings. The
+internal `snapshotSessionSettings` helper locks the Club and reads the scale; creation must call it
+inside the same transaction as the Session insert. Club scale edits do not change saved Sessions. Migration 14 backfills skeleton Sessions from current Club settings because their original
 settings were not stored; it preserves phase, version, details, and history.
 
-Migration `20261103000200_club_visibility_periods` adds six non-null Club settings and six nullable
-Session snapshot fields. Club values are initialized from existing settings; old Sessions remain
-all-null period snapshots. A database check rejects partial snapshots. As approved on 2026-11-04,
-all disclosure reads now use the current Club period flags, for every Session, role and plan.
-Neither nullable snapshots nor legacy role/tier rules override current Club settings. Retained
-Session columns are historical data; no schema migration or backfill is needed. Saving changed
+Migration `20261103000200_club_visibility_periods` added six non-null Club period settings. As
+approved on 2026-11-04, all disclosure reads use the current Club flags, including
+`showNominationsBeforeSubmit`, for every Session, role and plan; no legacy role or tier rule
+overrides them. Migration `20261106000000_drop_unread_visibility_columns` removed the Session
+visibility copies and the legacy single Club flags, which no code read. Saving changed
 visibility increments each Club Session's progressVersion in the same transaction without changing
 updatedAt or emitting phase events/notifications. Existing version polling refreshes open Session
 pages; the settings action also invalidates Session routes. Hub views retain their navigation/tab

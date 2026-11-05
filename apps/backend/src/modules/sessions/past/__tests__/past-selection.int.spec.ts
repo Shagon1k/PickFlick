@@ -30,7 +30,6 @@ describe('Past Selection evidence', () => {
                 name: 'Partial history',
                 selectionScaleMin: 0,
                 selectionScaleMax: 5,
-                showVoteResults: true,
                 showSelectionScoresAfter: true,
                 showNominationAuthorsAfter: true,
             },

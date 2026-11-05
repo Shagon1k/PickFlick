@@ -129,7 +129,7 @@ describe('Session foundation', () => {
     });
 
     it.each([0, 1])(
-        'should preserve the %i-based score and visibility snapshot after Club edits',
+        'should preserve the %i-based Selection scale snapshot after Club edits',
         async (min) => {
             await database.club.update({ where: { id: clubId }, data: { selectionScaleMin: min } });
             const session = await createSession('NOMINATION');
@@ -138,29 +138,17 @@ describe('Session foundation', () => {
                 data: {
                     selectionScaleMin: 1,
                     selectionScaleMax: 5,
-                    showNominationAuthors: false,
-                    showNominationsBeforeSubmit: false,
-                    showVoteResults: true,
-                    showRatingResults: false,
-                    useMonochromeMedia: false,
                 },
             });
             const saved = await database.session.findUniqueOrThrow({ where: { id: session.id } });
             expect(saved).toMatchObject({
                 selectionScaleMin: min,
                 selectionScaleMax: 10,
-                showNominationAuthors: true,
-                showNominationsBeforeSubmit: true,
-                showVoteResults: false,
-                showRatingResults: true,
-                useMonochromeMedia: true,
             });
             const later = await createSession('RATING');
             expect(later).toMatchObject({
                 selectionScaleMin: 1,
                 selectionScaleMax: 5,
-                showNominationAuthors: false,
-                showVoteResults: true,
             });
         },
     );

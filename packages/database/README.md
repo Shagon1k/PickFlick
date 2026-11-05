@@ -15,7 +15,7 @@ The catalog uses `Movie.id` UUID as identity, `MovieExternalId` for unique sourc
 summary title/year on `Movie`, and provider/locale keyed detail and search projections. The source migration preserves UUIDs and existing mappings, invalidates legacy JSON
 caches and fails on contradictory legacy IMDb mappings. Session/Library references must use UUIDs.
 
-Session creation requires score and visibility snapshots. Call `snapshotSessionSettings` inside
+Session creation requires a Selection scale snapshot. Call `snapshotSessionSettings` inside
 its creation transaction; it locks the Club before reading. A database trigger keeps a Session
 participant bound to its Session, Membership, and Club. Session participants and
 invites use composite foreign keys to stay within one Club. Current API workflows enforce authorization, participation and invite responses; these internal

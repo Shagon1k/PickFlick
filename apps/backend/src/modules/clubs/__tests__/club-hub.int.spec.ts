@@ -237,9 +237,10 @@ describe('Club Hub projection', () => {
         expect(await response.text()).not.toContain('Second Club');
     });
 
-    it('should project Rating progress and policy-filtered historical averages from received responses', async () => {
+    it('should project Rating progress and, once completed, the Club average for every role', async () => {
         const users = await Promise.all(Array.from({ length: 3 }, () => createUser(api.prisma)));
         const clubId = randomUUID();
+        // Hidden individual ratings never hide the Club average.
         await api.prisma.club.create({
             data: { id: clubId, name: 'History projection', showRatingsAfter: false },
         });
@@ -250,7 +251,6 @@ describe('Club Hub projection', () => {
             const session = await createSession(api.prisma, clubId, {
                 type: 'PRE_SELECTED',
                 phase: 'RATING',
-                showRatingResults: false,
             });
             for (const [index, membershipId] of memberships.entries()) {
                 const participant = await api.prisma.sessionParticipant.create({
@@ -281,46 +281,10 @@ describe('Club Hub projection', () => {
                 where: { id: session.id },
                 data: { phase: 'COMPLETED' },
             });
-            await api.prisma.club.update({
-                where: { id: clubId },
-                data: { showRatingsAfter: true },
-            });
-            for (const userId of users.slice(0, 2))
+            for (const userId of users)
                 expect((await read(userId)).historySessions).toMatchObject([
                     { id: session.id, ratingAverage: 7 },
                 ]);
-            expect((await read(users[2]!)).historySessions).toMatchObject([
-                { id: session.id, ratingAverage: 7 },
-            ]);
-            await api.prisma.membership.update({
-                where: { id: memberships[1] },
-                data: { role: 'MEMBER' },
-            });
-            expect((await read(users[1]!)).historySessions[0]?.ratingAverage).toBe(7);
-            const published = await createSession(api.prisma, clubId, {
-                type: 'PRE_SELECTED',
-                phase: 'RATING',
-                showRatingResults: true,
-            });
-            const participant = await api.prisma.sessionParticipant.create({
-                data: {
-                    sessionId: published.id,
-                    clubId,
-                    membershipId: memberships[0]!,
-                    status: 'ACCEPTED',
-                },
-            });
-            await api.prisma.sessionRating.create({
-                data: { sessionId: published.id, participantId: participant.id, score: 9 },
-            });
-            await api.prisma.session.update({
-                where: { id: published.id },
-                data: { phase: 'COMPLETED' },
-            });
-            expect(
-                (await read(users[2]!)).historySessions.find(({ id }) => id === published.id)
-                    ?.ratingAverage,
-            ).toBe(9);
         } finally {
             await removeUsers(api.prisma, users);
         }

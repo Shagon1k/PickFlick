@@ -31,7 +31,7 @@ describe('Club ratings API', () => {
             memberships.push(await addMember(api.prisma, clubId, users[index]!, role));
         }
         await api.prisma.user.update({ where: { id: users[3] }, data: { appRole: 'APP_ADMIN' } });
-        for (const [index, title] of ['Repeated film', 'Highest film', 'Hidden film'].entries()) {
+        for (const [index, title] of ['Repeated film', 'Highest film', 'Lowest film'].entries()) {
             await api.prisma.movie.create({ data: { id: movieIds[index]!, title } });
         }
         const original = tiers.getClubEntitlements;
@@ -42,7 +42,7 @@ describe('Club ratings API', () => {
         await addScreening(0, [10, 2]);
         await addScreening(0, [9]);
         await addScreening(1, [9]);
-        await addScreening(2, [1], false);
+        await addScreening(2, [1]);
         await addScreening(0, []);
         const live = await createSession(api.prisma, clubId, {
             type: 'PRE_SELECTED',
@@ -62,13 +62,12 @@ describe('Club ratings API', () => {
         });
     });
 
-    async function addScreening(movieIndex: number, scores: number[], canShowRatingResults = true) {
+    async function addScreening(movieIndex: number, scores: number[]) {
         const session = await createSession(api.prisma, clubId, {
             type: 'PAST',
             phase: 'COMPLETED',
             movieId: movieIds[movieIndex]!,
             scheduledAt: new Date('2026-01-01Z'),
-            showRatingResults: canShowRatingResults,
         });
         for (const [index, score] of scores.entries()) {
             const participant = await api.prisma.sessionParticipant.create({
