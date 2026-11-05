@@ -84,13 +84,19 @@ export class LibraryService {
             await tx.watchlistItem.count({ where }),
             query.page,
         );
+        const include = { movie: this.selectMovie() };
         const items =
             query.sort === 'genre'
-                ? await this.listWatchlistByGenre(tx, { userId, query, where, ...window })
+                ? await this.listByGenre(tx, { userId, query, ...window }, (ids) =>
+                      tx.watchlistItem.findMany({
+                          where: { userId, movieId: { in: ids } },
+                          include,
+                      }),
+                  )
                 : await tx.watchlistItem.findMany({
                       where,
-                      orderBy: getWatchlistOrder({ ...query, sort: query.sort }),
-                      include: { movie: this.selectMovie() },
+                      orderBy: getWatchlistOrder(query.sort, query.direction),
+                      include,
                       ...window,
                   });
         return {
@@ -118,13 +124,19 @@ export class LibraryService {
             await tx.personalMovieRating.count({ where }),
             query.page,
         );
+        const include = { movie: this.selectMovie() };
         const items =
             query.sort === 'genre'
-                ? await this.listRatingsByGenre(tx, { userId, query, where, ...window })
+                ? await this.listByGenre(tx, { userId, query, ...window }, (ids) =>
+                      tx.personalMovieRating.findMany({
+                          where: { userId, movieId: { in: ids } },
+                          include,
+                      }),
+                  )
                 : await tx.personalMovieRating.findMany({
                       where,
-                      orderBy: getRatingsOrder({ ...query, sort: query.sort }),
-                      include: { movie: this.selectMovie() },
+                      orderBy: getRatingsOrder(query.sort, query.direction),
+                      include,
                       ...window,
                   });
         return {
@@ -139,46 +151,20 @@ export class LibraryService {
         };
     }
 
-    private async listWatchlistByGenre(
+    /**
+     * Genre order needs raw SQL, which also applies the tab's filters and picks the page; the rows
+     * are then read by id and put back in that order.
+     */
+    private async listByGenre<TItem extends { movieId: string }>(
         tx: Prisma.TransactionClient,
-        input: {
-            userId: string;
-            query: TLibraryQuery;
-            where: Prisma.WatchlistItemWhereInput;
-            skip: number;
-            take: number;
-        },
+        page: { userId: string; query: TLibraryQuery; skip: number; take: number },
+        readRows: (ids: string[]) => Promise<TItem[]>,
     ) {
         const ids = await readGenrePage(tx, {
-            ...input,
+            ...page,
             detailsKey: buildConfiguredDetailsKey(this.environment.catalog),
         });
-        const items = await tx.watchlistItem.findMany({
-            where: { ...input.where, movieId: { in: ids } },
-            include: { movie: this.selectMovie() },
-        });
-        return orderGenrePage(items, ids);
-    }
-
-    private async listRatingsByGenre(
-        tx: Prisma.TransactionClient,
-        input: {
-            userId: string;
-            query: TLibraryQuery;
-            where: Prisma.PersonalMovieRatingWhereInput;
-            skip: number;
-            take: number;
-        },
-    ) {
-        const ids = await readGenrePage(tx, {
-            ...input,
-            detailsKey: buildConfiguredDetailsKey(this.environment.catalog),
-        });
-        const items = await tx.personalMovieRating.findMany({
-            where: { ...input.where, movieId: { in: ids } },
-            include: { movie: this.selectMovie() },
-        });
-        return orderGenrePage(items, ids);
+        return orderGenrePage(await readRows(ids), ids);
     }
 
     /** Case-insensitive title search; `%`, `_` and `\` in the query match literally. */
