@@ -1,4 +1,4 @@
-import type { BrowserContext } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 
 /**
  * Signs a browser context in to the mock API. The token names the scenario the mock serves; add
@@ -15,4 +15,17 @@ export async function signInMock(context: BrowserContext, token: string): Promis
             sameSite: 'Lax',
         },
     ]);
+}
+
+/** Answers social sign-in with `reply` and returns a reader for the last request body it saw. */
+export async function captureSocialSignIn(
+    page: Page,
+    reply: Record<string, unknown> = { redirect: false },
+) {
+    let body: Record<string, unknown> | undefined;
+    await page.route('**/api/auth/sign-in/social', async (route) => {
+        body = route.request().postDataJSON() as Record<string, unknown>;
+        await route.fulfill({ json: reply });
+    });
+    return () => body;
 }

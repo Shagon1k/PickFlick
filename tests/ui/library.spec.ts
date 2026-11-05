@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
-import { signInMock } from './mock-session';
+import { captureSocialSignIn, signInMock } from './mock-session';
 import { holdRoute, settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
@@ -144,22 +144,16 @@ for (const { destination, expected } of [
         `Library sign-in preserves and recovers ${destination}`,
         { tag: '@smoke' },
         async ({ context, page }) => {
-            let requestBody: Record<string, unknown> | undefined;
-            await page.route('**/api/auth/sign-in/social', async (route) => {
-                requestBody = route.request().postDataJSON() as Record<string, unknown>;
-                await route.fulfill({ json: { redirect: false } });
-            });
+            const readSignIn = await captureSocialSignIn(page);
 
             await page.goto(destination);
             await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(expected)}`);
             await settle(page);
             await page.getByRole('button', { name: 'Continue with Google' }).click();
-            await expect
-                .poll(() => requestBody)
-                .toMatchObject({
-                    provider: 'google',
-                    callbackURL: expected,
-                });
+            await expect.poll(readSignIn).toMatchObject({
+                provider: 'google',
+                callbackURL: expected,
+            });
 
             await signInMock(context, 'valid-library-sign-in');
             await page.reload();
