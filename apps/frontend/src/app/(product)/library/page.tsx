@@ -15,6 +15,7 @@ import LoadingState from '#components/ui/LoadingState/LoadingState';
 import LibraryShell from './_components/LibraryShell/LibraryShell';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
 import { buildLibraryPath } from './library-path';
+import { getLibraryPanelVariant } from './library-tabs';
 import { loadLibraryRead } from './load-library-read';
 import styles from './page.module.scss';
 
@@ -47,33 +48,29 @@ async function LibraryContent({
     isValid: boolean;
     isAuthenticated: boolean;
 }) {
-    const library =
-        isValid && isAuthenticated
-            ? await loadLibraryRead(() => getLibrary(query), buildLibraryPath(query))
-            : null;
+    if (!isValid)
+        return (
+            <section className={styles.recovery} aria-label="Invalid Library filters">
+                <Alert tone="warning">
+                    These Library filters are invalid. Clear them and try again.
+                </Alert>
+                <ButtonLink href="/library">Clear filters</ButtonLink>
+            </section>
+        );
+    const library = isAuthenticated
+        ? await loadLibraryRead(() => getLibrary(query), buildLibraryPath(query))
+        : null;
+    if (library) return <LibraryTable key={query.tab} library={library} query={query} />;
     const title = query.tab === 'watchlist' ? 'Watchlist' : 'My Ratings';
     return (
-        <>
-            {!isValid && (
-                <section className={styles.recovery} aria-label="Invalid Library filters">
-                    <Alert tone="warning">
-                        These Library filters are invalid. Clear them and try again.
-                    </Alert>
-                    <ButtonLink href="/library">Clear filters</ButtonLink>
-                </section>
-            )}
-            {library && <LibraryTable key={query.tab} library={library} query={query} />}
-            {isValid && !library && (
-                <section className={styles.recovery} aria-label={`${title} unavailable`}>
-                    <Alert tone="warning">
-                        {query.tab === 'watchlist'
-                            ? 'Your Watchlist is temporarily unavailable.'
-                            : 'Your ratings are temporarily unavailable.'}
-                    </Alert>
-                    <ButtonLink href={buildLibraryPath(query)}>Try again</ButtonLink>
-                </section>
-            )}
-        </>
+        <section className={styles.recovery} aria-label={`${title} unavailable`}>
+            <Alert tone="warning">
+                {query.tab === 'watchlist'
+                    ? 'Your Watchlist is temporarily unavailable.'
+                    : 'Your ratings are temporarily unavailable.'}
+            </Alert>
+            <ButtonLink href={buildLibraryPath(query)}>Try again</ButtonLink>
+        </section>
     );
 }
 
@@ -84,7 +81,6 @@ export default async function LibraryPage({
 }) {
     const parameters = await searchParams;
     const isAchievements = parameters.tab === 'achievements';
-    const tableVariant = parameters.tab === 'watchlist' ? 'watchlist' : 'ratings';
     const parsed = libraryQuerySchema.safeParse(parameters);
     const query = parsed.success ? parsed.data : libraryQuerySchema.parse({});
     const current = isAchievements ? 'achievements' : query.tab;
@@ -102,7 +98,7 @@ export default async function LibraryPage({
                 fallback={
                     <LoadingState
                         label="Loading your Library…"
-                        variant={isAchievements ? 'achievements' : tableVariant}
+                        variant={getLibraryPanelVariant(parameters.tab)}
                     />
                 }
             >

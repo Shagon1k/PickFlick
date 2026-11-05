@@ -6,6 +6,7 @@ import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import LoadingState from '#components/ui/LoadingState/LoadingState';
 
+import { getLibraryTabItems } from '../../library-tabs';
 import { loadLibraryRead } from '../../load-library-read';
 import styles from '../../page.module.scss';
 import LibraryStatistics from '../LibraryStatistics/LibraryStatistics';
@@ -52,26 +53,7 @@ export default function LibraryShell({
                     </Suspense>
                 )
             }
-            items={[
-                {
-                    label: 'My Ratings',
-                    icon: 'ratings',
-                    href: '/library?tab=my-ratings',
-                    current: current === 'my-ratings',
-                },
-                {
-                    label: 'Watchlist',
-                    icon: 'watchlist',
-                    href: '/library?tab=watchlist',
-                    current: current === 'watchlist',
-                },
-                {
-                    label: 'Achievements',
-                    icon: 'achievements',
-                    href: '/library?tab=achievements',
-                    current: current === 'achievements',
-                },
-            ]}
+            items={getLibraryTabItems(current)}
         >
             {children}
         </ControlShell>
