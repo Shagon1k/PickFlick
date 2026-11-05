@@ -432,8 +432,8 @@ every authentication session.
   within each Club, including cancelled Sessions; no rows are renumbered after cancellation. The
   Club's Session count excludes cancelled Sessions.
   Completed-screening statistics use validated cached Movie metadata and aggregate historical
-  Session Ratings. Free projects basic counts; Pro adds the extended summaries described below. Active selected-Movie enrichment runs after the snapshot transaction
-  and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
+  Session Ratings. Every plan gets the same statistics. Active selected-Movie enrichment runs after the
+  snapshot transaction and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
   Manage Club loads the active Session's detail and roster for Admins and Moderators and reuses the
   Session page's closure, Kick and cancellation dialogs; those actions revalidate every Club Hub view.
   Overview, Sessions, Ratings, Members and Manage Club share a persistent route-group layout. Its `loading.tsx` lets

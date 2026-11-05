@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import type { TMovieSearch } from '@pickflick/contracts';
 
 const CACHE_VERSION = 3;
+// Bumping this refetches search pages only; bumping CACHE_VERSION also refetches every details entry.
 const SEARCH_PROJECTION_VERSION = 1;
 
 /** New normalization policies refetch projections while keeping the canonical Movie identities. */

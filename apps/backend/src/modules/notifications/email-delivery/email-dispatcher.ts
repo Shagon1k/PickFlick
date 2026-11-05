@@ -45,6 +45,7 @@ export class EmailDispatcher {
         if (!this.options.environment.deliveryEnabled || signal?.aborted) return;
         const claim = await claimEmail(this.prisma, now, this.options.environment.localDelivery);
         if (claim) await this.deliver(claim, now);
+        // Scoped local runs never send operator alerts, not even for older failures (ADR-020 amendment).
         if (!signal?.aborted && !this.options.environment.localDelivery) {
             await sendFailureAlert(this.prisma, this.email, this.options);
         }

@@ -6,7 +6,10 @@ import { completeSessionPhase } from '../session-completion.js';
 import { lockSession } from '../session-lock.js';
 import { revokePendingInvites } from './session-invites.js';
 
-/** The caller holds the Club lock; completed attendance/history stays intact. */
+/**
+ * The caller holds the Club lock and has already ended the Membership, so phase completion no longer
+ * counts the departing member. Completed attendance/history stays intact.
+ */
 export async function departSessions(
     tx: Prisma.TransactionClient,
     membership: { id: string; clubId: string },
