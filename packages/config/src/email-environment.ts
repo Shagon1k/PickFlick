@@ -113,12 +113,12 @@ function validateLocalEmailEnvironment(
         'CONTACT_DELIVERY_TO',
         'must be one of LOCAL_EMAIL_RECIPIENTS in local live delivery',
     );
-    reject(
-        env.APP_ENV !== 'local' &&
-            Boolean(env.LOCAL_EMAIL_RECIPIENTS || env.LOCAL_EMAIL_SEND_AFTER),
-        'LOCAL_EMAIL_RECIPIENTS',
-        'local delivery restrictions may be configured only in local',
-    );
+    for (const variable of ['LOCAL_EMAIL_RECIPIENTS', 'LOCAL_EMAIL_SEND_AFTER'] as const)
+        reject(
+            env.APP_ENV !== 'local' && Boolean(env[variable]),
+            variable,
+            'local delivery restrictions may be configured only in local',
+        );
 }
 
 /** Validation above makes the scope mandatory before any local live sender starts. */

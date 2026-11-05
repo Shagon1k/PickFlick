@@ -206,25 +206,36 @@ describe('parseRuntimeEnvironment', () => {
     it.each(['test', 'uat', 'production'])(
         'should reject local recipient or cutoff restrictions in %s',
         (appEnvironment) => {
-            for (const scope of [
-                {
-                    LOCAL_EMAIL_RECIPIENTS: 'contact@example.invalid',
-                    LOCAL_EMAIL_SEND_AFTER: '',
-                },
-                {
-                    LOCAL_EMAIL_RECIPIENTS: '',
-                    LOCAL_EMAIL_SEND_AFTER: localLive.LOCAL_EMAIL_SEND_AFTER,
-                },
-            ]) {
+            for (const [variable, scope] of [
+                [
+                    'LOCAL_EMAIL_RECIPIENTS',
+                    {
+                        LOCAL_EMAIL_RECIPIENTS: 'contact@example.invalid',
+                        LOCAL_EMAIL_SEND_AFTER: '',
+                    },
+                ],
+                [
+                    'LOCAL_EMAIL_SEND_AFTER',
+                    {
+                        LOCAL_EMAIL_RECIPIENTS: '',
+                        LOCAL_EMAIL_SEND_AFTER: localLive.LOCAL_EMAIL_SEND_AFTER,
+                    },
+                ],
+            ] as const) {
                 const source = { ...production, APP_ENV: appEnvironment, ...scope };
 
-                expect(failuresOf(source)).toContain(
-                    'LOCAL_EMAIL_RECIPIENTS local delivery restrictions may be configured only in local',
+                const failures = failuresOf(source);
+                expect(failures).toContain(
+                    `${variable} local delivery restrictions may be configured only in local`,
                 );
+                // Only the variable that was set is named.
+                expect(
+                    failures.filter((failure) =>
+                        failure.includes('may be configured only in local'),
+                    ),
+                ).toHaveLength(1);
                 expect(emailWorkerEnvironmentSchema.safeParse(source).error?.issues).toEqual(
-                    expect.arrayContaining([
-                        expect.objectContaining({ path: ['LOCAL_EMAIL_RECIPIENTS'] }),
-                    ]),
+                    expect.arrayContaining([expect.objectContaining({ path: [variable] })]),
                 );
             }
         },
