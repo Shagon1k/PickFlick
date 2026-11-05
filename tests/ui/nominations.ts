@@ -130,33 +130,30 @@ export function handleNominations(
         return true;
     }
     if (pathname === `/sessions/${SESSION_ID}`) {
-        const sendDetail = () => {
-            const detail: TSession = {
-                id: SESSION_ID,
-                clubId: CLUB_ID,
-                clubName: 'Midnight Society',
-                topic: 'Nomination night',
-                notes: 'Everyone nominates one film.',
-                type: 'FULL_CYCLE',
-                phase: state.phase,
-                location: 'Room A',
-                scheduledAt: '2026-12-01T00:00:00.000Z',
-                deadlineAt: null,
-                movieId: null,
-                version: 5,
-                phaseVersion: 1,
-                progressVersion: state.version,
-                nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
-                selection: null,
-                selectionOutcome: null,
-                selectionScores: null,
-                nominationAuthors: null,
-                rating: null,
-                canManage: token.includes('operator'),
-            };
-            sendJson(response, 200, detail);
+        const detail: TSession = {
+            id: SESSION_ID,
+            clubId: CLUB_ID,
+            clubName: 'Midnight Society',
+            topic: 'Nomination night',
+            notes: 'Everyone nominates one film.',
+            type: 'FULL_CYCLE',
+            phase: state.phase,
+            location: 'Room A',
+            scheduledAt: '2026-12-01T00:00:00.000Z',
+            deadlineAt: null,
+            movieId: null,
+            version: 5,
+            phaseVersion: 1,
+            progressVersion: state.version,
+            nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
+            selection: null,
+            selectionOutcome: null,
+            selectionScores: null,
+            nominationAuthors: null,
+            rating: null,
+            canManage: token.includes('operator'),
         };
-        sendDetail();
+        sendJson(response, 200, detail);
     } else if (request.method === 'GET') sendJson(response, 200, projection(token, state));
     else
         readJson<Partial<TCloseNomination & TSubmitNomination>>(request, (input) => {

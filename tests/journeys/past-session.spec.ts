@@ -154,11 +154,9 @@ test('A minimal past Session waits for hydration, retains input after a request 
     });
     try {
         await page.goto(path, { waitUntil: 'commit' });
-        await expect(page.locator('#past-date')).toBeDisabled();
+        await expect(form.getByLabel('Date')).toBeDisabled();
         await expect(
-            page
-                .locator('form:has(#past-date)')
-                .getByRole('button', { name: 'Next', exact: true, includeHidden: true }),
+            form.getByRole('button', { name: 'Next', exact: true, includeHidden: true }),
         ).toBeDisabled();
         releaseScripts();
         await expect(form.getByLabel('Date')).toBeEnabled();

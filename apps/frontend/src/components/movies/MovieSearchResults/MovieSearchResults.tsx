@@ -39,7 +39,7 @@ export default function MovieSearchResults({
     const isLoading = !result;
     const message = getSearchMessage(term, result);
     return (
-        <div className={styles.results}>
+        <div className={styles.results} role="group" aria-label="Film search results">
             <div className={styles.header}>
                 {result?.state === 'stale' ? <span>Cached</span> : null}
                 {isLoading ? (

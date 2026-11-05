@@ -165,9 +165,9 @@ test('Rating keeps input and explains save failure and offline recovery', async 
 for (const [scenario, message] of [
     ['stale', 'This Session changed. Refresh before closing Rating.'],
     ['closefailure', 'We could not close Rating. Try again.'],
-]) {
+] as const) {
     test(`Rating closure preserves confirmation on ${scenario}`, async ({ context, page }) => {
-        await authenticate(context, scenario!);
+        await authenticate(context, scenario);
         await page.goto(ROUTE);
         await page.getByRole('button', { name: 'Session settings' }).click();
         await expect(page.getByRole('menuitem', { name: 'Close Rating early' })).toBeFocused();
@@ -175,7 +175,7 @@ for (const [scenario, message] of [
         const dialog = page.getByRole('dialog', { name: 'Close Rating early' });
         await dialog.getByLabel('Type CLOSE to confirm').fill('CLOSE');
         await dialog.getByRole('button', { name: 'Complete Session' }).click();
-        await expect(dialog.getByRole('status')).toHaveText(message!);
+        await expect(dialog.getByRole('status')).toHaveText(message);
         await expect(dialog.getByLabel('Type CLOSE to confirm')).toHaveValue('CLOSE');
     });
 }

@@ -12,7 +12,7 @@ import type {
 } from '@pickflick/contracts';
 
 import { handleAchievements } from './achievements.ts';
-import { settingsProjection as clubSettingsProjection } from './club-projections.ts';
+import { settingsProjection } from './club-projections.ts';
 import { handleClubRatings } from './club-ratings.ts';
 import { buildHubProjection } from './hub-projections.ts';
 import { handleLibrary } from './library.ts';
@@ -47,8 +47,9 @@ const avatarPng = Buffer.from(
     'base64',
 );
 
-const settingsProjection = (token: TToken) =>
-    clubSettingsProjection(
+/** The base settings projection plus what this mock session changed: avatar and removals. */
+const currentSettings = (token: TToken) =>
+    settingsProjection(
         token,
         avatarVersionsBySession.get(token),
         removedMembersBySession.has(token),
@@ -60,11 +61,11 @@ function hubClubs(token: TToken): IClubSummary[] {
             token?.includes(scenario),
         )
     )
-        return clubsBySession.get(token) ?? [settingsProjection(token).club];
+        return clubsBySession.get(token) ?? [currentSettings(token).club];
     if (!token?.includes('hub')) {
         return clubsBySession.get(token) ?? [];
     }
-    const first = settingsProjection(token).club;
+    const first = currentSettings(token).club;
     const second: IClubSummary = {
         ...first,
         id: SECOND_CLUB_ID,
@@ -79,7 +80,7 @@ function hubProjection(token: TToken, clubId: string) {
     if (token?.includes('session-workflow') && clubId === SETTINGS_CLUB_ID)
         return sessionHub(token);
     const club = hubClubs(token).find(({ id }) => id === clubId);
-    return club ? buildHubProjection(token, club, settingsProjection(token)) : null;
+    return club ? buildHubProjection(token, club, currentSettings(token)) : null;
 }
 
 function sessionToken(request: TMockRequest): TToken {
@@ -197,7 +198,7 @@ const clubRoutes: TClubRoute[] = [
         'GET',
         /^\/sessions\/past\/members$/u,
         (_request, response, token) => {
-            const members: TPastSessionMembers = settingsProjection(token).members.map(
+            const members: TPastSessionMembers = currentSettings(token).members.map(
                 ({ id, displayName }) => ({ id, displayName, status: 'ACTIVE' }),
             );
             sendJson(response, 200, members);
@@ -284,13 +285,13 @@ const clubRoutes: TClubRoute[] = [
     [
         'GET',
         /^\/settings$/u,
-        (_request, response, token) => sendJson(response, 200, settingsProjection(token)),
+        (_request, response, token) => sendJson(response, 200, currentSettings(token)),
     ],
     ['GET', /^\/avatar$/u, (_request, response) => sendAvatar(response)],
     [
         'PATCH',
         /^\/settings$/u,
-        (_request, response, token) => sendJson(response, 200, settingsProjection(token)),
+        (_request, response, token) => sendJson(response, 200, currentSettings(token)),
     ],
     [
         'PATCH',
@@ -397,8 +398,7 @@ function handleInvitation(request: TMockRequest, response: TMockResponse, pathna
                     ? { state: 'accepted', clubId: SETTINGS_CLUB_ID }
                     : { state: 'declined' };
             invitationResponses.set(key, preview);
-            if (decision === 'accept')
-                clubsBySession.set(session, [settingsProjection(session).club]);
+            if (decision === 'accept') clubsBySession.set(session, [currentSettings(session).club]);
         }
         sendJson(response, 200, preview);
     });
@@ -437,7 +437,7 @@ const api = createServer((request, response) => {
     const clubMatch = /^\/clubs\/([0-9a-f-]{36})(\/.*)?$/u.exec(pathname);
     if (
         handlePendingInvitation(request, response, pathname, sessionToken(request), (token) =>
-            clubsBySession.set(token, [settingsProjection(token).club]),
+            clubsBySession.set(token, [currentSettings(token).club]),
         )
     ) {
         return;

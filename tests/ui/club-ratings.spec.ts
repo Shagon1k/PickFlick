@@ -83,10 +83,10 @@ test(
             ['valid-hub-ratings-empty', 'No rated films yet.'],
             ['valid-hub-ratings-unavailable', 'Club Ratings are temporarily unavailable'],
             ['valid-hub-ratings-denied', 'Club access unavailable'],
-        ]) {
-            await signInMock(context, token!);
+        ] as const) {
+            await signInMock(context, token);
             await page.goto(PATH);
-            await expect(page.getByText(copy!, { exact: false })).toBeVisible();
+            await expect(page.getByText(copy, { exact: false })).toBeVisible();
         }
         await page.goto(`${PATH}?sort=invalid`);
         await expect(page.getByRole('region', { name: 'Invalid ratings filters' })).toBeVisible();

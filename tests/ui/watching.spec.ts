@@ -98,12 +98,12 @@ for (const scenario of ['member', 'readonly']) {
 for (const [scenario, message] of [
     ['failure', 'We could not open Rating. Try again.'],
     ['stale', 'This Session changed. Refresh before opening Rating.'],
-]) {
+] as const) {
     test(`Opening Rating keeps the dialog on ${scenario} and explains offline recovery`, async ({
         context,
         page,
     }) => {
-        await authenticate(context, scenario!);
+        await authenticate(context, scenario);
         await page.goto(ROUTE);
         await page.getByRole('button', { name: 'Session settings' }).click();
         await expect(page.getByRole('menuitem', { name: 'Open Rating' })).toBeFocused();
@@ -111,7 +111,7 @@ for (const [scenario, message] of [
         const dialog = page.getByRole('dialog', { name: 'Open Rating' });
         await dialog.getByLabel('Type OPEN to confirm').fill('OPEN');
         await dialog.getByRole('button', { name: 'Open Rating', exact: true }).click();
-        await expect(dialog.getByRole('status')).toHaveText(message!);
+        await expect(dialog.getByRole('status')).toHaveText(message);
         await expect(dialog.getByLabel('Type OPEN to confirm')).toHaveValue('OPEN');
         await context.setOffline(true);
         await dialog.getByRole('button', { name: 'Open Rating', exact: true }).click();

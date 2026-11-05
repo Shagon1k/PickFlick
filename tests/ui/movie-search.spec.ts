@@ -78,36 +78,31 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await input.fill('empty');
     await expect(
         page
-            .getByRole('listbox', { name: 'Film results' })
-            .locator('..')
+            .getByRole('group', { name: 'Film search results' })
             .getByText('No films found. Try another title.'),
     ).toBeVisible();
     await input.fill('outage');
     await expect(
         page
-            .getByRole('listbox', { name: 'Film results', exact: true })
-            .locator('..')
+            .getByRole('group', { name: 'Film search results' })
             .getByText('The film provider is temporarily unavailable. Try again.'),
     ).toBeVisible();
     await input.fill('limited');
     await expect(
         page
-            .getByRole('listbox', { name: 'Film results', exact: true })
-            .locator('..')
+            .getByRole('group', { name: 'Film search results' })
             .getByText('Film search is busy. Please try again shortly.'),
     ).toBeVisible();
     await input.fill('disabled');
     await expect(
         page
-            .getByRole('listbox', { name: 'Film results', exact: true })
-            .locator('..')
+            .getByRole('group', { name: 'Film search results' })
             .getByText('Film search is not configured yet.'),
     ).toBeVisible();
     await input.fill('stale');
     await expect(
         page
-            .getByRole('listbox', { name: 'Film results', exact: true })
-            .locator('../..')
+            .getByRole('group', { name: 'Film search results' })
             .getByText('Cached', { exact: true }),
     ).toBeVisible();
     await expect(
@@ -125,8 +120,7 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await expect(page.getByRole('option')).toHaveCount(0);
     await expect(
         page
-            .getByRole('listbox', { name: 'Film results' })
-            .locator('..')
+            .getByRole('group', { name: 'Film search results' })
             .getByText('No films found. Try another title.'),
     ).toBeVisible();
     await expect(page.getByText('Old film')).toHaveCount(0);
@@ -147,21 +141,24 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
         hasTouch: true,
         viewport: { width: 390, height: 844 },
     });
-    const page = await context.newPage();
-    const moviePath = `/movies/${MOVIE_ID}`;
-    await page.goto(moviePath);
-    await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(moviePath)}`);
-    await signInMock(context, 'valid-search-touch');
-    await page.goto('/app', { waitUntil: 'load' });
-    await settle(page);
-    await page
-        .getByRole('button', { name: 'Search films', exact: true })
-        .filter({ visible: true })
-        .tap();
-    await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
-    await page.getByRole('option').first().tap();
-    await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
-    await context.close();
+    try {
+        const page = await context.newPage();
+        const moviePath = `/movies/${MOVIE_ID}`;
+        await page.goto(moviePath);
+        await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(moviePath)}`);
+        await signInMock(context, 'valid-search-touch');
+        await page.goto('/app', { waitUntil: 'load' });
+        await settle(page);
+        await page
+            .getByRole('button', { name: 'Search films', exact: true })
+            .filter({ visible: true })
+            .tap();
+        await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
+        await page.getByRole('option').first().tap();
+        await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
+    } finally {
+        await context.close();
+    }
 });
 
 test('search renders available same-origin posters and preserves film rows when an image fails', async ({
