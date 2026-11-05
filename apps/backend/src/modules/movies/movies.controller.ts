@@ -97,6 +97,7 @@ export class MoviesController {
     async search(@Body(new ZodValidationPipe(movieSearchSchema)) input: TMovieSearch) {
         const result = await this.movies.search(input, { allowStale: true });
         if (result.state === 'unavailable') return result;
+        // PoiskKino search results can omit genres; cached details fill them in when present.
         const metadata = await this.movies.getCachedMetadata(
             result.data.movies.filter((movie) => !movie.genres?.length).map((movie) => movie.id),
         );
