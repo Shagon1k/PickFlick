@@ -21,6 +21,10 @@ import {
 const SESSION_ID = '30000000-0000-4000-8000-000000000050';
 const saved = new Map<string, TSubmitRating>();
 const closed = new Set<string>();
+/** Scenarios whose viewer is not a current participant of the Session. */
+const isOutsider = (token: string) => /removed|unjoined|ineligible/u.test(token);
+/** Outsiders and read-only Club members can see the Session but not act in it. */
+const isReadOnly = (token: string) => token.includes('readonly') || isOutsider(token);
 
 export function handleRating(
     request: TMockRequest,
@@ -31,7 +35,7 @@ export function handleRating(
     if (!token?.startsWith('valid-rating') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
         return false;
     const isCompleted = closed.has(token) || token.includes('completed');
-    const canManage = !/member|readonly|removed|unjoined|ineligible/u.test(token);
+    const canManage = !token.includes('member') && !isReadOnly(token);
     const canManageSession = canManage && !isCompleted;
     const own = saved.get(token);
     const version = 1 + Number(Boolean(own)) + Number(isCompleted);
@@ -62,7 +66,7 @@ export function handleRating(
         });
     } else if (pathname.endsWith('/progress')) sendJson(response, 200, { version });
     else if (pathname.endsWith('/roster')) {
-        const participantNames = /removed|unjoined|ineligible/u.test(token)
+        const participantNames = isOutsider(token)
             ? ['Casey', 'Morgan']
             : ['Jordan', 'Casey', 'Morgan'];
         const roster: ISessionRoster = {
@@ -71,7 +75,7 @@ export function handleRating(
             acceptedCount: participantNames.length,
             canJoin: !isCompleted && token.includes('unjoined'),
             isRemoved: token.includes('removed'),
-            canLeave: !isCompleted && !/readonly|removed|unjoined|ineligible/u.test(token),
+            canLeave: !isCompleted && !isReadOnly(token),
             canManage: canManageSession,
             participants: participantNames.map((displayName, index) => ({
                 id: `40000000-0000-4000-8000-00000000005${index}`,
@@ -126,10 +130,10 @@ function buildRating(
             submittedAt: '2026-12-01T22:01:00.000Z',
         });
     return {
-        acceptedCount: /removed|unjoined|ineligible/u.test(token) ? 2 : 3,
+        acceptedCount: isOutsider(token) ? 2 : 3,
         submittedCount: entries.length,
         receivedCount: entries.length,
-        canSubmit: !isCompleted && !own && !/readonly|removed|unjoined|ineligible/u.test(token),
+        canSubmit: !isCompleted && !own && !isReadOnly(token),
         canClose: !isCompleted && canManage,
         own: own
             ? {
