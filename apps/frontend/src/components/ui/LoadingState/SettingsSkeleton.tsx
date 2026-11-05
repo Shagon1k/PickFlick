@@ -1,6 +1,10 @@
 import type { IClubHub } from '@pickflick/contracts';
 
-import { formatSessionPhase, formatSessionProgress } from '#components/sessions/club-session-text';
+import {
+    formatHubSessionTitle,
+    formatSessionPhase,
+    formatSessionProgress,
+} from '#components/sessions/club-session-text';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatCalendarDate } from '#lib/format';
 
@@ -162,9 +166,7 @@ function RatingSummaries({ hub }: { hub?: IClubHub | null }) {
                 <div className={styles.ratingSummary} key={session.id}>
                     <div className={styles.ratingCopy}>
                         <strong>
-                            <Skeleton
-                                text={session.movie?.title ?? session.topic ?? 'Untitled Session'}
-                            />
+                            <Skeleton text={formatHubSessionTitle(session)} />
                         </strong>
                         <span>
                             <Skeleton

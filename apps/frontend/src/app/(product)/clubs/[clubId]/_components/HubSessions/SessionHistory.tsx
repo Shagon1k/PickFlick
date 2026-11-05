@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import { formatHubSessionTitle } from '#components/sessions/club-session-text';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
@@ -128,11 +129,7 @@ export default function SessionHistory({
                                     withColorReveal
                                 />
                                 <div className={styles.copy}>
-                                    <strong>
-                                        {session.movie?.title ??
-                                            session.topic ??
-                                            'Untitled Session'}
-                                    </strong>
+                                    <strong>{formatHubSessionTitle(session)}</strong>
                                     <span>
                                         {[
                                             session.scheduledAt

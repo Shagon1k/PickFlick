@@ -1,6 +1,7 @@
 import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
+import { formatHubSessionTitle } from '#components/sessions/club-session-text';
 import Avatar from '#components/ui/Avatar/Avatar';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
@@ -113,9 +114,7 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                                 <li key={session.id}>
                                     {before}
                                     <Link href={`/sessions/${session.id}`} prefetch={false}>
-                                        {session.movie?.title ??
-                                            session.topic ??
-                                            'Untitled Session'}
+                                        {formatHubSessionTitle(session)}
                                     </Link>
                                     {after} ·{' '}
                                     <LocalTime format="relative" value={session.updatedAt} />

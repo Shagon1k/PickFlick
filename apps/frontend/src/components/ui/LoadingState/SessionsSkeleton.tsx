@@ -1,5 +1,6 @@
 import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 
+import { formatHubSessionTitle } from '#components/sessions/club-session-text';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { formatAverage, formatCalendarDate, formatCount } from '#lib/format';
@@ -99,9 +100,7 @@ function SessionRow({ session, isRating }: { session?: IClubHubSession; isRating
             <div className={styles.copy} data-known={Boolean(session) || undefined}>
                 <div className={styles.name}>
                     {session ? (
-                        <Skeleton
-                            text={session.movie?.title ?? session.topic ?? 'Untitled Session'}
-                        />
+                        <Skeleton text={formatHubSessionTitle(session)} />
                     ) : (
                         <Skeleton shouldFill />
                     )}

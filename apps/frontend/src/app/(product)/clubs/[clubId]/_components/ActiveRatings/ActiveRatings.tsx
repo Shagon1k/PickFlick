@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
+import { formatHubSessionTitle } from '#components/sessions/club-session-text';
 import RatingClose from '#components/sessions/RatingClose/RatingClose';
 import Button from '#components/ui/Button/Button';
 import { formatCalendarDate } from '#lib/format';
@@ -33,11 +34,7 @@ export default function ActiveRatings({
                             <li key={session.id}>
                                 <div className={styles.copy}>
                                     <Link href={`/sessions/${session.id}`} prefetch={false}>
-                                        <strong>
-                                            {session.movie?.title ??
-                                                session.topic ??
-                                                'Untitled Session'}
-                                        </strong>
+                                        <strong>{formatHubSessionTitle(session)}</strong>
                                         <span>
                                             {session.scheduledAt
                                                 ? formatCalendarDate(session.scheduledAt)

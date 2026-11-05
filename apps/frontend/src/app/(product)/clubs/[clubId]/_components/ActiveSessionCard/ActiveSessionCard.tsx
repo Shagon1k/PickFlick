@@ -2,14 +2,18 @@
 
 import type { IClubHub } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useState, useTransition } from 'react';
+import type { ReactNode } from 'react';
 
-import { formatSessionPhase, formatSessionProgress } from '#components/sessions/club-session-text';
+import {
+    formatSessionPhase,
+    formatSessionProgress,
+    getProgressTotal,
+} from '#components/sessions/club-session-text';
 import { changeRosterAction } from '#components/sessions/roster-actions';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import styles from './ActiveSessionCard.module.scss';
 
@@ -25,23 +29,15 @@ export default function ActiveSessionCard({
     actions?: ReactNode;
 }) {
     const { activeSession: session, memberCount } = hub;
-    const [isPending, startTransition] = useTransition();
-    const [message, setMessage] = useState('');
+    const { message, setMessage, isPending, run } = useActionStatus();
     const router = useRouter();
-    function handleJoin() {
-        if (!session) return;
-        const offline = getOfflineMessage();
-        if (offline) {
-            setMessage(offline);
-            return;
-        }
-        startTransition(async () => {
-            const result = await changeRosterAction(session.id, { action: 'join' }).catch(() => ({
-                ok: false,
-                message: 'Could not join this Session. Try again.',
-            }));
-            setMessage(result.message);
-            if (result.ok) router.push(`/sessions/${session.id}`);
+    function join(sessionId: string) {
+        run(() => changeRosterAction(sessionId, { action: 'join' }), {
+            unreachableMessage: 'Could not join this Session. Try again.',
+            onResult: (result) => {
+                setMessage(result.message);
+                if (result.ok) router.push(`/sessions/${sessionId}`);
+            },
         });
     }
     const details = session ? (
@@ -53,24 +49,16 @@ export default function ActiveSessionCard({
             </p>
             <FilmProgress
                 value={session.progressCount ?? session.acceptedCount}
+                // Watching has no progress count, so its bar shows who joined out of the Club.
                 max={
-                    session.phase === 'NOMINATION' || session.progressCount === null
+                    session.progressCount === null
                         ? memberCount
-                        : session.acceptedCount
+                        : getProgressTotal(session, memberCount)
                 }
                 label={formatSessionProgress(session, memberCount)}
             />
         </div>
     ) : null;
-    const sessionAction = session?.canJoin ? (
-        <Button fullWidth loading={isPending} onClick={handleJoin}>
-            Join me!
-        </Button>
-    ) : (
-        <ButtonLink fullWidth href={`/sessions/${session?.id}`} variant="primary">
-            Open Session
-        </ButtonLink>
-    );
     return (
         <section
             className={styles.card}
@@ -81,7 +69,20 @@ export default function ActiveSessionCard({
             {session ? (
                 <div className={styles.stack}>
                     {details}
-                    {actions ?? sessionAction}
+                    {actions ??
+                        (session.canJoin ? (
+                            <Button fullWidth loading={isPending} onClick={() => join(session.id)}>
+                                Join me!
+                            </Button>
+                        ) : (
+                            <ButtonLink
+                                fullWidth
+                                href={`/sessions/${session.id}`}
+                                variant="primary"
+                            >
+                                Open Session
+                            </ButtonLink>
+                        ))}
                     <p role="status">{message}</p>
                 </div>
             ) : (

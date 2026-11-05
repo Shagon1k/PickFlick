@@ -5,10 +5,11 @@ import Link from 'next/link';
 import choosingPanda from '#brand/panda-choosing.webp';
 import projectionistPanda from '#brand/panda-projectionist.webp';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import { getProgressTotal } from '#components/sessions/club-session-text';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Icon from '#components/ui/Icon/Icon';
-import { formatCount, formatRuntime } from '#lib/format';
+import { formatCount, formatRuntime, toScreeningTime } from '#lib/format';
 
 import styles from './CallSheet.module.scss';
 
@@ -32,11 +33,14 @@ export default function CallSheet({
               scheduled,
           )
         : '—';
-    // Sessions store a date at midnight UTC; only a real time earns the Call time slot.
-    const hasTime = scheduled !== null && scheduled.getUTCHours() + scheduled.getUTCMinutes() > 0;
-    const time = hasTime
-        ? new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(scheduled)
-        : null;
+    // A date-only Session has no time, so it shows its location in the Call time slot instead.
+    const hasTime = Boolean(session.scheduledAt && toScreeningTime(session.scheduledAt));
+    const time =
+        scheduled && hasTime
+            ? new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(
+                  scheduled,
+              )
+            : null;
     const hasSelectedFilm = isFilmSessionPhase(session.phase);
     const title = hasSelectedFilm
         ? (session.movie?.title ?? session.topic ?? 'Film unavailable')
@@ -66,45 +70,24 @@ export default function CallSheet({
             </header>
             <div className={styles.layout}>
                 <dl className={styles.fields}>
-                    <div className={styles.picture}>
-                        <dt>{hasSelectedFilm ? 'Picture' : 'Session'}</dt>
-                        <dd>{title}</dd>
-                        <dd className={styles.fieldOutline} aria-hidden="true">
-                            <ColorReveal variant="outline" />
-                        </dd>
-                    </div>
+                    <Field
+                        className={styles.picture}
+                        label={hasSelectedFilm ? 'Picture' : 'Session'}
+                        value={title}
+                    />
                     {time ? (
-                        <div>
-                            <dt>Call time</dt>
-                            <dd>{time}</dd>
-                            <dd className={styles.fieldOutline} aria-hidden="true">
-                                <ColorReveal variant="outline" />
-                            </dd>
-                        </div>
+                        <Field label="Call time" value={time} />
                     ) : (
-                        <div className={styles.location}>
-                            <dt>Location</dt>
-                            <dd title={session.location ?? undefined}>{session.location ?? '—'}</dd>
-                            <dd className={styles.fieldOutline} aria-hidden="true">
-                                <ColorReveal variant="outline" />
-                            </dd>
-                        </div>
+                        <Field
+                            className={styles.location}
+                            label="Location"
+                            value={session.location ?? '—'}
+                            title={session.location ?? undefined}
+                        />
                     )}
-                    <div>
-                        <dt>Date</dt>
-                        <dd>{date}</dd>
-                        <dd className={styles.fieldOutline} aria-hidden="true">
-                            <ColorReveal variant="outline" />
-                        </dd>
-                    </div>
+                    <Field label="Date" value={date} />
                     {fields.map((field) => (
-                        <div key={field.label}>
-                            <dt>{field.label}</dt>
-                            <dd>{field.value}</dd>
-                            <dd className={styles.fieldOutline} aria-hidden="true">
-                                <ColorReveal variant="outline" />
-                            </dd>
-                        </div>
+                        <Field key={field.label} label={field.label} value={field.value} />
                     ))}
                 </dl>
                 <figure className={styles.still}>
@@ -193,6 +176,28 @@ function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
     );
 }
 
+function Field({
+    label,
+    value,
+    className,
+    title,
+}: {
+    label: string;
+    value: string;
+    className?: string;
+    title?: string;
+}) {
+    return (
+        <div className={className}>
+            <dt>{label}</dt>
+            <dd title={title}>{value}</dd>
+            <dd className={styles.fieldOutline} aria-hidden="true">
+                <ColorReveal variant="outline" />
+            </dd>
+        </div>
+    );
+}
+
 function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean, memberCount: number) {
     if (hasSelectedFilm)
         return [
@@ -202,7 +207,7 @@ function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean, memb
     return [
         {
             label: session.phase === 'SELECTION' ? 'Ballots' : 'Nominated',
-            value: `${session.progressCount ?? 0}/${session.phase === 'NOMINATION' ? memberCount : session.acceptedCount}`,
+            value: `${session.progressCount ?? 0}/${getProgressTotal(session, memberCount)}`,
         },
         {
             label: session.phase === 'SELECTION' ? 'Nominations' : 'Participants',
