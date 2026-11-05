@@ -3,11 +3,14 @@
 import type { TMovieSummary } from '@pickflick/contracts';
 import Link from 'next/link';
 
-import { getSearchMessage, type TMovieSearchResponse } from '#components/movies/movie-search';
+import {
+    formatFilmCount,
+    getSearchMessage,
+    type TMovieSearchResponse,
+} from '#components/movies/movie-search';
 import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
-import { formatCount } from '#lib/format';
 
 import styles from './MovieSearchResults.module.scss';
 
@@ -45,7 +48,7 @@ export default function MovieSearchResults({
                     </div>
                 ) : null}
                 {result && 'data' in result ? (
-                    <span className={styles.count}>{formatCount(movies.length, 'film')} found</span>
+                    <span className={styles.count}>{formatFilmCount(movies.length)}</span>
                 ) : null}
             </div>
             <p className="visually-hidden" role="status">

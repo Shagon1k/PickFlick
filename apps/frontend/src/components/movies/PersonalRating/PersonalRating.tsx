@@ -24,6 +24,7 @@ export default function PersonalRating({
 }: {
     movieId: string;
     rating: TPersonalMovieRating | null;
+    /** Lets the caller react to a save; passing it also closes the editor once the save lands. */
     onSaved?: (message: string) => void;
     /** A Library table cell opens the same editor from a compact score button. */
     isInTable?: boolean;
@@ -75,17 +76,7 @@ export default function PersonalRating({
                     }
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    {isInTable ? null : <Icon name="ratings" />}
-                    {rating && isInTable ? (
-                        <strong className={styles.tableScore}>{rating.score}</strong>
-                    ) : null}
-                    {rating && !isInTable ? (
-                        <span className={styles.pill}>
-                            <strong>{rating.score}</strong>
-                            <small>You</small>
-                        </span>
-                    ) : null}
-                    {rating ? null : 'Rate'}
+                    <TriggerContent score={rating?.score} isInTable={isInTable} />
                 </Button>
             }
         >
@@ -105,5 +96,27 @@ export default function PersonalRating({
                 </p>
             </div>
         </Popover>
+    );
+}
+
+function TriggerContent({ score, isInTable }: { score?: number; isInTable: boolean }) {
+    if (isInTable)
+        return score === undefined ? (
+            <>Rate</>
+        ) : (
+            <strong className={styles.tableScore}>{score}</strong>
+        );
+    return (
+        <>
+            <Icon name="ratings" />
+            {score === undefined ? (
+                'Rate'
+            ) : (
+                <span className={styles.pill}>
+                    <strong>{score}</strong>
+                    <small>You</small>
+                </span>
+            )}
+        </>
     );
 }

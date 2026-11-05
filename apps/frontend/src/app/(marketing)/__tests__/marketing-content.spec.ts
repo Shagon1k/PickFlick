@@ -17,14 +17,12 @@ describe('public plan contract', () => {
             free: 'Unlimited',
             pro: 'Unlimited',
         });
-        expect(freePlanFeatures.map(({ label }) => label)).toContain('1 blocking Session per Club');
-        expect(freePlanFeatures.map(({ label }) => label)).toContain(
-            'Configurable Session visibility',
-        );
-        expect(proPlanFeatures.map(({ label }) => label)).toContain(
-            'Configurable Session visibility',
-        );
-        expect(proPlanFeatures.map(({ label }) => label)).toContain('1 blocking Session per Club');
+        const freeLabels = freePlanFeatures.map(({ label }) => label);
+        const proLabels = proPlanFeatures.map(({ label }) => label);
+        for (const labels of [freeLabels, proLabels]) {
+            expect(labels).toContain('1 blocking Session per Club');
+            expect(labels).toContain('Configurable Session visibility');
+        }
     });
 
     it('should mark Free restrictions as limits rather than included features', () => {

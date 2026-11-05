@@ -35,7 +35,7 @@ export default function WatchlistBookmark({
     const priorityLabel =
         WATCHLIST_PRIORITIES.find((priority) => priority.value === item?.priority)?.label ?? 'Save';
 
-    function handleSave(priority: TWatchlistPriority | null, shouldClose = true) {
+    function save(priority: TWatchlistPriority | null, { shouldClose = true } = {}) {
         run(() => setWatchlistAction(movieId, priority), {
             pendingMessage: 'Updating your Watchlist…',
             onResult: (result) => {
@@ -55,7 +55,8 @@ export default function WatchlistBookmark({
     function handleOpen() {
         if (isPending) return;
         setIsOpen(!isOpen);
-        if (!isOpen && !item) handleSave('MEDIUM', false);
+        // Opening an empty bookmark adds the film at once and keeps the priority choices open.
+        if (!isOpen && !item) save('MEDIUM', { shouldClose: false });
     }
 
     return (
@@ -104,7 +105,7 @@ export default function WatchlistBookmark({
                                 type="button"
                                 aria-pressed={item?.priority === priority.value}
                                 disabled={isPending}
-                                onClick={() => handleSave(priority.value)}
+                                onClick={() => save(priority.value)}
                             >
                                 {priority.label}
                             </button>
@@ -116,7 +117,7 @@ export default function WatchlistBookmark({
                             aria-label="Remove from watchlist"
                             className={styles.remove}
                             disabled={isPending}
-                            onClick={() => handleSave(null)}
+                            onClick={() => save(null)}
                         >
                             <Icon name="close" />
                         </button>

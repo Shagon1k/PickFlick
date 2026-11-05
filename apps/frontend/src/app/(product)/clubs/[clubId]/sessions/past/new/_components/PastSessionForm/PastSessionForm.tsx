@@ -67,12 +67,16 @@ export default function PastSessionForm({
         shouldFocusStepRef.current = false;
     }, [step]);
     const submissionIdRef = useRef<string | null>(null);
-    function buildInput({ date, time, ...values }: IPastSessionValues) {
+    /** One key for every retry of this form, so a lost response cannot log the Session twice. */
+    function getSubmissionId() {
         submissionIdRef.current ??= crypto.randomUUID();
+        return submissionIdRef.current;
+    }
+    function buildInput({ date, time, ...values }: IPastSessionValues) {
         return {
             ...values,
             scheduledAt: date ? `${date}T${time || '00:00'}:00.000Z` : '',
-            submissionId: submissionIdRef.current,
+            submissionId: getSubmissionId(),
         };
     }
     const form = useForm<IPastSessionValues>({
