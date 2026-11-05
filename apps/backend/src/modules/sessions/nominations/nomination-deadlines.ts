@@ -129,8 +129,12 @@ export class NominationDeadlines {
                 },
             });
             if (outcome === 'EMPTY') {
-                // Nomination stays open without a deadline; an operator may set a new one.
-                await tx.session.update({ where: { id: sessionId }, data: { deadlineAt: null } });
+                // Nomination stays open without a deadline; an operator may set a new one. Bumping
+                // the details version makes an edit opened before this answer SESSION_CHANGED.
+                await tx.session.update({
+                    where: { id: sessionId },
+                    data: { deadlineAt: null, detailsVersion: { increment: 1 } },
+                });
                 await publishProgress(tx, sessionId, 'DETAILS');
                 await recordSessionNotifications(tx, session, 'NOMINATION_STALLED');
             } else {

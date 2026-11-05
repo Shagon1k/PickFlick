@@ -117,11 +117,15 @@ describe('NominationDeadlines', () => {
         expect(await session()).toMatchObject({
             phase: 'NOMINATION',
             phaseVersion: 1,
-            detailsVersion: 1,
+            // Clearing the deadline is a details change, so a form opened before it is stale.
+            detailsVersion: 2,
             deadlineVersion: 1,
             // The passed deadline is cleared, so the header stops counting down.
             deadlineAt: null,
         });
+        const stale = await edit({ version: 1, topic: 'Stale topic' });
+        expect(stale.status).toBe(409);
+        expect(await stale.json()).toMatchObject({ error: { reason: 'SESSION_CHANGED' } });
         expect((await edit({ topic: 'Edited topic', deadlineAt: null })).status).toBe(200);
         await new NominationDeadlines(api.prisma, log, api.transactions).runOnce(due);
         const result = await decisions();
