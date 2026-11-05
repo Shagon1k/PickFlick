@@ -360,9 +360,6 @@ for (const viewport of screenshotViewports) {
             await settle(page);
             await expect(page).toHaveScreenshot(`nominations-${viewport.name}.png`, {
                 fullPage: true,
-                animations: 'disabled',
-                caret: 'hide',
-                scale: 'css',
             });
         },
     );

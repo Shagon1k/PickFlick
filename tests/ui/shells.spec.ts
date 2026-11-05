@@ -1,9 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { formatViolations } from './axe';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
-import { formatViolations, openShell, shellRoutes } from './shell-fixtures';
+import { openShell, shellRoutes } from './shell-fixtures';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 test(
@@ -77,13 +78,10 @@ for (const shell of shellRoutes) {
             async ({ page }) => {
                 await openShell(page, shell, viewport);
                 await expect(page).toHaveScreenshot(`shell-${shell}-${viewport.name}.png`, {
-                    animations: 'disabled',
-                    caret: 'hide',
                     fullPage: true,
                     // Signed out, the invite ticket shows its load error and renders unevenly;
                     // the pending-invite captures cover the ticket itself.
                     mask: [page.locator('[data-invite-ticket]')],
-                    scale: 'css',
                 });
             },
         );

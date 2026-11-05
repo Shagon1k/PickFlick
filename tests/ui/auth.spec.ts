@@ -68,10 +68,7 @@ for (const viewport of screenshotViewports) {
         async ({ page }) => {
             await openLogin(page, viewport);
             await expect(page).toHaveScreenshot(`login-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );

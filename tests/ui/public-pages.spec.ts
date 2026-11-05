@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { formatViolations } from './axe';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
@@ -15,19 +16,6 @@ async function openPage(page: Page, route: string, viewport: { height: number; w
     await page.setViewportSize(viewport);
     await page.goto(route, { waitUntil: 'load' });
     await settle(page);
-}
-
-function formatViolations(violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']) {
-    return violations
-        .map(
-            (violation) =>
-                `${violation.id}: ${violation.help}\n${violation.nodes
-                    .map(
-                        (node) => `  ${node.target.join(' ')}: ${node.failureSummary ?? node.html}`,
-                    )
-                    .join('\n')}`,
-        )
-        .join('\n');
 }
 
 /** The landing hero fades in; axe must not judge it half-transparent. */
@@ -99,10 +87,7 @@ for (const publicPage of pages) {
                 await revealLandingSections(page, publicPage.name);
 
                 await expect(page).toHaveScreenshot(`${publicPage.name}-${viewport.name}.png`, {
-                    animations: 'disabled',
-                    caret: 'hide',
                     fullPage: true,
-                    scale: 'css',
                 });
             },
         );

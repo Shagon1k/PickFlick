@@ -220,9 +220,6 @@ for (const viewport of screenshotViewports) {
             await settle(page);
             await expect(page).toHaveScreenshot(`create-session-${viewport.name}.png`, {
                 fullPage: true,
-                animations: 'disabled',
-                caret: 'hide',
-                scale: 'css',
             });
         },
     );

@@ -361,10 +361,7 @@ for (const viewport of screenshotViewports) {
             await page.goto(`/clubs/${FIRST_CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
             await expect(page).toHaveScreenshot(`club-hub-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, test } from '@playwright/test';
 
+import { formatViolations } from './axe';
 import { settle } from './settle';
 
 const PREVIEW_PATH = '/ui-preview';
@@ -57,17 +58,7 @@ test('component gallery passes accessibility, form, keyboard, overlay, and motio
     assert.equal(
         accessibilityResults.violations.length,
         0,
-        `accessibility violations:\n${accessibilityResults.violations
-            .map(
-                (violation) =>
-                    `${violation.id} (${violation.impact ?? 'unknown impact'}): ${violation.help}\n${violation.nodes
-                        .map(
-                            (node) =>
-                                `  ${node.target.join(' ')}: ${node.failureSummary ?? node.html}`,
-                        )
-                        .join('\n')}`,
-            )
-            .join('\n')}`,
+        `accessibility violations:\n${formatViolations(accessibilityResults.violations)}`,
     );
 
     const namedField = page.getByRole('textbox', { name: 'Club name', exact: true });

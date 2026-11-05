@@ -339,10 +339,7 @@ for (const viewport of screenshotViewports) {
             await authenticate(context, `valid-settings-admin-${viewport.name}`);
             await open(page, viewport);
             await expect(page).toHaveScreenshot(`club-settings-admin-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );
@@ -356,10 +353,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await authenticate(context, `valid-settings-member-${viewport.name}`);
             await open(page, viewport);
             await expect(page).toHaveScreenshot(`club-settings-member-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );
@@ -384,10 +378,7 @@ for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
             await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
             await settle(page);
             await expect(page).toHaveScreenshot(`club-settings-archived-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );

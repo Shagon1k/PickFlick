@@ -162,10 +162,7 @@ for (const viewport of screenshotViewports) {
             await authenticate(context, `valid-no-clubs-${viewport.name}`);
             await open(page, '/app', viewport);
             await expect(page).toHaveScreenshot(`no-clubs-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );
@@ -177,10 +174,7 @@ for (const viewport of screenshotViewports) {
             await authenticate(context, `valid-create-club-${viewport.name}`);
             await open(page, '/clubs/new', viewport);
             await expect(page).toHaveScreenshot(`create-club-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );

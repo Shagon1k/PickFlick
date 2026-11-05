@@ -319,7 +319,7 @@ for (const viewport of screenshotViewports) {
                 await settle(page);
                 await expect(page).toHaveScreenshot(
                     `club-invitation-${state}-${viewport.name}.png`,
-                    { fullPage: true, scale: 'css' },
+                    { fullPage: true },
                 );
             },
         );
@@ -348,7 +348,7 @@ for (const viewport of screenshotViewports) {
                 await settle(page);
                 await expect(page).toHaveScreenshot(
                     `club-invitation-${decision}-${viewport.name}.png`,
-                    { fullPage: true, scale: 'css' },
+                    { fullPage: true },
                 );
             },
         );

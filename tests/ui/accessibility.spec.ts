@@ -1,20 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { formatViolations } from './axe';
 import { settle } from './settle';
-
-function formatViolations(violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']) {
-    return violations
-        .map(
-            (violation) =>
-                `${violation.id} (${violation.impact ?? 'unknown impact'}): ${violation.help}\n${violation.nodes
-                    .map(
-                        (node) => `  ${node.target.join(' ')}: ${node.failureSummary ?? node.html}`,
-                    )
-                    .join('\n')}`,
-        )
-        .join('\n');
-}
 
 for (const profile of [
     { height: 844, name: 'mobile', width: 390 },
