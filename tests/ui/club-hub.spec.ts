@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
@@ -260,13 +261,7 @@ test('Hub meets keyboard, touch, accessibility, and width contracts', async ({ b
             await page.setViewportSize(viewport);
             await page.goto(`/clubs/${FIRST_CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
-            const widths = await page.evaluate(() => ({
-                body: document.body.scrollWidth,
-                client: document.documentElement.clientWidth,
-                document: document.documentElement.scrollWidth,
-            }));
-            expect(widths.body).toBeLessThanOrEqual(widths.client);
-            expect(widths.document).toBeLessThanOrEqual(widths.client);
+            await expectNoPageOverflow(page);
         }
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         const next = page.getByRole('button', { name: 'Next Club' });

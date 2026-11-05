@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
@@ -213,9 +214,7 @@ for (const viewport of canonicalViewports) {
         );
         expect(offset > 0, `list heading is ${offset}px below the form`).toBe(!isSideBySide);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        expect(
-            await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-        ).toBe(true);
+        await expectNoPageOverflow(page);
     });
 }
 

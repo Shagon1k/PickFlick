@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
@@ -9,14 +10,6 @@ async function open(page: Page, route: string, viewport: { height: number; width
     await page.setViewportSize(viewport);
     await page.goto(route, { waitUntil: 'load' });
     await settle(page);
-}
-
-function widths(page: Page) {
-    return page.evaluate(() => ({
-        body: globalThis.document.body.scrollWidth,
-        client: globalThis.document.documentElement.clientWidth,
-        document: globalThis.document.documentElement.scrollWidth,
-    }));
 }
 
 test('protected Club onboarding redirects an unauthenticated visitor', async ({ page }) => {
@@ -74,14 +67,7 @@ test('Club onboarding does not overflow across canonical and gap widths', async 
     for (const route of ['/app', '/clubs/new']) {
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
             await open(page, route, viewport);
-            const dimensions = await widths(page);
-            expect(
-                dimensions.document,
-                `${route} document at ${viewport.width}px`,
-            ).toBeLessThanOrEqual(dimensions.client);
-            expect(dimensions.body, `${route} body at ${viewport.width}px`).toBeLessThanOrEqual(
-                dimensions.client,
-            );
+            await expectNoPageOverflow(page, `${route} at ${viewport.width}px`);
         }
     }
 });

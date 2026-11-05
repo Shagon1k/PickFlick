@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
@@ -51,13 +52,7 @@ test('Login has no horizontal overflow at canonical and bridge widths', async ({
         { height: 900, name: 'bridge-640', width: 640 },
     ]) {
         await openLogin(page, viewport);
-        const dimensions = await page.evaluate(() => ({
-            body: globalThis.document.body.scrollWidth,
-            client: globalThis.document.documentElement.clientWidth,
-            document: globalThis.document.documentElement.scrollWidth,
-        }));
-        expect(dimensions.document, viewport.name).toBeLessThanOrEqual(dimensions.client);
-        expect(dimensions.body, viewport.name).toBeLessThanOrEqual(dimensions.client);
+        await expectNoPageOverflow(page, viewport.name);
     }
 });
 

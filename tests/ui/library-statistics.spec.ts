@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 
@@ -28,9 +29,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     statistics.getByText('DirectorWithAVeryLongUnbrokenName'.repeat(4)),
                 ).toBeVisible();
                 await settle(page);
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
+                await expectNoPageOverflow(page);
                 expect(
                     await statistics
                         .locator('dd[data-text]')

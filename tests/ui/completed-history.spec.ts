@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
@@ -37,9 +38,7 @@ test(
         ).toContainText('8.0');
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-            true,
-        );
+        await expectNoPageOverflow(page);
     },
 );
 
@@ -82,9 +81,7 @@ for (const viewport of canonicalViewports) {
             await expect(page.getByRole('dialog')).toHaveCount(0);
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         },
     );
@@ -113,9 +110,7 @@ for (const viewport of canonicalViewports) {
             await expect(
                 history.getByRole('listitem').filter({ hasText: 'An empty screening' }),
             ).toContainText('—');
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         },
     );

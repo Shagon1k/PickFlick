@@ -305,6 +305,11 @@ export default [
     {
         files: ['tests/**/*.ts'],
         ...playwright.configs['flat/recommended'],
+        rules: {
+            ...playwright.configs['flat/recommended'].rules,
+            // Shared helpers such as expectNoPageOverflow assert on the test's behalf.
+            'playwright/expect-expect': ['warn', { assertFunctionNames: ['expectNoPageOverflow'] }],
+        },
     },
     {
         // Developer and CI tooling deliberately resolves pnpm, docker, and git from PATH.

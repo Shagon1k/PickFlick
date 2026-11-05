@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
@@ -84,9 +85,7 @@ for (const viewport of canonicalViewports) {
                     .getByText('A memorable screening.', { exact: true }),
             ).toBeVisible();
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             await settle(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         },
@@ -199,9 +198,7 @@ test('Rating supports touch and reduced motion on a phone', async ({ browser }) 
                 .first()
                 .getByText('You', { exact: true }),
         ).toBeVisible();
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-            true,
-        );
+        await expectNoPageOverflow(page);
     } finally {
         await context.close();
     }

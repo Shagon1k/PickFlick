@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
@@ -109,13 +110,7 @@ test('Club settings do not overflow across canonical and bridge widths', async (
         { height: 900, name: 'bridge-1200', width: 1200 },
     ]) {
         await open(page, viewport);
-        const widths = await page.evaluate(() => ({
-            body: globalThis.document.body.scrollWidth,
-            client: globalThis.document.documentElement.clientWidth,
-            document: globalThis.document.documentElement.scrollWidth,
-        }));
-        expect(widths.document, `${viewport.name} document`).toBeLessThanOrEqual(widths.client);
-        expect(widths.body, `${viewport.name} body`).toBeLessThanOrEqual(widths.client);
+        await expectNoPageOverflow(page, `${viewport.name} document`);
     }
 });
 
@@ -246,13 +241,7 @@ for (const state of ['admin-over-limit', 'adminless']) {
             // Mantine fades dialogs in; axe would measure contrast through the partial opacity.
             await expect(card).toHaveCSS('opacity', '1');
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            const widths = await page.evaluate(() => ({
-                body: globalThis.document.body.scrollWidth,
-                client: globalThis.document.documentElement.clientWidth,
-                document: globalThis.document.documentElement.scrollWidth,
-            }));
-            expect(widths.document).toBeLessThanOrEqual(widths.client);
-            expect(widths.body).toBeLessThanOrEqual(widths.client);
+            await expectNoPageOverflow(page);
             await card.getByRole('button', { name: 'Revoke invitation' }).focus();
             await page.keyboard.press('Enter');
             await expect(card.getByRole('status')).toHaveText('Invitation revoked.');

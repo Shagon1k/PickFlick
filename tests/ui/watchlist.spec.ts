@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 
@@ -148,9 +149,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 ).toHaveText('Low');
                 await settle(page);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
+                await expectNoPageOverflow(page);
                 await row.getByRole('link').click();
                 await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
                 await page

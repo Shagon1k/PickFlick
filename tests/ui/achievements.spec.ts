@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 
@@ -35,11 +36,7 @@ for (const width of [390, 768, 1024, 1440]) {
                     );
                     await expect(masked.locator('details')).toHaveCount(0);
                     await settle(page);
-                    expect(
-                        await page.evaluate(
-                            () => document.documentElement.scrollWidth <= innerWidth,
-                        ),
-                    ).toBe(true);
+                    await expectNoPageOverflow(page);
                     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
                     const unlocked = shelf.getByRole('button', { name: '1 Unlocked', exact: true });
                     await unlocked.focus();

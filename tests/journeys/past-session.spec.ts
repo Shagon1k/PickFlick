@@ -7,6 +7,7 @@ import { type Browser, expect, type Page, test } from '@playwright/test';
 import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/catalog-cache-key.ts';
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
+import { expectNoPageOverflow } from '../ui/layout';
 import { settle } from '../ui/settle.ts';
 import { canonicalViewports } from '../ui/viewports.ts';
 import { openVisitor } from './visitors';
@@ -380,9 +381,7 @@ for (const viewport of canonicalViewports) {
                 await context.setOffline(false);
                 await expect(zero).toHaveValue('0');
                 await settle(page);
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
+                await expectNoPageOverflow(page);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
                 await logSession(page);
                 await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
@@ -415,9 +414,7 @@ for (const viewport of canonicalViewports) {
                     await prisma.selectionBallot.findMany({ where: { session: { clubId } } }),
                 ).toEqual([]);
                 await settle(page);
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
+                await expectNoPageOverflow(page);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
                 await journey.signInMember();
                 await page.reload();

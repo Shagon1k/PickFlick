@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { screenshotViewports } from './viewports';
@@ -50,9 +51,7 @@ for (const viewport of screenshotViewports) {
                     return range.getClientRects().length;
                 }),
             ).toBe(1);
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         },
     );

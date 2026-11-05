@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
@@ -217,13 +218,7 @@ test('member management and invite popovers meet touch, focus, accessibility, an
             await expect(dialog.getByRole('button', { name: 'Accept', exact: true })).toBeVisible();
             await expect(dialog).toHaveCSS('opacity', '1');
             await settle(page);
-            const widths = await page.evaluate(() => ({
-                body: document.body.scrollWidth,
-                document: document.documentElement.scrollWidth,
-                client: document.documentElement.clientWidth,
-            }));
-            expect(widths.body).toBeLessThanOrEqual(widths.client);
-            expect(widths.document).toBeLessThanOrEqual(widths.client);
+            await expectNoPageOverflow(page);
             const box = await dialog.boundingBox();
             expect(box?.x).toBeGreaterThanOrEqual(0);
             expect(box?.y).toBeGreaterThanOrEqual(0);

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
 
@@ -57,9 +58,7 @@ for (const width of [390, 1440]) {
                         .analyze()
                 ).violations,
             ).toEqual([]);
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             await page.keyboard.press('Escape');
             await expect(panel).toBeHidden();
             await expect(trigger).toBeFocused();

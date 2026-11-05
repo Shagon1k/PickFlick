@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
@@ -35,9 +36,7 @@ for (const viewport of canonicalViewports) {
                     .getByText('Room A', { exact: true }),
             ).toBeVisible();
             await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             const settings = page.getByRole('button', { name: 'Session settings' });
             await settings.focus();
