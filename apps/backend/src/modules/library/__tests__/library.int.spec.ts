@@ -160,4 +160,34 @@ describe('Library', () => {
         expect((await read('tab=watchlist&q=100%25_&priority=HIGH')).total).toBe(0);
         expect((await read('q=%25')).items.map((item) => item.movieId)).toEqual([literal.id]);
     });
+
+    // Genre order filters in raw SQL, so it must select the same rows as the Prisma filters.
+    it.each([
+        'tab=my-ratings',
+        'tab=my-ratings&q=LIBRARY',
+        'tab=my-ratings&q=100%25_',
+        'tab=my-ratings&score=4',
+        'tab=my-ratings&score=8&q=film',
+        'tab=my-ratings&score=8&q=100%25_',
+        'tab=watchlist',
+        'tab=watchlist&q=%25',
+        'tab=watchlist&priority=LOW',
+        'tab=watchlist&priority=HIGH&q=library',
+        'tab=watchlist&priority=HIGH&q=100%25_',
+    ])('should select the same rows by genre as by default for %s', async (query) => {
+        async function readAllIds(pagedQuery: string) {
+            const first = await read(pagedQuery);
+            const ids = first.items.map((item) => item.movieId);
+            for (let page = 2; page <= first.pages; page++) {
+                const next = await read(`${pagedQuery}&page=${page}`);
+                ids.push(...next.items.map((item) => item.movieId));
+            }
+            return { total: first.total, ids };
+        }
+        const byDefault = await readAllIds(query);
+        const byGenre = await readAllIds(`${query}&sort=genre`);
+        expect(byGenre.total).toBe(byDefault.total);
+        expect(byGenre.ids).toHaveLength(byGenre.total);
+        expect(new Set(byGenre.ids)).toEqual(new Set(byDefault.ids));
+    });
 });

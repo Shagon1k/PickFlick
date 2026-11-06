@@ -11,6 +11,7 @@ import type {
 import { settingsProjection } from './club-projections.ts';
 import {
     readJson,
+    rejectMethod,
     sendError,
     sendJson,
     type TMockRequest,
@@ -78,6 +79,8 @@ export function handleSessionWorkflow(
     const creation = /^\/clubs\/([\da-f-]{36})\/sessions$/u.exec(pathname);
     const detail = /^\/sessions\/([\da-f-]{36})(\/cancel)?$/u.exec(pathname);
     if (!creation && !detail) return false;
+    const allowed = creation || detail?.[2] ? (['POST'] as const) : (['GET', 'PATCH'] as const);
+    if (rejectMethod(request, response, ...allowed)) return true;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'session-auth');
         return true;

@@ -23,6 +23,34 @@ export function sendError(
     });
 }
 
+type TMethod = 'GET' | 'POST' | 'PATCH';
+
+/**
+ * Returns which of `routes` (path suffix after `prefix` → its API method) the path names exactly,
+ * or `undefined` so the next mock handler can try it.
+ */
+export function matchRoute<TRoute extends string>(
+    pathname: string,
+    prefix: string,
+    routes: Record<TRoute, TMethod>,
+): TRoute | undefined {
+    const suffix = pathname.slice(prefix.length);
+    return pathname.startsWith(prefix) && Object.hasOwn(routes, suffix)
+        ? (suffix as TRoute)
+        : undefined;
+}
+
+/** Answers 405 when the API does not accept the request's method on a matched route. */
+export function rejectMethod(
+    request: TMockRequest,
+    response: TMockResponse,
+    ...allowed: TMethod[]
+): boolean {
+    if (allowed.some((method) => method === request.method)) return false;
+    response.writeHead(405, { allow: allowed.join(', ') }).end();
+    return true;
+}
+
 /** Reads a JSON request body; the caller names the shape it expects from the frontend. */
 export function readJson<TBody = Record<string, unknown>>(
     request: TMockRequest,

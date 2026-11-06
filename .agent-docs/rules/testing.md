@@ -25,6 +25,8 @@
   test-only endpoint is involved. Keep scripted failures and edge states on the UI mock.
 - The UI mock API is TypeScript that Node runs directly. Annotate every response with its
   `@pickflick/contracts` type so `pnpm typecheck` fails when the mock drifts from the real API.
+  Match each API path exactly and answer a wrong method with 405 (`matchRoute`, `rejectMethod` in
+  `tests/ui/mock-http.ts`), so a request outside the contract fails instead of passing.
 - Build test data with small factory functions instead of repeating inline objects.
 
 ## Naming and structure

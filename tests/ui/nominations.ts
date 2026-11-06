@@ -10,6 +10,7 @@ import type {
 
 import {
     readJson,
+    rejectMethod,
     sendError,
     sendJson,
     type TMockRequest,
@@ -69,6 +70,7 @@ function projection(token: string, state: INominationState): TNominations {
     };
 }
 function handleRoster(
+    request: TMockRequest,
     response: TMockResponse,
     pathname: string,
     token: string | undefined,
@@ -76,6 +78,7 @@ function handleRoster(
 ): boolean {
     if (!token?.includes('nomination') || pathname !== `/sessions/${SESSION_ID}/roster`)
         return false;
+    if (rejectMethod(request, response, 'GET')) return true;
     // The initial detail read has completed; the roster sees the later departure.
     if (token.includes('split-roster') && !state.departed) {
         state.departed = true;
@@ -118,18 +121,16 @@ export function handleNominations(
         sendError(response, 503, 'SERVICE_UNAVAILABLE', 'refresh-failure');
         return true;
     }
-    if (handleRoster(response, pathname, token, state)) return true;
-    if (handleProgress(response, pathname, token)) return true;
-    if (
-        !/^\/sessions\/[^/]+\/nominations(?:\/close)?$/u.test(pathname) &&
-        !(token?.includes('nomination') && pathname === `/sessions/${SESSION_ID}`)
-    )
-        return false;
+    if (handleRoster(request, response, pathname, token, state)) return true;
+    if (handleProgress(request, response, pathname, token)) return true;
+    const isDetail = token?.includes('nomination') && pathname === `/sessions/${SESSION_ID}`;
+    if (!isDetail && !/^\/sessions\/[^/]+\/nominations(?:\/close)?$/u.test(pathname)) return false;
+    if (rejectMethod(request, response, isDetail ? 'GET' : 'POST')) return true;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'nomination-auth');
         return true;
     }
-    if (pathname === `/sessions/${SESSION_ID}`) {
+    if (isDetail) {
         const detail: TSession = {
             id: SESSION_ID,
             clubId: CLUB_ID,
@@ -154,8 +155,7 @@ export function handleNominations(
             canManage: token.includes('operator'),
         };
         sendJson(response, 200, detail);
-    } else if (request.method === 'GET') sendJson(response, 200, projection(token, state));
-    else
+    } else
         readJson<Partial<TCloseNomination & TSubmitNomination>>(request, (input) => {
             if (token.includes('failure')) {
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'nomination-failure');
@@ -188,12 +188,14 @@ export function handleNominations(
 }
 
 function handleProgress(
+    request: TMockRequest,
     response: TMockResponse,
     pathname: string,
     token: string | undefined,
 ): boolean {
-    if (!token?.includes('nomination') || !pathname.startsWith(`/sessions/${SESSION_ID}/progress`))
+    if (!token?.includes('nomination') || pathname !== `/sessions/${SESSION_ID}/progress`)
         return false;
+    if (rejectMethod(request, response, 'GET')) return true;
     const state = stateFor(token);
     const progress: TSessionProgress = { version: state.version };
     sendJson(response, 200, progress);

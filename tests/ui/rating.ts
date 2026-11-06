@@ -11,7 +11,9 @@ import {
 } from '@pickflick/contracts';
 
 import {
+    matchRoute,
     readJson,
+    rejectMethod,
     sendError,
     sendJson,
     type TMockRequest,
@@ -19,6 +21,13 @@ import {
 } from './mock-http.ts';
 
 const SESSION_ID = '30000000-0000-4000-8000-000000000050';
+const ROUTES = {
+    '': 'GET',
+    '/progress': 'GET',
+    '/roster': 'GET',
+    '/rating': 'POST',
+    '/rating/close': 'POST',
+} as const;
 const saved = new Map<string, TSubmitRating>();
 const closed = new Set<string>();
 /** Scenarios whose viewer is not a current participant of the Session. */
@@ -32,14 +41,15 @@ export function handleRating(
     pathname: string,
     token: string | undefined,
 ): boolean {
-    if (!token?.startsWith('valid-rating') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
-        return false;
+    const route = matchRoute(pathname, `/sessions/${SESSION_ID}`, ROUTES);
+    if (!token?.startsWith('valid-rating') || route === undefined) return false;
+    if (rejectMethod(request, response, ROUTES[route])) return true;
     const isCompleted = closed.has(token) || token.includes('completed');
     const canManage = !token.includes('member') && !isReadOnly(token);
     const canManageSession = canManage && !isCompleted;
     const own = saved.get(token);
     const version = 1 + Number(Boolean(own)) + Number(isCompleted);
-    if (request.method === 'POST' && pathname.endsWith('/rating/close')) {
+    if (route === '/rating/close') {
         readJson(request, (body) => {
             if (token.includes('closefailure'))
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'rating-close-failure');
@@ -53,7 +63,7 @@ export function handleRating(
                 sendJson(response, 201, null);
             }
         });
-    } else if (request.method === 'POST' && pathname.endsWith('/rating')) {
+    } else if (route === '/rating') {
         readJson(request, (body) => {
             const parsed = submitRatingSchema.safeParse(body);
             if (token.includes('failure'))
@@ -64,8 +74,8 @@ export function handleRating(
                 sendJson(response, 201, null);
             }
         });
-    } else if (pathname.endsWith('/progress')) sendJson(response, 200, { version });
-    else if (pathname.endsWith('/roster')) {
+    } else if (route === '/progress') sendJson(response, 200, { version });
+    else if (route === '/roster') {
         const participantNames = isOutsider(token)
             ? ['Casey', 'Morgan']
             : ['Jordan', 'Casey', 'Morgan'];

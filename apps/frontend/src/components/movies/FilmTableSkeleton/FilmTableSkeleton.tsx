@@ -1,38 +1,20 @@
 import type { ReactNode } from 'react';
 
+import { getFilmTableColumns, type TFilmTableVariant } from '#components/movies/film-table-columns';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import Table, { type ITableRow } from '#components/ui/Table/Table';
 
 import styles from './FilmTableSkeleton.module.scss';
 
 const ROW_COUNT = 4;
-type TFilmTableSkeletonVariant = 'club-ratings' | 'ratings' | 'watchlist';
-
-function buildColumns(variant: TFilmTableSkeletonVariant) {
-    const rank = { key: 'rank', header: '#', isNumeric: true };
-    const film = { key: 'film', header: 'Film' };
-    const genre = { key: 'genre', header: 'Genre' };
-    const year = { key: 'year', header: 'Year' };
-    if (variant === 'club-ratings')
-        return [rank, film, year, genre, { key: 'value', header: 'Rating', isNumeric: true }];
-    const isWatchlist = variant === 'watchlist';
-    return [
-        rank,
-        film,
-        genre,
-        year,
-        { key: 'date', header: isWatchlist ? 'Added on' : 'Rated on' },
-        { key: 'value', header: isWatchlist ? 'Priority' : 'Rating', isNumeric: !isWatchlist },
-    ];
-}
 
 export function buildFilmTableSkeletonRows(
-    variant: TFilmTableSkeletonVariant,
+    variant: TFilmTableVariant,
     rowCount = ROW_COUNT,
 ): ITableRow[] {
     const isClub = variant === 'club-ratings';
     const isWatchlist = variant === 'watchlist';
-    const columns = buildColumns(variant);
+    const columns = getFilmTableColumns(variant);
     return Array.from({ length: rowCount }, (_, index) => ({
         id: String(index),
         cells: Object.fromEntries(
@@ -60,7 +42,7 @@ export function buildFilmTableSkeletonRows(
     }));
 }
 
-export default function FilmTableSkeleton({ variant }: { variant: TFilmTableSkeletonVariant }) {
+export default function FilmTableSkeleton({ variant }: { variant: TFilmTableVariant }) {
     return (
         <div className={styles.layout}>
             <div className={styles.search}>
@@ -69,7 +51,7 @@ export default function FilmTableSkeleton({ variant }: { variant: TFilmTableSkel
             <Table
                 variant="leaderboard"
                 caption="Loading films"
-                columns={buildColumns(variant)}
+                columns={getFilmTableColumns(variant)}
                 rows={buildFilmTableSkeletonRows(variant)}
                 isLoading
             />

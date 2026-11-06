@@ -585,11 +585,12 @@ framework is introduced. Production activation remains unauthorized.
 Migration 19 adds Session `progressVersion` and `SessionProgressEvent`, a Session-specific
 transactional outbox keyed by `(sessionId, version)`. Nomination, roster, details, cancellation,
 manual closure and deadline transitions persist their new version with an event. Events retain
-phase, phase/details versions, accepted/nominated counts and accepted Membership recipients
-for later notification work. `AUTOMATIC` records the machine decision without a human actor.
-Notification delivery and retention policy remain later phases; no dispatcher or message broker is
-introduced. Nothing reads these rows yet: the outbox is kept by owner decision (#172) as the source
-for the notification phase, an explicit exception to the no-speculative-code rule. Existing rows start at version 1 without invented events or retrospective transitions.
+phase, phase/details versions, accepted/nominated counts and accepted Membership recipients.
+`AUTOMATIC` records the machine decision without a human actor. No dispatcher or message broker is
+introduced. The Early Bird achievement reads the first `SELECTION` event as the Selection opening
+time. Notifications do not read the outbox: `publishProgress` records them in the same
+transaction, and no code reads `recipientIds`. The outbox is kept by owner decision (#172), an
+explicit exception to the no-speculative-code rule. Existing rows start at version 1 without invented events or retrospective transitions.
 
 Submission and roster changes evaluate active Club Memberships and accepted participants under
 Club → Session locks. Automatic closure requires all active members to have joined and nominated,

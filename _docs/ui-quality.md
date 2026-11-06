@@ -191,7 +191,7 @@ Main, Delivery and the UAT artifact still require verification after merge.
 ## Phase 18 baseline review, 2026-11-01
 
 The owner's Phase 18 choices refine the canonical screens as recorded in [DESIGN.md](../DESIGN.md)
-and the [verification register](phase-18-human-verification-3.md). The pinned Linux image generated
+and the Phase 18 verification under #63. The pinned Linux image generated
 62 changed baselines and ten new captures, bringing the inventory to 118 PNGs at 390/1440.
 All 72 changed/new images were inspected for composition and changed regions. Full-size checks
 also covered the new mobile dialogs and wizard, including the nomination rows and score table.
@@ -224,8 +224,8 @@ The pinned Linux image passes all 112 visual checks during the update and again 
 snapshots. Pixel tolerance and masks are unchanged. Eight additional actual production-screen
 before/after pairs use matching synthetic fixtures at 390×844, DPR 2; they accompany the owner
 report. Interaction, keyboard and animation evidence comes from behavior checks, not static PNGs.
-Final contract, static and hosted acceptance evidence belongs to the
-[current register](phase-18-human-verification-3.md#current-alignment-evidence).
+Final contract and static evidence is summarized in the
+[Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--done).
 
 ## Phase 18 verification follow-up, 2026-11-04
 
@@ -244,12 +244,11 @@ film-count caption. Existing shell masks and the zero-pixel comparison threshold
 Behavior checks include table transitions with held navigation responses, matrix sorting with
 zero/missing/tied scores and a sign-in click held until hydration. The Login regression test fails
 on the preceding implementation because the button is enabled before its handler exists; the
-fix reuses the existing hydration hook. Final gate results belong to the
-[verification register](phase-18-human-verification-3.md#verification-resumed--2026-11-04).
+fix reuses the existing hydration hook. Final gate results are summarized in the
+[Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--done).
 
 The hosted follow-up caught press-animation geometry in the Watchlist priority captures: scaling
 the popover anchor left Floating UI at a fractional intermediate position. The control now pulses
 its existing inner press surface; its anchor stays fixed. Captures also wait for the automatic
 Medium save to finish. Seven Watchlist contract checks and ten repeated strict Linux comparisons
-pass after the fix, without changing either baseline PNG or the screenshot tolerance. The
-[hosted follow-up](phase-18-human-verification-3.md#hosted-visual-follow-up) records the reproduction.
+pass after the fix, without changing either baseline PNG or the screenshot tolerance.

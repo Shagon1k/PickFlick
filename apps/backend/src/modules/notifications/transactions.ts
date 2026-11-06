@@ -8,9 +8,10 @@ import { trackNotificationRecipients } from './notification-store.js';
 type TTransactionOptions = Parameters<PrismaClient['$transaction']>[1];
 
 /**
- * Every service transaction goes through here, so a reader sees whether it writes. Writes may record
- * Notifications (Club audit events do, see `recordAudit`); their recipients get an inbox refresh
- * signal only after the transaction commits.
+ * Service transactions that go through here show whether they write; some services still call
+ * `prisma.$transaction` directly. Writes may record Notifications (Club audit events do, see
+ * `recordAudit`); their recipients get an inbox refresh signal only after the transaction commits.
+ * Notifications recorded in a direct `prisma.$transaction` get no signal.
  */
 @Injectable()
 export class Transactions {
