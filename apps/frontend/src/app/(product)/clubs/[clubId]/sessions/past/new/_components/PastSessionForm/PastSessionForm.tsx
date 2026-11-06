@@ -125,7 +125,7 @@ export default function PastSessionForm({
             const errors = FILM_FIELDS.filter((field) => form.validateField(field).hasError);
             if (errors.length) {
                 setMessage('Review the highlighted fields and try again.');
-                requestAnimationFrame(() => focusFirstInvalid(formRef.current ?? undefined));
+                focusFirstInvalid(formRef.current ?? undefined);
                 return;
             }
         }
