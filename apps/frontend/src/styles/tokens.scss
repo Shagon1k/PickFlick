@@ -94,7 +94,6 @@
     --container: 1120px;
     --gutter: 24px;
     --header-action-size: 48px;
-    --header-action-ring-size: 42px;
     --header-action-icon-size: 20px;
     --header-avatar-size: 40px;
     --radius: 12px;
@@ -107,14 +106,9 @@
     --session-result-score-size: 28px;
     --session-result-score-font: 600 var(--session-result-score-size) / var(--lh-ui)
         var(--font-display);
-    --movie-search-gap: 2px;
-    --movie-search-panel-height: 320px;
-    --movie-search-count-height: 32px;
     --movie-search-row-height: 64px;
     --watchlist-priority-control-width: 112px;
-    --nomination-panel-min-height: 280px;
     --session-result-list-max: 300px;
-    --session-rating-form-padding: clamp(var(--gutter), 4vw, 42px);
 
     /* Border, elevation, imagery, and motion */
     --shadow-overlay: 0 18px 48px rgb(0 0 0 / 42%);

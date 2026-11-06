@@ -1,7 +1,7 @@
 .card {
     position: relative;
     width: min(720px, 100%);
-    padding: var(--session-rating-form-padding);
+    padding: clamp(var(--gutter), 4vw, 42px);
     margin: var(--gap-lg) auto 0;
     text-align: center;
     background: transparent;

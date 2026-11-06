@@ -52,7 +52,7 @@
 .avatarButton::before,
 .searchClose::before {
     position: absolute;
-    inset: calc((var(--header-action-size) - var(--header-action-ring-size)) / 2);
+    inset: calc((var(--header-action-size) - 42px) / 2);
     z-index: -1;
     content: '';
     border: 1px solid var(--border-lit);
