@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { loadRuntimeEnvironment, type TRuntimeEnvironment } from '@pickflick/config/environment';
-import type { TNotificationEvent } from '@pickflick/contracts';
+import type { TNotificationEvent, TSessionPhase } from '@pickflick/contracts';
 import {
     assertSafeSeedOrResetTarget,
     type Prisma,
@@ -56,6 +56,56 @@ export async function addMember(
         data: { id: randomUUID(), clubId, userId, role },
     });
     return membership.id;
+}
+
+/** Takes the outbox version a request will write next, so that write fails on uniqueness. */
+export function reserveProgressVersion(
+    prisma: PrismaClient,
+    sessionId: string,
+    version: number,
+    phase: TSessionPhase,
+) {
+    return prisma.sessionProgressEvent.create({
+        data: {
+            sessionId,
+            version,
+            kind: 'PROGRESS',
+            phase,
+            phaseVersion: 1,
+            detailsVersion: 1,
+            acceptedCount: 0,
+            nominatedCount: 0,
+            recipientIds: [],
+        },
+    });
+}
+
+/** The text of a failure that withFailingInsert raises, so a test can prove it never leaks. */
+export const INJECTED_FAILURE = 'injected failure';
+
+/**
+ * Runs `test` while a trigger rejects inserts into `table` that match the SQL `condition` on
+ * `NEW`, a real database failure in the middle of a transaction, and removes the trigger after.
+ */
+export async function withFailingInsert(
+    prisma: PrismaClient,
+    table: string,
+    condition: string,
+    test: () => Promise<void>,
+) {
+    const name = `fail_${randomUUID().replaceAll('-', '')}`;
+    await prisma.$executeRawUnsafe(
+        `CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF ${condition} THEN RAISE EXCEPTION '${INJECTED_FAILURE}'; END IF; RETURN NEW; END $$`,
+    );
+    await prisma.$executeRawUnsafe(
+        `CREATE TRIGGER ${name} BEFORE INSERT ON "${table}" FOR EACH ROW EXECUTE FUNCTION ${name}()`,
+    );
+    try {
+        await test();
+    } finally {
+        await prisma.$executeRawUnsafe(`DROP TRIGGER ${name} ON "${table}"`);
+        await prisma.$executeRawUnsafe(`DROP FUNCTION ${name}()`);
+    }
 }
 
 /** Creates a Session with the Club's current settings snapshot; `data` overrides any column. */

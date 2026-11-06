@@ -6,6 +6,7 @@ import {
     createSession,
     createUser,
     type ITestApi,
+    reserveProgressVersion,
     startTestApi,
 } from '../../../testing/integration.js';
 import { removeUsers } from '../../../testing/remove-users.js';
@@ -286,19 +287,7 @@ describe('Session progress', () => {
         await excludeUnjoinedMember();
         await submit();
         // Reserve the next outbox key to force a real PostgreSQL uniqueness failure.
-        await api.prisma.sessionProgressEvent.create({
-            data: {
-                sessionId,
-                version: 3,
-                kind: 'PROGRESS',
-                phase: 'NOMINATION',
-                phaseVersion: 1,
-                detailsVersion: 1,
-                acceptedCount: 2,
-                nominatedCount: 1,
-                recipientIds: [],
-            },
-        });
+        await reserveProgressVersion(api.prisma, sessionId, 3, 'NOMINATION');
         expect((await submit(users[1])).status).toBe(500);
         expect(await state()).toMatchObject({
             phase: 'NOMINATION',

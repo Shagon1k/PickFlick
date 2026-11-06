@@ -9,6 +9,7 @@ import {
     findNotifiedUsers,
     type ITestApi,
     startTestApi,
+    withFailingInsert,
 } from '../../../../testing/integration.js';
 import { removeUsers } from '../../../../testing/remove-users.js';
 
@@ -330,27 +331,21 @@ describe('Rating', () => {
         await submit(2);
         const before = await state();
         const ratings = await received();
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION reject_rating_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action = 'SESSION_RATING_CLOSED' THEN RAISE EXCEPTION 'test audit failure'; END IF; RETURN NEW; END; $$`,
+        await withFailingInsert(
+            api.prisma,
+            'ClubAuditEvent',
+            `NEW.action = 'SESSION_RATING_CLOSED'`,
+            async () => {
+                expect((await close()).status).toBe(500);
+                expect(await state()).toEqual(before);
+                expect(await received()).toEqual(ratings);
+                expect(
+                    await api.prisma.sessionProgressEvent.count({
+                        where: { sessionId, phase: 'COMPLETED' },
+                    }),
+                ).toBe(0);
+            },
         );
-        await api.prisma.$executeRawUnsafe(
-            `CREATE TRIGGER reject_rating_audit BEFORE INSERT ON "ClubAuditEvent" FOR EACH ROW EXECUTE FUNCTION reject_rating_audit()`,
-        );
-        try {
-            expect((await close()).status).toBe(500);
-            expect(await state()).toEqual(before);
-            expect(await received()).toEqual(ratings);
-            expect(
-                await api.prisma.sessionProgressEvent.count({
-                    where: { sessionId, phase: 'COMPLETED' },
-                }),
-            ).toBe(0);
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER reject_rating_audit ON "ClubAuditEvent"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION reject_rating_audit()');
-        }
         expect((await close()).status).toBe(201);
     });
 
@@ -358,22 +353,16 @@ describe('Rating', () => {
         await submit();
         await submit(1);
         const before = await state();
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION reject_rating_progress() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.phase = 'COMPLETED' THEN RAISE EXCEPTION 'test progress failure'; END IF; RETURN NEW; END; $$`,
+        await withFailingInsert(
+            api.prisma,
+            'SessionProgressEvent',
+            `NEW.phase = 'COMPLETED'`,
+            async () => {
+                expect((await submit(2)).status).toBe(500);
+                expect(await received()).toHaveLength(2);
+                expect(await state()).toEqual(before);
+            },
         );
-        await api.prisma.$executeRawUnsafe(
-            `CREATE TRIGGER reject_rating_progress BEFORE INSERT ON "SessionProgressEvent" FOR EACH ROW EXECUTE FUNCTION reject_rating_progress()`,
-        );
-        try {
-            expect((await submit(2)).status).toBe(500);
-            expect(await received()).toHaveLength(2);
-            expect(await state()).toEqual(before);
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER reject_rating_progress ON "SessionProgressEvent"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION reject_rating_progress()');
-        }
         expect((await submit(2)).status).toBe(201);
         expect((await state()).phase).toBe('COMPLETED');
     });

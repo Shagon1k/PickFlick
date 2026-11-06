@@ -7,6 +7,7 @@ import {
     createSession,
     createUser,
     type ITestApi,
+    reserveProgressVersion,
     startTestApi,
 } from '../../../../testing/integration.js';
 import { removeUsers } from '../../../../testing/remove-users.js';
@@ -179,19 +180,7 @@ describe('Watching', () => {
     });
 
     it('should roll back the phase and retain the slot when progress publication fails', async () => {
-        await api.prisma.sessionProgressEvent.create({
-            data: {
-                sessionId,
-                version: 2,
-                kind: 'PROGRESS',
-                phase: 'WATCHING',
-                phaseVersion: 1,
-                detailsVersion: 1,
-                acceptedCount: 1,
-                nominatedCount: 0,
-                recipientIds: [],
-            },
-        });
+        await reserveProgressVersion(api.prisma, sessionId, 2, 'WATCHING');
         expect((await open()).status).toBe(500);
         expect(await state()).toMatchObject({
             phase: 'WATCHING',

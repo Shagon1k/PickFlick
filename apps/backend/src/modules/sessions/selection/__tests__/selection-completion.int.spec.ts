@@ -8,6 +8,7 @@ import {
     createUser,
     findNotifiedUsers,
     type ITestApi,
+    reserveProgressVersion,
     startTestApi,
 } from '../../../../testing/integration.js';
 import { removeUsers } from '../../../../testing/remove-users.js';
@@ -251,19 +252,7 @@ describe('Selection completion', () => {
         'should roll back %s closure if the outbox write fails',
         async (kind) => {
             await submit();
-            await api.prisma.sessionProgressEvent.create({
-                data: {
-                    sessionId,
-                    version: 3,
-                    kind: 'PROGRESS',
-                    phase: 'SELECTION',
-                    phaseVersion: 1,
-                    detailsVersion: 1,
-                    acceptedCount: 2,
-                    nominatedCount: 2,
-                    recipientIds: [],
-                },
-            });
+            await reserveProgressVersion(api.prisma, sessionId, 3, 'SELECTION');
             const complete = () => (kind === 'automatic' ? submit(users[1]) : close());
             expect((await complete()).status).toBe(500);
             expect(await state()).toMatchObject({
