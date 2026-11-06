@@ -227,7 +227,6 @@ model Membership {
   auditEvents           ClubAuditEvent[]
   sessionParticipants   SessionParticipant[]
   pastNominations       PastNomination[]
-  createdSessionInvites SessionInvite[]      @relation("SessionInviteCreator")
 
   @@unique([id, clubId])
   // PostgreSQL migration owns the partial unique index for one ACTIVE row per User/Club.
@@ -309,7 +308,6 @@ model SessionParticipant {
   updatedAt           DateTime                 @updatedAt @db.Timestamptz(3)
   session             Session                  @relation(fields: [sessionId, clubId], references: [id, clubId], onDelete: Restrict)
   membership          Membership               @relation(fields: [membershipId, clubId], references: [id, clubId], onDelete: Restrict)
-  invitations         SessionInvite[]
   nomination          Nomination?
   selectionBallot     SelectionBallot?
   rating              SessionRating?
@@ -319,24 +317,6 @@ model SessionParticipant {
   @@unique([id, sessionId])
   @@unique([id, clubId])
   @@index([membershipId])
-}
-
-model SessionInvite {
-  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tokenDigest         String             @unique @db.Char(64)
-  participantId       String             @db.Uuid
-  clubId              String             @db.Uuid
-  inviterMembershipId String             @db.Uuid
-  expiresAt           DateTime           @db.Timestamptz(3)
-  revokedAt           DateTime?          @db.Timestamptz(3)
-  respondedAt         DateTime?          @db.Timestamptz(3)
-  accepted            Boolean?
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  participant         SessionParticipant @relation(fields: [participantId, clubId], references: [id, clubId], onDelete: Restrict)
-  inviter             Membership         @relation("SessionInviteCreator", fields: [inviterMembershipId, clubId], references: [id, clubId], onDelete: Restrict)
-
-  @@index([participantId, createdAt])
-  @@index([inviterMembershipId])
 }
 
 model ClubInvite {

@@ -45,7 +45,6 @@ describe('Session foundation', () => {
     });
     afterEach(async () => {
         const clubs = { clubId: { in: [clubId, otherClubId] } };
-        await database.sessionInvite.deleteMany({ where: clubs });
         await database.sessionParticipant.deleteMany({ where: clubs });
         await database.session.deleteMany({ where: clubs });
         await database.membership.deleteMany({ where: clubs });
@@ -219,49 +218,16 @@ describe('Session foundation', () => {
         ).toMatchObject({ status: 'ACCEPTED' });
     });
 
-    it('should bind invite recipients and inviters to existing Memberships in the Session Club', async () => {
+    it('should bind participants to existing Memberships in the Session Club', async () => {
         const session = await createSession('NOMINATION');
         await expect(
             database.sessionParticipant.create({
                 data: { sessionId: session.id, clubId, membershipId: otherMembershipId },
             }),
         ).rejects.toThrow('SessionParticipant_membershipId_clubId_fkey');
-        const participant = await database.sessionParticipant.create({
+        await database.sessionParticipant.create({
             data: { sessionId: session.id, clubId, membershipId },
         });
-        const invite = {
-            participantId: participant.id,
-            clubId,
-            inviterMembershipId: membershipId,
-            tokenDigest: 'a'.repeat(64),
-            expiresAt: new Date(Date.now() + 60_000),
-        };
-        await database.sessionInvite.create({ data: invite });
-        await expect(database.sessionInvite.create({ data: invite })).rejects.toThrow(
-            'SessionInvite_tokenDigest_key',
-        );
-        await expect(
-            database.sessionInvite.create({
-                data: {
-                    ...invite,
-                    tokenDigest: 'b'.repeat(64),
-                    inviterMembershipId: otherMembershipId,
-                },
-            }),
-        ).rejects.toThrow('SessionInvite_inviterMembershipId_clubId_fkey');
-        await expect(
-            database.sessionInvite.create({ data: { ...invite, tokenDigest: 'raw-token' } }),
-        ).rejects.toThrow('SessionInvite_digest_check');
-        await expect(
-            database.sessionInvite.create({
-                data: { ...invite, tokenDigest: 'c'.repeat(64), expiresAt: new Date(0) },
-            }),
-        ).rejects.toThrow('SessionInvite_expiry_check');
-        await expect(
-            database.sessionInvite.create({
-                data: { ...invite, tokenDigest: 'd'.repeat(64), accepted: true },
-            }),
-        ).rejects.toThrow('SessionInvite_response_check');
         expect(await database.membership.count({ where: { clubId } })).toBe(1);
     });
 });
