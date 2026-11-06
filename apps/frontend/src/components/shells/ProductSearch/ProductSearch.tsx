@@ -72,7 +72,7 @@ export default function ProductSearch() {
                 <div className={styles.globalSearchField}>
                     <input
                         aria-activedescendant={
-                            activeIndex >= 0 ? `movie-search-${activeIndex}` : undefined
+                            movies[activeIndex] ? `movie-search-${activeIndex}` : undefined
                         }
                         aria-autocomplete="list"
                         aria-controls="movie-search-results"
