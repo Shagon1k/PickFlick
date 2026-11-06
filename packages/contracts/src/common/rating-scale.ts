@@ -10,6 +10,7 @@ export const RATING_SCORES = Array.from(
     (_, index) => RATING_SCALE.min + index,
 );
 
+/** Scores read `1.0` through `9.0`; the top score stays a bare `10`. */
 export function formatRatingScore(score: number) {
-    return String(score);
+    return score === RATING_SCALE.max ? String(score) : score.toFixed(1);
 }

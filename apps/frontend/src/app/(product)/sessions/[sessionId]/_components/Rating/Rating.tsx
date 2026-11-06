@@ -1,6 +1,6 @@
 'use client';
 
-import { RATING_SCALE, type TRating } from '@pickflick/contracts';
+import { formatRatingScore, type TRating } from '@pickflick/contracts';
 import { useId, useState } from 'react';
 
 import Avatar from '#components/ui/Avatar/Avatar';
@@ -71,8 +71,7 @@ function RatingList({
 
 function RatingEntry({ entry, isLoading }: { entry: TEntry; isLoading: boolean }) {
     const name = entry.isOwn ? 'You' : entry.author;
-    const formattedScore =
-        entry.score === RATING_SCALE.max ? String(entry.score) : entry.score.toFixed(1);
+    const formattedScore = formatRatingScore(entry.score);
     return (
         <li data-own={entry.isOwn || undefined} data-color-reveal-trigger data-color-reveal-surface>
             <ColorReveal variant="surface" />
