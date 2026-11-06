@@ -226,19 +226,12 @@ describe('NominationDeadlines', () => {
         });
         expect(await decisions()).toHaveLength(0);
     });
-    it('should not decide after manual closure or cancellation', async () => {
+    it('should not decide after manual closure', async () => {
         await submit();
         expect((await close()).status).toBe(201);
         expect(await worker.execute(sessionId, due)).toBe('STALE');
         expect(await decisions()).toHaveLength(0);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
-        const cancelled = await api.request(`/sessions/${sessionId}/cancel`, {
-            userId: admin,
-            method: 'POST',
-            json: { version: 2, confirmation: 'CANCEL' },
-        });
-        expect(cancelled.status).toBe(201);
-        expect(await worker.execute(sessionId, due)).toBe('STALE');
     });
     it('should not decide a cancelled Nomination', async () => {
         await submit();
@@ -281,14 +274,14 @@ describe('NominationDeadlines', () => {
         await worker.runOnce(due);
         expect((await session()).phase).toBe('WATCHING');
     });
-    it.each([{ deadlineAt: new Date(Date.now() + 120_000) }, { phase: 'CANCELLED' as const }])(
-        'should not decide a Session changed to %o',
-        async (data) => {
-            await api.prisma.session.update({ where: { id: sessionId }, data });
-            expect(await worker.execute(sessionId, due)).toBe('STALE');
-            expect(await decisions()).toHaveLength(0);
-        },
-    );
+    it('should not decide a Session whose deadline moved later', async () => {
+        await api.prisma.session.update({
+            where: { id: sessionId },
+            data: { deadlineAt: new Date(Date.now() + 120_000) },
+        });
+        expect(await worker.execute(sessionId, due)).toBe('STALE');
+        expect(await decisions()).toHaveLength(0);
+    });
     it('should roll back the decision, notifications and transition if the final write fails and retry after restart', async () => {
         await submit();
         // A transaction-local trigger injects a real database failure at the final write.
