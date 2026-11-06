@@ -25,6 +25,7 @@
 }
 
 /* Cards in one row share a height, and their Save rows sit on the same line at the bottom. */
+.sessionCards,
 .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -390,6 +391,10 @@
 }
 
 @media (width < 1024px) {
+    .sessionCards {
+        grid-template-columns: 1fr;
+    }
+
     .grid {
         grid-template-columns: 1fr;
         gap: var(--gap-md);

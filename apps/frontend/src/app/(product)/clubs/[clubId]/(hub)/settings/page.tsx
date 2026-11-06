@@ -6,9 +6,9 @@ import { getClubHub, getClubSettings } from '#api/clubs.server';
 import { getSessionRoster } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 
-import type { TRatingCloseControl } from '../../_components/ActiveRatings/ActiveRatings.types';
 import HubLoadFailure from '../../_components/HubLoadFailure/HubLoadFailure';
 import HubPanel from '../../_components/HubPanel/HubPanel';
+import type { TRatingCloseControl } from './_components/ActiveRatings/ActiveRatings.types';
 import ClubSettings from './_components/ClubSettings/ClubSettings';
 
 export const metadata: Metadata = {
