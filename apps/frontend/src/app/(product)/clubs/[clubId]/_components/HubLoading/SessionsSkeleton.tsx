@@ -1,6 +1,9 @@
 import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 
-import { formatHubSessionTitle } from '#components/sessions/club-session-text';
+import {
+    formatHubSessionTitle,
+    formatRatingProgress,
+} from '#components/sessions/club-session-text';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { formatAverage, formatCalendarDate, formatCount } from '#lib/format';
@@ -75,12 +78,7 @@ function getMeta(session: IClubHubSession | undefined, isRating: boolean) {
         session.scheduledAt ? formatCalendarDate(session.scheduledAt) : 'Not scheduled',
         session.location,
     ];
-    if (isRating)
-        fields.push(
-            session.acceptedCount
-                ? `${session.progressCount ?? 0} of ${session.acceptedCount} rated`
-                : 'No current participants',
-        );
+    if (isRating) fields.push(formatRatingProgress(session));
     return fields.filter(Boolean).join(' · ');
 }
 function SessionRow({ session, isRating }: { session?: IClubHubSession; isRating: boolean }) {

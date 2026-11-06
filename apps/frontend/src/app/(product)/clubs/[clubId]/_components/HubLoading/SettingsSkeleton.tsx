@@ -2,6 +2,7 @@ import type { IClubHub } from '@pickflick/contracts';
 
 import {
     formatHubSessionTitle,
+    formatRatingProgress,
     formatSessionPhase,
     formatSessionProgress,
 } from '#components/sessions/club-session-text';
@@ -170,7 +171,7 @@ function RatingSummaries({ hub }: { hub?: IClubHub | null }) {
                         </strong>
                         <span>
                             <Skeleton
-                                text={`${session.scheduledAt ? formatCalendarDate(session.scheduledAt) : 'Not scheduled'} · ${session.progressCount ?? 0} of ${session.acceptedCount} rated`}
+                                text={`${session.scheduledAt ? formatCalendarDate(session.scheduledAt) : 'Not scheduled'} · ${formatRatingProgress(session)}`}
                             />
                         </span>
                     </div>

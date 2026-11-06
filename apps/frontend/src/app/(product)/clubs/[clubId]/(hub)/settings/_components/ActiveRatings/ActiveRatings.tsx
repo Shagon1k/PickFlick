@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
-import { formatHubSessionTitle } from '#components/sessions/club-session-text';
+import {
+    formatHubSessionTitle,
+    formatRatingProgress,
+} from '#components/sessions/club-session-text';
 import RatingClose from '#components/sessions/RatingClose/RatingClose';
 import Button from '#components/ui/Button/Button';
 import { formatCalendarDate } from '#lib/format';
@@ -40,8 +43,7 @@ export default function ActiveRatings({
                                                 ? formatCalendarDate(session.scheduledAt)
                                                 : 'Not scheduled'}
                                             {' · '}
-                                            {session.progressCount ?? 0} of {session.acceptedCount}{' '}
-                                            rated
+                                            {formatRatingProgress(session)}
                                         </span>
                                     </Link>
                                     {control?.status === 'unavailable' ? (

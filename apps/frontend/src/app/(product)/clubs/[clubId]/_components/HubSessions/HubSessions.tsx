@@ -2,7 +2,10 @@ import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
-import { formatHubSessionTitle } from '#components/sessions/club-session-text';
+import {
+    formatHubSessionTitle,
+    formatRatingProgress,
+} from '#components/sessions/club-session-text';
 import AvatarGroup from '#components/ui/AvatarGroup/AvatarGroup';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
@@ -47,9 +50,7 @@ export default function HubSessions({ hub }: { hub: IClubHub }) {
 
 function OpenRatingRow({ session }: { session: IClubHubSession }) {
     const title = formatHubSessionTitle(session);
-    const progress = session.acceptedCount
-        ? `${session.progressCount ?? 0} of ${session.acceptedCount} rated`
-        : 'No current participants';
+    const progress = formatRatingProgress(session);
     const meta = [
         session.scheduledAt ? formatCalendarDate(session.scheduledAt) : 'Not scheduled',
         session.location,

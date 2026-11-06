@@ -31,3 +31,10 @@ export function formatSessionProgress(session: IClubHubSession, memberCount: num
         return `${session.progressCount ?? 0} of ${total} have submitted`;
     return `${session.acceptedCount} of ${memberCount} Club members have joined`;
 }
+
+/** An open Rating row's progress; a Session everyone left has no one left to rate. */
+export function formatRatingProgress(session: IClubHubSession) {
+    return session.acceptedCount
+        ? `${session.progressCount ?? 0} of ${session.acceptedCount} rated`
+        : 'No current participants';
+}
