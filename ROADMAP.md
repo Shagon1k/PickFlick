@@ -1332,7 +1332,7 @@ acknowledgement remain acceptance gates. Phase 18 below summarizes the verificat
 
 **Out of scope:** Web push and Paddle events before Phase 20.
 
-### Phase 18 — Human Verification & Bug Fixing III · In progress
+### Phase 18 — Human Verification & Bug Fixing III · Done
 
 **Goal:** Stabilize completion, past history, the Library, statistics, achievements, and
 notifications as one retention loop.
@@ -1345,24 +1345,24 @@ notifications as one retention loop.
 
 - [x] Create a severity-classified register (the temporary Phase 18 document, removed after the
       fixes).
-- [ ] Run Watch → Rate → Complete → History → Library → Statistics and Achievements across several
+- [x] Run Watch → Rate → Complete → History → Library → Statistics and Achievements across several
       Clubs and Users.
-- [ ] Verify partial Rating closure, multiple Rating Sessions, past data, repeat viewings,
+- [x] Verify partial Rating closure, multiple Rating Sessions, past data, repeat viewings,
       Personal-versus-Session Rating separation, and anonymized or departed members.
-- [ ] Exercise notification preferences, retries, multi-tab SSE, deleted entities, empty, long, and
+- [x] Exercise notification preferences, retries, multi-tab SSE, deleted entities, empty, long, and
       error states, and email-safe content.
-- [ ] Compare every delivered surface at representative widths with keyboard, touch, and reduced
+- [x] Compare every delivered surface at representative widths with keyboard, touch, and reduced
       motion.
 - [x] Fix Blockers and Majors, retest, consolidate docs, delete staging docs, and schedule remaining
       debt.
 
 **Acceptance:**
 
-- [ ] No open Blocker or Major.
-- [ ] Shared history and Personal Rating invariants survive repeated edits, imports, recomputation,
+- [x] No open Blocker or Major.
+- [x] Shared history and Personal Rating invariants survive repeated edits, imports, recomputation,
       and membership changes.
-- [ ] Automated suites and cross-feature journeys pass after fixes.
-- [ ] Documentation and issue disposition match verified behavior.
+- [x] Automated suites and cross-feature journeys pass after fixes.
+- [x] Documentation and issue disposition match verified behavior.
 
 **Out of scope:** Billing, full privacy and deletion, and App Admin operations.
 
@@ -1377,7 +1377,6 @@ integration tests, 16 real-API journeys and the final six Past Session checks. T
 passes 400/402; after repairing its two test-timing failures, all six affected responsive cases
 pass three repeats without retries. The
 [baseline review](_docs/ui-quality.md#phase-18-baseline-review-2026-11-01) records the evidence.
-Full CI and exact-head hosted owner acceptance remain required before this gate closes.
 
 The owner reopened alignment on 2026-11-01 after rejecting earlier green tests as proof of design
 parity. The current changes retain the selected Phase 18 designs and correct shared controls,
@@ -1388,14 +1387,12 @@ and 17 real-API journeys, including the two-account empty-inbox Hub refresh regr
 emails were confirmed delivered by provider GET; local database status remains ACCEPTED without
 signed callbacks. The final native static rerun passes; UI contract passes 310/310 and
 pinned-Linux visual comparison passes 112/112 after all 51 changed/new PNGs were reviewed.
-Exact-head hosted CI and owner acceptance remain pending.
 
 The owner resumed automated verification on 2026-11-04 after the later UI/visibility changes.
 The local rerun passes `pnpm verify` (648 unit tests and production builds), 329 database/API
 checks, 315 UI contract checks, 17 real-API journeys and 112 pinned-Linux visual comparisons.
 All 77 refreshed existing PNGs were reviewed; no screenshot tolerance or quality gate changed.
-Worker recovery, built-runtime smoke and deployment-definition checks also pass. Exact-head hosted
-CI and owner acceptance still gate Phase 18 completion.
+Worker recovery, built-runtime smoke and deployment-definition checks also pass.
 
 The register closed on 2026-11-06. Every finding is fixed or dispositioned: #39 and #40 were
 expected local data, and #58 was accepted as designed. Owner decisions are in the Decision Log
@@ -1404,6 +1401,10 @@ below and DES-012–DES-017. Two simplification passes followed. The first, at `
 112 pinned-Linux visual comparisons. The second, PR #205, passed `pnpm verify` (658 unit tests),
 333 integration checks and the full UI suite at 434/438. Every visual matched, and the four
 intermittent failures also occur on `main`. Owner deferrals from these passes were dropped.
+
+**Recorded evidence (2026-11-06):** issue #63, PRs #199 and #205. The owner accepted Phase 18 with
+no open Blocker or Major; that acceptance was recorded on the owner's instruction ahead of the
+merge of #205 and the closing of #63. Phases 13–17 keep their own open gates listed above.
 
 ### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
 
@@ -1788,7 +1789,7 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 12 — Human Verification & Bug Fixing II                | Done        | #48 and PR #180: owner-accepted UAT journey, full automated suite and reviewed baselines (2026-10-23).             |
 | 13 — Watching, Rating & Completion                     | In progress | Watching → Rating → Completed is implemented; exact-head hosted/owner phase acceptance remains open.               |
 | 14–17                                                  | In progress | Past imports, Library, analytics/achievements and notifications are built; hosted/sandbox acceptance remains open. |
-| 18 — Human Verification & Bug Fixing III               | In progress | #63: owner-led verification and fixes for Phases 13–17; final checks and acceptance remain open.                   |
+| 18 — Human Verification & Bug Fixing III               | Done        | #63, PRs #199 and #205: owner-accepted verification and fixes for Phases 13–17 (2026-11-06).                       |
 | 19–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |
 | 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                            |

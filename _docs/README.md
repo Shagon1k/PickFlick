@@ -64,7 +64,7 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 
 The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,
 decisions and implementation notes from before the fixes. Its raw area reports were removed after
-consolidation. Phase 18 evidence is summarized in the [Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--in-progress).
+consolidation. Phase 18 evidence is summarized in the [Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--done).
 
 The temporary Phase 6–11 and 13–17 documents were consolidated into the canonical references above
 and removed. [Roadmap phase evidence](../ROADMAP.md#11-progress) and

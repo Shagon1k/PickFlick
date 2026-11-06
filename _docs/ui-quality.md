@@ -225,7 +225,7 @@ snapshots. Pixel tolerance and masks are unchanged. Eight additional actual prod
 before/after pairs use matching synthetic fixtures at 390×844, DPR 2; they accompany the owner
 report. Interaction, keyboard and animation evidence comes from behavior checks, not static PNGs.
 Final contract and static evidence is summarized in the
-[Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--in-progress).
+[Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--done).
 
 ## Phase 18 verification follow-up, 2026-11-04
 
@@ -245,7 +245,7 @@ Behavior checks include table transitions with held navigation responses, matrix
 zero/missing/tied scores and a sign-in click held until hydration. The Login regression test fails
 on the preceding implementation because the button is enabled before its handler exists; the
 fix reuses the existing hydration hook. Final gate results are summarized in the
-[Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--in-progress).
+[Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--done).
 
 The hosted follow-up caught press-animation geometry in the Watchlist priority captures: scaling
 the popover anchor left Floating UI at a fractional intermediate position. The control now pulses
