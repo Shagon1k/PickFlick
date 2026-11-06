@@ -166,26 +166,15 @@ for (const { destination, expected } of [
 }
 
 test(
-    'Library rating failures preserve the selection and recover',
+    'Saving a Library rating closes the dialog and returns focus to the table heading',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await signInMock(context, 'valid-library-errors');
+        // PersonalRating's offline and failed-save recovery is covered on the Movie page.
+        await signInMock(context, 'valid-library-recovered');
         await page.goto('/library?q=Grand');
         await page.getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' }).click();
         const dialog = page.getByRole('dialog');
-        const nine = dialog.getByRole('radio', { name: '9 of 10', exact: true });
-        // A chosen star saves itself; choosing it again retries.
-        await context.setOffline(true);
-        await nine.click();
-        await expect(dialog.getByText(/offline/iu)).toBeVisible();
-        await context.setOffline(false);
-        await nine.click();
-        await expect(
-            dialog.getByText('We could not save your rating.', { exact: false }),
-        ).toBeVisible();
-        await expect(nine).toBeChecked();
-        await signInMock(context, 'valid-library-recovered');
-        await nine.click();
+        await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
         await expect(dialog).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'My Ratings', exact: true })).toBeFocused();
         await expect(

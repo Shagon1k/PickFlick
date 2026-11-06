@@ -58,7 +58,7 @@ export function handlePersonalRating(
     }
     if (request.method === 'PUT') {
         readJson<TSavePersonalRating>(request, (body) => {
-            if (token === 'valid-rating-failure' || token === 'valid-library-errors') {
+            if (token === 'valid-rating-failure') {
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'request-personal-rating');
                 return;
             }
