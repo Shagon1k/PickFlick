@@ -8,10 +8,12 @@ import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondInvitationAction } from '../../actions';
+
+const RESPONSE_FAILURE = 'The invitation could not be updated. Check your connection and retry.';
 
 type TView = TInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
 /** A closed link shows as a voided ticket; the stamp names why, never which Club. */
@@ -60,33 +62,20 @@ const messages = {
 
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
-    const [isPending, setIsPending] = useState(false);
     // Server-rendered buttons must wait until their decision handlers are attached.
     const isReady = useIsHydrated();
-    const [failure, setFailure] = useState('');
+    const { message: failure, setMessage, isPending, run } = useActionStatus();
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));
 
-    async function respond(decision: 'accept' | 'decline') {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setFailure(offlineMessage);
-            return;
-        }
-        setIsPending(true);
-        setFailure('');
-        try {
-            const next = await respondInvitationAction({ token, decision });
-            if (next.state === 'error') {
-                setFailure('The invitation could not be updated. Check your connection and retry.');
-            } else {
-                setView(next);
-            }
-        } catch {
-            setFailure('The invitation could not be updated. Check your connection and retry.');
-        } finally {
-            setIsPending(false);
-        }
+    function respond(decision: 'accept' | 'decline') {
+        run(() => respondInvitationAction({ token, decision }), {
+            unreachableMessage: RESPONSE_FAILURE,
+            onResult: (next) => {
+                if ('ok' in next || next.state === 'error') setMessage(RESPONSE_FAILURE);
+                else setView(next);
+            },
+        });
     }
 
     return (
