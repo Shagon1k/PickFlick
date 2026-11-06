@@ -15,11 +15,14 @@ export function toIsoDate(value: string): string {
 }
 
 /**
- * A Session's calendar date. Sessions store the venue's wall-clock day and time as if in UTC, so
- * they are read in UTC whatever the viewer's zone.
+ * A Session's calendar date, or the parts `options` asks for. Sessions store the venue's
+ * wall-clock day and time as if in UTC, so they are read in UTC whatever the viewer's zone.
  */
-export function formatCalendarDate(value: string): string {
-    return new Date(value).toLocaleDateString('en', { dateStyle: 'medium', timeZone: 'UTC' });
+export function formatCalendarDate(
+    value: string,
+    options: Intl.DateTimeFormatOptions = { dateStyle: 'medium' },
+): string {
+    return new Intl.DateTimeFormat('en', { ...options, timeZone: 'UTC' }).format(new Date(value));
 }
 
 /** The screening's `hh:mm`, or null for a date-only Session (stored at midnight). */

@@ -10,7 +10,7 @@ import Alert from '#components/ui/Alert/Alert';
 import Button from '#components/ui/Button/Button';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
-import { formatCount } from '#lib/format';
+import { formatCalendarDate, formatCount } from '#lib/format';
 
 import { loadPendingInvitesAction, respondPendingInviteAction } from './actions';
 import styles from './PendingInvites.module.scss';
@@ -242,12 +242,11 @@ function describeInvitation(invitation: TPendingInvitation): ReactNode {
             </>
         );
     if (!invitation.scheduledAt) return <>{invitation.clubName}</>;
-    const day = new Intl.DateTimeFormat('en', {
+    const day = formatCalendarDate(invitation.scheduledAt, {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
-        timeZone: 'UTC',
-    }).format(new Date(invitation.scheduledAt));
+    });
     return (
         <>
             {invitation.clubName} · {day}

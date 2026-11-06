@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 import Icon from '#components/ui/Icon/Icon';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
-import { formatAverage, toScreeningTime } from '#lib/format';
+import { formatAverage, formatCalendarDate, toScreeningTime } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -18,11 +18,10 @@ export default function SessionFacts({
 )) {
     const panel = getCompanion(session, roster, isLoading);
     const date = session.scheduledAt
-        ? new Intl.DateTimeFormat('en', {
+        ? formatCalendarDate(session.scheduledAt, {
               dateStyle: 'long',
               timeStyle: toScreeningTime(session.scheduledAt) ? 'short' : undefined,
-              timeZone: 'UTC',
-          }).format(new Date(session.scheduledAt))
+          })
         : 'Not scheduled';
     const participants =
         roster?.participants

@@ -1,4 +1,4 @@
-import { formatAverage, formatHours, formatInstant } from '../format';
+import { formatAverage, formatCalendarDate, formatHours, formatInstant } from '../format';
 
 describe('number formats', () => {
     it('should always show one decimal for a rating average', () => {
@@ -17,5 +17,15 @@ describe('formatInstant relative', () => {
         expect(formatInstant('2026-10-31T10:00:00Z', 'relative', undefined, now)).toBe('2 hr. ago');
         expect(formatInstant('2026-10-30T11:00:00Z', 'relative', undefined, now)).toBe('yesterday');
         expect(formatInstant('2026-10-31T10:00:00Z', 'date', 'UTC', now)).toBe('Oct 31, 2026');
+    });
+});
+
+describe('formatCalendarDate', () => {
+    it('should read the stored wall-clock value in UTC', () => {
+        const value = '2026-11-06T23:30:00.000Z';
+
+        expect(formatCalendarDate(value)).toBe('Nov 6, 2026');
+        expect(formatCalendarDate(value, { weekday: 'long' })).toBe('Friday');
+        expect(formatCalendarDate(value, { timeStyle: 'short' })).toBe('11:30 PM');
     });
 });

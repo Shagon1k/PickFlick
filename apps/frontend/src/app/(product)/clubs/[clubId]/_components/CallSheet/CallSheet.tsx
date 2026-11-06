@@ -9,7 +9,7 @@ import { getProgressTotal } from '#components/sessions/club-session-text';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Icon from '#components/ui/Icon/Icon';
-import { formatCount, formatRuntime, toScreeningTime } from '#lib/format';
+import { formatCalendarDate, formatCount, formatRuntime, toScreeningTime } from '#lib/format';
 
 import styles from './CallSheet.module.scss';
 
@@ -24,22 +24,15 @@ export default function CallSheet({
     scheduleHref?: string;
 }) {
     if (!session) return <EmptyCallSheet scheduleHref={scheduleHref} />;
-    const scheduled = session.scheduledAt ? new Date(session.scheduledAt) : null;
-    const unit = scheduled
-        ? new Intl.DateTimeFormat('en', { weekday: 'long', timeZone: 'UTC' }).format(scheduled)
-        : 'Screening';
+    const scheduled = session.scheduledAt;
+    const unit = scheduled ? formatCalendarDate(scheduled, { weekday: 'long' }) : 'Screening';
     const date = scheduled
-        ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
-              scheduled,
-          )
+        ? formatCalendarDate(scheduled, { month: 'short', day: 'numeric' })
         : '—';
     // A date-only Session has no time, so it shows its location in the Call time slot instead.
-    const hasTime = Boolean(session.scheduledAt && toScreeningTime(session.scheduledAt));
     const time =
-        scheduled && hasTime
-            ? new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(
-                  scheduled,
-              )
+        scheduled && toScreeningTime(scheduled)
+            ? formatCalendarDate(scheduled, { timeStyle: 'short' })
             : null;
     const hasSelectedFilm = isFilmSessionPhase(session.phase);
     const title = hasSelectedFilm
