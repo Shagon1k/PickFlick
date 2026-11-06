@@ -180,6 +180,7 @@ export default [
                         'notifications',
                         'sessions',
                         'shells',
+                        'statistics',
                         'ui',
                     ],
                 },

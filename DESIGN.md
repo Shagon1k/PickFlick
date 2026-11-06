@@ -103,7 +103,8 @@ and block. The primitive owns the shimmer, tones and reduced-motion behavior. It
 can measure already-authorized text in an invisible inline box, preserving its font, wrapping
 and height while painting the shared skeleton over it. Decorative loading content is inert.
 The primitive uses a Mantine Box span so it also fits inside headings and inline labels.
-`LoadingState` owns the accessible loading status and content-shaped compositions. Hub has separate Overview,
+`LoadingState` owns the accessible loading status and wraps a content-shaped skeleton that its
+route owns; skeletons two routes share sit in their component group. Hub has separate Overview,
 Sessions, Ratings, Members, Achievements and Manage Club fallbacks. Members shows only list rows,
 without a placeholder for an absent top action. My Library uses table layouts
 for My Ratings/Watchlist, the achievement shelf for Achievements and eight statistic placeholders.
@@ -289,8 +290,7 @@ here.
   Each panel rechecks authorization and refreshes the frame's snapshot; its links keep the scroll
   position. Below 768px the section tabs give way to the bottom bar's Hub strip. A section switch
   answers at once: the strip closes, the current section moves and a card skeleton holds the panel
-  until the server responds. The same `LoadingState` cards variant suits later panel routes such as
-  the Library.
+  until the server responds.
 - The carousel ends with Create new club. The caption shows member count, the count of Sessions that
   were not cancelled, and the founding month and year; description, plan, role and scale stay in
   their own panels. Names wrap by whole words and stop at three lines. Phones show position dots and

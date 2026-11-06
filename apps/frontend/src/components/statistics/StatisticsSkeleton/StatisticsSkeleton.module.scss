@@ -1,0 +1,149 @@
+.statistics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--gap-sm);
+}
+
+.stat {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: var(--gap-sm);
+    align-items: center;
+    min-width: 0;
+    min-height: 124px;
+    padding: var(--gap-md);
+    container-type: inline-size;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.statIcon {
+    width: 58px;
+    height: 58px;
+    border-radius: var(--radius-pill);
+}
+
+.statCopy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+}
+
+.statValue {
+    display: grid;
+    align-items: center;
+    width: 70%;
+    height: calc(clamp(40px, 5vw, 56px) * var(--lh-tight));
+    border-radius: var(--radius);
+}
+
+.statValue[data-text] {
+    width: 100%;
+    height: calc(clamp(20px, 10cqi, 42px) * var(--lh-tight));
+}
+
+.statLabel {
+    width: 100%;
+    height: 1lh;
+    margin-top: var(--gap-xs);
+    font-size: var(--fs-meta);
+}
+
+/* Personal statistics keep the gap LibraryStatistics leaves below itself. */
+.statistics:not([data-overview]) {
+    margin-bottom: var(--gap-lg);
+}
+
+.statistics[data-overview] {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.statistics[data-overview] .stat {
+    grid-column: span 3;
+    gap: 0;
+    padding: 20px 24px;
+}
+
+.statistics[data-overview] .stat:nth-child(n + 5) {
+    grid-column: span 4;
+}
+
+.statistics[data-overview] .statValue[data-text] {
+    height: calc(clamp(20px, 2.5vw, 28px) * var(--lh-tight));
+}
+
+.statistics[data-overview] .statLabel {
+    font: var(--fs-meta)/var(--lh-ui) var(--font-body);
+}
+
+@media (width < 1024px) {
+    .statistics,
+    .statistics[data-overview] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .statistics[data-overview] .stat,
+    .statistics[data-overview] .stat:nth-child(n + 5) {
+        grid-column: auto;
+    }
+
+    .statistics[data-overview] .stat:nth-child(5) {
+        grid-column: 1/-1;
+    }
+}
+
+@media (width < 768px) {
+    .statistics[data-overview] .stat {
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: var(--gap-sm);
+        padding: 20px 14px;
+    }
+
+    .statistics[data-overview] .statIcon {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+@media (width < 576px) {
+    .statistics {
+        gap: var(--gap-xs);
+    }
+
+    .stat {
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: var(--gap-xs);
+        min-height: 104px;
+        padding: var(--gap-sm) var(--gap-xs);
+    }
+
+    .statIcon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .statValue {
+        height: calc(30px * var(--lh-tight));
+    }
+
+    .statLabel {
+        font-size: var(--fs-caption);
+    }
+
+    .statistics[data-overview] {
+        gap: var(--gap-sm);
+    }
+
+    .statistics[data-overview] .stat {
+        min-height: 124px;
+    }
+
+    .statistics[data-overview] .statValue {
+        height: calc(clamp(40px, 5vw, 56px) * var(--lh-tight));
+    }
+
+    .statistics[data-overview] .stat:nth-child(n + 5) {
+        grid-column: 1/-1;
+    }
+}

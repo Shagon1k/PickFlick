@@ -2,6 +2,7 @@ import { type ReactNode, Suspense } from 'react';
 
 import { getLibraryStatistics } from '#api/library.server';
 import ControlShell from '#components/shells/ControlShell/ControlShell';
+import StatisticsSkeleton from '#components/statistics/StatisticsSkeleton/StatisticsSkeleton';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import LoadingState from '#components/ui/LoadingState/LoadingState';
@@ -43,10 +44,9 @@ export default function LibraryShell({
                 shouldShowStatistics && (
                     <Suspense
                         fallback={
-                            <LoadingState
-                                label="Loading personal statistics…"
-                                variant="statistics"
-                            />
+                            <LoadingState label="Loading personal statistics…">
+                                <StatisticsSkeleton />
+                            </LoadingState>
                         }
                     >
                         <LibraryStatisticsSummary returnPath={returnPath} />

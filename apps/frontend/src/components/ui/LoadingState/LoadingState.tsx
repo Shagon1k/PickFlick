@@ -1,37 +1,31 @@
-import type { IClubHub } from '@pickflick/contracts';
+import type { ReactNode } from 'react';
 
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './LoadingState.module.scss';
-import PanelSkeleton, { type TPanelSkeletonVariant } from './PanelSkeleton';
 
 export interface ILoadingStateProps {
     label: string;
     lines?: number;
-    hub?: IClubHub | null;
-    variant?: 'lines' | TPanelSkeletonVariant;
+    /** A content-shaped skeleton; without one, generic lines hold the space. */
+    children?: ReactNode;
 }
 
-export default function LoadingState({
-    label,
-    lines = 3,
-    variant = 'lines',
-    hub,
-}: ILoadingStateProps) {
+export default function LoadingState({ label, lines = 3, children }: ILoadingStateProps) {
     return (
         <div aria-busy="true" aria-live="polite" className={styles.loadingState} role="status">
             <span className="visually-hidden">{label}</span>
-            {variant === 'lines' ? (
+            {children ? (
+                <div aria-hidden="true" inert>
+                    {children}
+                </div>
+            ) : (
                 <div className={styles.lines}>
                     {Array.from({ length: Math.max(1, lines) }, (_, index) => (
                         <div className={styles.line} key={index}>
                             <Skeleton shouldFill />
                         </div>
                     ))}
-                </div>
-            ) : (
-                <div aria-hidden="true" inert>
-                    <PanelSkeleton variant={variant} hub={hub} />
                 </div>
             )}
         </div>

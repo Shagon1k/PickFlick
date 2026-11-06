@@ -3,12 +3,12 @@ import type { ReactNode } from 'react';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import Table, { type ITableRow } from '#components/ui/Table/Table';
 
-import styles from './TableSkeleton.module.scss';
+import styles from './FilmTableSkeleton.module.scss';
 
 const ROW_COUNT = 4;
-type TTableSkeletonVariant = 'club-ratings' | 'ratings' | 'watchlist';
+type TFilmTableSkeletonVariant = 'club-ratings' | 'ratings' | 'watchlist';
 
-function buildColumns(variant: TTableSkeletonVariant) {
+function buildColumns(variant: TFilmTableSkeletonVariant) {
     const rank = { key: 'rank', header: '#', isNumeric: true };
     const film = { key: 'film', header: 'Film' };
     const genre = { key: 'genre', header: 'Genre' };
@@ -26,8 +26,8 @@ function buildColumns(variant: TTableSkeletonVariant) {
     ];
 }
 
-export function buildTableSkeletonRows(
-    variant: TTableSkeletonVariant,
+export function buildFilmTableSkeletonRows(
+    variant: TFilmTableSkeletonVariant,
     rowCount = ROW_COUNT,
 ): ITableRow[] {
     const isClub = variant === 'club-ratings';
@@ -60,7 +60,7 @@ export function buildTableSkeletonRows(
     }));
 }
 
-export default function TableSkeleton({ variant }: { variant: TTableSkeletonVariant }) {
+export default function FilmTableSkeleton({ variant }: { variant: TFilmTableSkeletonVariant }) {
     return (
         <div className={styles.layout}>
             <div className={styles.search}>
@@ -70,7 +70,7 @@ export default function TableSkeleton({ variant }: { variant: TTableSkeletonVari
                 variant="leaderboard"
                 caption="Loading films"
                 columns={buildColumns(variant)}
-                rows={buildTableSkeletonRows(variant)}
+                rows={buildFilmTableSkeletonRows(variant)}
                 isLoading
             />
             <div className={styles.pagination}>

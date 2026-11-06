@@ -10,12 +10,11 @@ import Achievements from '#components/achievements/Achievements/Achievements';
 import RetryButton from '#components/shells/RetryButton/RetryButton';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import LoadingState from '#components/ui/LoadingState/LoadingState';
 
+import LibraryPanelSkeleton from './_components/LibraryPanelLoading/LibraryPanelSkeleton';
 import LibraryShell from './_components/LibraryShell/LibraryShell';
 import LibraryTable from './_components/LibraryTable/LibraryTable';
 import { buildLibraryPath } from './library-path';
-import { getLibraryPanelVariant } from './library-tabs';
 import { loadLibraryRead } from './load-library-read';
 import styles from './page.module.scss';
 
@@ -93,15 +92,7 @@ export default async function LibraryPage({
             returnPath={returnPath}
             shouldShowStatistics={isAchievements || (parsed.success && session === 'authenticated')}
         >
-            <Suspense
-                key={current}
-                fallback={
-                    <LoadingState
-                        label="Loading your Library…"
-                        variant={getLibraryPanelVariant(parameters.tab)}
-                    />
-                }
-            >
+            <Suspense key={current} fallback={<LibraryPanelSkeleton tab={parameters.tab} />}>
                 {isAchievements ? (
                     <AchievementContent />
                 ) : (

@@ -9,9 +9,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
-import { buildTableSkeletonRows } from '#components/ui/LoadingState/TableSkeleton';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatAverage, formatCount } from '#lib/format';
@@ -95,7 +95,7 @@ export default function ClubRatings({
                 ]}
                 rows={
                     isPending
-                        ? buildTableSkeletonRows('club-ratings', ratings.items.length || 1)
+                        ? buildFilmTableSkeletonRows('club-ratings', ratings.items.length || 1)
                         : ratings.items.map((item, index) => ({
                               id: item.movieId,
                               cells: {

@@ -17,9 +17,3 @@ export function getLibraryTabItems(current?: TLibraryTab): IShellNavigationItem[
         current: current ? current === tab : undefined,
     }));
 }
-
-/** The skeleton that matches a tab; an unknown tab falls back to My Ratings like the page. */
-export function getLibraryPanelVariant(tab: string | string[] | null | undefined) {
-    if (tab === 'achievements') return 'achievements';
-    return tab === 'watchlist' ? 'watchlist' : 'ratings';
-}

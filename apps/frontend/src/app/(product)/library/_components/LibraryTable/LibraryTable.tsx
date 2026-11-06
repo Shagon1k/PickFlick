@@ -10,11 +10,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
+import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
-import { buildTableSkeletonRows } from '#components/ui/LoadingState/TableSkeleton';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
@@ -189,7 +189,9 @@ export default function LibraryTable({
                         ...sortable('value'),
                     },
                 ]}
-                rows={isPending ? buildTableSkeletonRows(skeletonVariant, rows.length || 1) : rows}
+                rows={
+                    isPending ? buildFilmTableSkeletonRows(skeletonVariant, rows.length || 1) : rows
+                }
                 emptyMessage={emptyMessage}
             />
             <nav aria-label={`${title} pages`} className={styles.libraryTable__pagination}>
