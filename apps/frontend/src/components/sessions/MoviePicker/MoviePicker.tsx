@@ -100,7 +100,6 @@ export default function MoviePicker({
                 }}
             />
         ) : undefined;
-    const labelProps = isLabelHidden ? { className: 'visually-hidden' } : undefined;
     const labelHint = required ? 'required' : 'optional';
     const actionWidth = endAction ? 'calc(var(--hit) * 2)' : undefined;
     if (value) {
@@ -114,7 +113,7 @@ export default function MoviePicker({
                     id={id}
                     label={label}
                     labelHint={labelHint}
-                    labelProps={labelProps}
+                    isLabelHidden={isLabelHidden}
                     value={title}
                     title={title}
                     readOnly
@@ -143,7 +142,7 @@ export default function MoviePicker({
                 id={id}
                 label={label}
                 labelHint={labelHint}
-                labelProps={labelProps}
+                isLabelHidden={isLabelHidden}
                 placeholder={placeholder}
                 required={required}
                 shouldReserveMessage={shouldReserveMessage}

@@ -53,7 +53,6 @@ export default function TableSearch({
                 type="search"
                 label={label}
                 isLabelHidden
-                labelProps={{ className: 'visually-hidden' }}
                 shouldReserveMessage={false}
                 placeholder={label}
                 maxLength={maxLength}

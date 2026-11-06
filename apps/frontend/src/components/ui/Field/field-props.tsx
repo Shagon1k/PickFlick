@@ -62,11 +62,9 @@ export function getFieldProps({
             );
         },
         inputWrapperOrder: SLOT_ORDER,
-        label: isLabelHidden ? (
-            <span className="visually-hidden">{label}</span>
-        ) : (
-            <FieldLabel hint={labelHint} label={label} />
-        ),
+        label: isLabelHidden ? label : <FieldLabel hint={labelHint} label={label} />,
+        // A hidden label leaves the grid too, so the control keeps no empty label row above it.
+        ...(isLabelHidden ? { labelProps: { className: 'visually-hidden' } } : {}),
         unstyled: true,
         withAsterisk: false,
     };

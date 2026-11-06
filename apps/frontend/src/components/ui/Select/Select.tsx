@@ -49,8 +49,15 @@ export default function Select({
         <MantineSelect
             {...props}
             allowDeselect={false}
-            {...getFieldProps({ error, hint, label, labelHint, success, shouldReserveMessage })}
-            labelProps={isLabelHidden ? { className: 'visually-hidden' } : props.labelProps}
+            {...getFieldProps({
+                error,
+                hint,
+                isLabelHidden,
+                label,
+                labelHint,
+                success,
+                shouldReserveMessage,
+            })}
             classNames={{
                 ...FIELD_CLASS_NAMES,
                 input: clsx(fieldStyles.control, fieldStyles['m-select']),
