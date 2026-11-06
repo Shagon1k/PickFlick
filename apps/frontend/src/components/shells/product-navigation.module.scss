@@ -91,11 +91,6 @@
     border-color: var(--gold-border);
 }
 
-.avatarButton {
-    font: 600 13px/1 var(--font-body);
-    color: var(--fg-secondary);
-}
-
 .avatarButton::before {
     background: var(--surface);
 }
