@@ -48,7 +48,8 @@
     object-fit: cover;
 }
 
-.avatar[data-hover-color] .avatar__image {
+/* Without ColorReveal, a parent restores the colour by setting --avatar-filter. */
+.avatar[data-without-reveal] .avatar__image {
     filter: var(--avatar-filter, grayscale(1));
     transition: filter var(--motion-local) var(--ease-standard);
 }

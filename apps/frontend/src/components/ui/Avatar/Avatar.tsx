@@ -26,7 +26,7 @@ export default function Avatar({
             alt=""
             aria-hidden="true"
             component="span"
-            data-hover-color={!withColorReveal || undefined}
+            data-without-reveal={!withColorReveal || undefined}
             name={name}
             src={isLoading ? null : src}
             imageProps={{ loading: 'lazy', decoding: 'async' }}
