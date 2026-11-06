@@ -19,15 +19,14 @@ const INVITATION_FAILURE: IFailureCopy = {
     reasons: {
         MEMBER_LIMIT_REACHED: 'This Club has reached its member limit.',
         INVITATION_LIMIT_REACHED:
-            'This Club has reached its active invitation limit. Revoke an unused link in Recent invitations, then try again.',
+            'This Club has reached its active invitation limit. Revoke an unused link in Recent links, then try again.',
     },
     statuses: [[ACCESS_LOST_STATUSES, 'Invitation management is no longer available to you.']],
     fallback: 'Invitations could not be updated. Check your connection and try again.',
     request: 'Club invitation request',
 };
 
-const REFRESH_ERROR =
-    'Invitation list could not be refreshed. Use Recent invitations to try again.';
+const REFRESH_ERROR = 'Invitation list could not be refreshed. Use Recent links to try again.';
 
 export async function createInvitationAction(clubId: string): Promise<TInvitationResult> {
     try {

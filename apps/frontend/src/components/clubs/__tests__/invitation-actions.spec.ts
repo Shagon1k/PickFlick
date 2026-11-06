@@ -40,8 +40,7 @@ describe('Invitation management action', () => {
         await expect(createInvitationAction(CLUB_ID)).resolves.toEqual({
             ok: true,
             created,
-            refreshError:
-                'Invitation list could not be refreshed. Use Recent invitations to try again.',
+            refreshError: 'Invitation list could not be refreshed. Use Recent links to try again.',
         });
         expect(api.createInvitation).toHaveBeenCalledExactlyOnceWith(CLUB_ID);
     });
@@ -58,8 +57,7 @@ describe('Invitation management action', () => {
 
         await expect(revokeInvitationAction(CLUB_ID, created.id)).resolves.toEqual({
             ok: true,
-            refreshError:
-                'Invitation list could not be refreshed. Use Recent invitations to try again.',
+            refreshError: 'Invitation list could not be refreshed. Use Recent links to try again.',
         });
         expect(api.revokeInvitation).toHaveBeenCalledExactlyOnceWith(CLUB_ID, created.id);
     });

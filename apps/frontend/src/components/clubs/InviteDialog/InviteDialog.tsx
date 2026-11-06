@@ -70,15 +70,7 @@ export default function InviteDialog({
         }
     }
 
-    async function create(current: IManagedInvitation[]) {
-        const pending = current.filter((invite) => invite.state === 'pending').length;
-        if (pending >= projection.entitlements.memberLimit) {
-            setStatus({
-                message: 'Every active link is still pending. Revoke one in Recent links first.',
-                isError: true,
-            });
-            return;
-        }
+    async function create() {
         const result = await perform(() => createInvitationAction(clubId));
         if (result?.created) showCreated(result.created, result);
     }
@@ -89,7 +81,7 @@ export default function InviteDialog({
         const loaded = await perform(() => loadInvitationsAction(clubId));
         if (!loaded) return;
         setHasLoaded(true);
-        if (canCreate && !link) await create(loaded.invitations ?? []);
+        if (canCreate && !link) await create();
     }
 
     async function handleRevoke(inviteId: string) {
@@ -195,7 +187,7 @@ export default function InviteDialog({
                         <Button
                             disabled={isPending || !hasLoaded}
                             fullWidth
-                            onClick={() => create(invitations)}
+                            onClick={() => void create()}
                             variant="secondary"
                         >
                             New link
