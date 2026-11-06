@@ -1246,8 +1246,8 @@ cases are finished. Screenshots are now provided only when the owner explicitly 
 
 The owner superseded snapshot-only disclosure: current Club During/After settings govern all
 existing, legacy and future Sessions, without role/plan bypass. Own responses remain readable;
-During requires the viewer's own response, After begins at Completed. Stored scores, scale and
-Session visibility columns are unchanged. Shared policy reads, Hub averages, Club analytics and
+During requires the viewer's own response, After begins at Completed. Stored scores and scale are
+unchanged; the simplification pass below later dropped the unread Session visibility columns. Shared policy reads, Hub averages, Club analytics and
 result-derived achievement/notification projections use current Club flags. Settings changes
 invalidate Session routes and advance their existing progress signal without changing history
 order or producing lifecycle notifications. The Settings tooltip explains the global scope.
@@ -1280,3 +1280,37 @@ Focused verification on the isolated `PF-fix-global-club-visibility` worktree, b
 This focused change belongs to the existing Phase 18 branch and issue #63. The owner requires
 continuing in that branch. Unrelated local `AGENTS.md` edits remain outside the implementation
 commit. Issue #63 remains In progress; #204 remains Deferred.
+
+### Simplification pass, 2026-11-06
+
+The owner approved a simplification pass over `37fb7f4..1110695c`. Two audits ran: a
+three-area pass and a six-area pass guided by `simplify-code`, each checked by a skeptic. Edits
+landed after `e089b07a`, one logical change per commit, with structural moves kept apart
+from behavior changes. Because production has never launched, compatibility code was removed
+rather than kept.
+
+Behavior and data changes the owner accepted:
+
+- Three migrations: `20261106000000_drop_unread_visibility_columns` (Session visibility copies and
+  legacy Club flags), `20261106000100_clear_decided_empty_deadlines`, and
+  `20261106000200_drop_session_invites`.
+- Personal Session invitation links and their route and endpoints are gone (`4c82ed73`, breaking).
+  Session participation runs only through `/participation`; per-Session sharing stays in #204.
+- `PATCH /clubs/:clubId/settings` takes either the Club Info fields or the Club Settings fields
+  and rejects a mix (`86f425bb`, breaking).
+- Fixed: Color reveal ran a double rAF loop, the Past Session future date reported late, a lapsed
+  deadline edit was not stale, the Library offered Clear filters wrongly, the
+  pre-submission setting now reads live, and film search pointed at a stale option.
+- Copy: one Movie title fallback ("Untitled film"), "No current participants" for an empty Rating,
+  the saved own Rating reads `7.0`, and invitation limit copy names "Recent links".
+
+Deferred with reasons: StatusLine copies (A8), inner `disabled` props (N15), `.removed` vs
+`.railItem` (N67), a loading SessionHeader (A17), Popover trigger state (A26), ScaleControl-owned
+focus (N11), `--ease-action` (named by the design contract), and the gallery-only LoadingState
+and Table variants (B21/B22).
+
+Evidence at `1110695c` on an isolated PostgreSQL: `pnpm verify` with 659 unit checks, 322/322
+integration, 326/326 UI contract and 17/17 journeys. Four baselines changed as reviewed: the
+gallery product shell (SectionTabs) and the rating form (no empty label row). They were captured
+in the pinned CI Playwright image, where the visual suite passes 112/112 (`c5a754b6`). Issue #63
+remains In progress.
