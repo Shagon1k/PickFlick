@@ -7,7 +7,9 @@ import type {
 } from '@pickflick/contracts';
 
 import {
+    matchRoute,
     readJson,
+    rejectMethod,
     sendError,
     sendJson,
     type TMockRequest,
@@ -15,6 +17,13 @@ import {
 } from './mock-http.ts';
 
 const SESSION_ID = '30000000-0000-4000-8000-000000000045';
+const ROUTES = {
+    '': 'GET',
+    '/progress': 'GET',
+    '/roster': 'GET',
+    '/selection': 'POST',
+    '/selection/close': 'POST',
+} as const;
 const closed = new Set<string>();
 const states = new Map<string, TSubmitSelection | null>();
 
@@ -51,17 +60,18 @@ export function handleSelection(
     pathname: string,
     token: string | undefined,
 ): boolean {
-    if (!token?.startsWith('valid-selection') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
-        return false;
+    const route = matchRoute(pathname, `/sessions/${SESSION_ID}`, ROUTES);
+    if (!token?.startsWith('valid-selection') || route === undefined) return false;
+    if (rejectMethod(request, response, ROUTES[route])) return true;
     const ballot = states.get(token) ?? null;
     const isClosed = closed.has(token) || token.includes('outcome');
     const ballotVersion = ballot ? 2 : 1;
     const version = isClosed ? 3 : ballotVersion;
-    if (pathname.endsWith('/progress')) {
+    if (route === '/progress') {
         sendJson(response, 200, { version });
         return true;
     }
-    if (pathname.endsWith('/roster')) {
+    if (route === '/roster') {
         const roster: ISessionRoster = {
             progressVersion: version,
             memberCount: 4,
@@ -75,7 +85,7 @@ export function handleSelection(
         sendJson(response, 200, roster);
         return true;
     }
-    if (pathname.endsWith('/selection/close')) {
+    if (route === '/selection/close') {
         readJson(request, () => {
             if (token.includes('failure'))
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'close-failure');
@@ -86,7 +96,7 @@ export function handleSelection(
         });
         return true;
     }
-    if (pathname.endsWith('/selection')) {
+    if (route === '/selection') {
         readJson<TSubmitSelection>(request, (input) => {
             if (token.includes('failure')) {
                 sendError(response, 503, 'SERVICE_UNAVAILABLE', 'selection-failure');

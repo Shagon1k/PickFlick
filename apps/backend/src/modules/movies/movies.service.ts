@@ -134,12 +134,12 @@ export class MoviesService {
 
     async getDetails(
         movieId: string,
-        options: { allowStale?: boolean; forceRefresh?: boolean } = {},
+        options: { allowStale?: boolean } = {},
     ): Promise<TMovieResult<TMovieDetails>> {
         const locale = this.environment.catalog.locale;
         const key = buildConfiguredDetailsKey(this.environment.catalog);
         const cached = await this.repository.findCachedDetails(movieId, key);
-        if (!options.forceRefresh && cached && this.isFresh(cached)) return toCachedResult(cached);
+        if (cached && this.isFresh(cached)) return toCachedResult(cached);
         const lookup = await this.repository.findExternalIds(movieId);
         if (!lookup) return { state: 'unavailable', reason: 'NOT_FOUND' };
         const fetchedAt = new Date();

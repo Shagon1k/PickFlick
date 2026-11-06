@@ -466,7 +466,8 @@ model NominationDeadlineDecision {
   @@id([sessionId, deadlineVersion])
 }
 
-// Recipient intent only. Delivery is owned by the later notification phase.
+// Session progress outbox. The Early Bird achievement reads the first SELECTION event as the
+// Selection opening time; Notifications are recorded separately and `recipientIds` is unread.
 model SessionProgressEvent {
   sessionId      String       @db.Uuid
   version        Int

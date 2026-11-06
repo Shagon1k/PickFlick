@@ -10,6 +10,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
+import {
+    getFilmTableColumns,
+    type TFilmTableColumnKey,
+} from '#components/movies/film-table-columns';
 import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
 import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
@@ -24,6 +28,14 @@ import { getNextTableSort } from '#lib/table-sort';
 
 import { buildLibraryPath } from '../../library-path';
 import styles from './LibraryTable.module.scss';
+
+const SORTS: Partial<Record<TFilmTableColumnKey, TLibraryQuery['sort']>> = {
+    film: 'title',
+    genre: 'genre',
+    year: 'year',
+    date: 'recent',
+    value: 'value',
+};
 
 export default function LibraryTable({
     library,
@@ -79,7 +91,7 @@ export default function LibraryTable({
     const valueFilter = isWatchlist ? query.priority : query.score;
     const hasFilters = Boolean(query.q || valueFilter);
     const emptyMessage = getEmptyMessage(isWatchlist, hasFilters);
-    const skeletonVariant = isWatchlist ? 'watchlist' : 'ratings';
+    const tableVariant = isWatchlist ? 'watchlist' : 'ratings';
     const countLabel = formatCount(library.total, isWatchlist ? 'queued film' : 'rated film');
     const toRow = (
         item: TLibrary['items'][number],
@@ -170,26 +182,11 @@ export default function LibraryTable({
                 variant="leaderboard"
                 isLoading={isPending}
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}
-                columns={[
-                    { key: 'rank', header: '#', isNumeric: true },
-                    { key: 'film', header: 'Film', ...sortable('title') },
-                    { key: 'genre', header: 'Genre', ...sortable('genre') },
-                    { key: 'year', header: 'Year', ...sortable('year') },
-                    {
-                        key: 'date',
-                        header: isWatchlist ? 'Added on' : 'Rated on',
-                        ...sortable('recent'),
-                    },
-                    {
-                        key: 'value',
-                        header: isWatchlist ? 'Priority' : 'Rating',
-                        isNumeric: !isWatchlist,
-                        ...sortable('value'),
-                    },
-                ]}
-                rows={
-                    isPending ? buildFilmTableSkeletonRows(skeletonVariant, rows.length || 1) : rows
-                }
+                columns={getFilmTableColumns(tableVariant).map((column) => {
+                    const sort = SORTS[column.key];
+                    return sort ? { ...column, ...sortable(sort) } : column;
+                })}
+                rows={isPending ? buildFilmTableSkeletonRows(tableVariant, rows.length || 1) : rows}
                 emptyMessage={emptyMessage}
             />
             <FilmTablePagination

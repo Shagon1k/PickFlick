@@ -1,7 +1,9 @@
 import { type ISessionRoster, openRatingSchema, type TSession } from '@pickflick/contracts';
 
 import {
+    matchRoute,
     readJson,
+    rejectMethod,
     sendError,
     sendJson,
     type TMockRequest,
@@ -9,6 +11,7 @@ import {
 } from './mock-http.ts';
 
 const SESSION_ID = '30000000-0000-4000-8000-000000000049';
+const ROUTES = { '': 'GET', '/progress': 'GET', '/roster': 'GET', '/rating/open': 'POST' } as const;
 const opened = new Set<string>();
 
 export function handleWatching(
@@ -17,12 +20,13 @@ export function handleWatching(
     pathname: string,
     token: string | undefined,
 ): boolean {
-    if (!token?.startsWith('valid-watching') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
-        return false;
+    const route = matchRoute(pathname, `/sessions/${SESSION_ID}`, ROUTES);
+    if (!token?.startsWith('valid-watching') || route === undefined) return false;
+    if (rejectMethod(request, response, ROUTES[route])) return true;
     const canManage = !token.includes('member') && !token.includes('readonly');
     const isRating = opened.has(token);
     const version = isRating ? 2 : 1;
-    if (pathname.endsWith('/rating/open')) {
+    if (route === '/rating/open') {
         readJson(request, (body) => {
             if (!canManage) sendError(response, 403, 'FORBIDDEN', 'watching-role');
             else if (!openRatingSchema.safeParse(body).success)
@@ -36,9 +40,9 @@ export function handleWatching(
                 sendJson(response, 201, null);
             }
         });
-    } else if (pathname.endsWith('/progress')) {
+    } else if (route === '/progress') {
         sendJson(response, 200, { version });
-    } else if (pathname.endsWith('/roster')) {
+    } else if (route === '/roster') {
         const roster: ISessionRoster = {
             progressVersion: version,
             memberCount: 3,

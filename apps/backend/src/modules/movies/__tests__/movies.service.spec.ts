@@ -168,16 +168,6 @@ describe('MoviesService', () => {
         );
     });
 
-    it('should refresh a fresh Movie when explicitly forced', async () => {
-        repository.findCachedDetails.mockResolvedValue({
-            data: buildCanonicalDetails(),
-            fetchedAt: now,
-        });
-        provider.fetchDetails.mockResolvedValue(buildMovieDetails());
-        await service.getDetails(MOVIE_ID, { forceRefresh: true });
-        expect(provider.fetchDetails).toHaveBeenCalledWith(buildMovieLookup());
-    });
-
     it('should report and cache partial details until the next refresh', async () => {
         const record = buildMovieDetails();
         record.provenance.push({

@@ -7,6 +7,7 @@ import type {
 
 import {
     readJson,
+    rejectMethod,
     sendError,
     sendJson,
     type TMockRequest,
@@ -109,12 +110,15 @@ export function handleSessionRoster(
     token: string | undefined,
 ): boolean {
     const isPendingRoute = pathname === '/session-invitations/pending';
-    const isRosterRoute = /^\/sessions\/[^/]+\/(?:roster|participants|participation|leave)/u.test(
-        pathname,
-    );
+    const rosterRoute =
+        /^\/sessions\/[^/]+\/(roster|participation|leave|participants\/[^/]+\/remove)$/u.exec(
+            pathname,
+        )?.[1];
     const isDetailRoute =
         pathname === `/sessions/${SESSION_ID}` && token?.includes('session-roster');
-    if (!isPendingRoute && !isRosterRoute && !isDetailRoute) return false;
+    if (!isPendingRoute && !rosterRoute && !isDetailRoute) return false;
+    const isRead = !rosterRoute || rosterRoute === 'roster';
+    if (rejectMethod(request, response, isRead ? 'GET' : 'POST')) return true;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'roster-auth');
         return true;
@@ -137,7 +141,7 @@ export function handleSessionRoster(
               ]
             : [];
         sendJson(response, 200, invitations);
-    } else if (pathname.endsWith('/roster')) {
+    } else if (rosterRoute === 'roster') {
         sendJson(response, 200, rosterProjection(token, state));
     } else {
         mutate(request, response, pathname, token, state);

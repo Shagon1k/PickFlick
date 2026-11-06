@@ -1314,3 +1314,28 @@ integration, 326/326 UI contract and 17/17 journeys. Four baselines changed as r
 gallery product shell (SectionTabs) and the rating form (no empty label row). They were captured
 in the pinned CI Playwright image, where the visual suite passes 112/112 (`c5a754b6`). Issue #63
 remains In progress.
+
+### Code simplicity review follow-up, 2026-11-06
+
+A static simplicity review at `37adb522` led to a behavior-neutral cleanup in one commit:
+
+- A parameterized Library integration test checks that `sort=genre` returns the same total and
+  rows as the default order for search, score and priority filters. No mismatch was found.
+- Corrected comments: `Transactions` no longer claims every service transaction goes through it,
+  and `SessionProgressEvent` names Early Bird as its reader in the schema and Architecture.
+- The unused `forceRefresh` option of `MoviesService.getDetails` is removed. ADR-016 is still
+  Proposed; a refresh worker can add its own mode when it exists.
+- The six Session UI mock handlers match exact paths and methods: unknown suffixes get 404 and
+  wrong methods get 405 (`matchRoute`, `rejectMethod` in `tests/ui/mock-http.ts`).
+- `film-table-columns.ts` holds the film table columns shared by LibraryTable, ClubRatings and
+  FilmTableSkeleton. Each table keeps its own sort keys.
+
+Deferred for owner decisions: removing `recipientIds` or the progress outbox (#172), a guard
+against recording Notifications outside `Transactions.write` (the 12 direct transactions need
+review first; `club-avatar.service.ts` and `past-sessions.service.ts` call `recordAudit` there),
+Mantine overlays, and named mock scenarios instead of token substrings.
+
+Evidence on an isolated PostgreSQL: `pnpm verify`, 333/333 integration, and the full UI suite in
+the pinned CI Playwright image at 434/438 with every visual capture unchanged. The four failures
+(`club-ratings.spec.ts:122`, `selection-outcome.spec.ts:93`) are intermittent and also fail on
+`4cf47d2b` (3 of 15 repeats there, 6 of 15 on the branch, no mock 404 or 405 in those runs).

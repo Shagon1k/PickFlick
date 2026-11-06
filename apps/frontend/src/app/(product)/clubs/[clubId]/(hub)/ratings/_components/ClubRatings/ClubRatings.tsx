@@ -9,6 +9,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import {
+    getFilmTableColumns,
+    type TFilmTableColumnKey,
+} from '#components/movies/film-table-columns';
 import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
 import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
 import Table from '#components/ui/Table/Table';
@@ -19,6 +23,13 @@ import { getNextTableSort } from '#lib/table-sort';
 
 import { buildClubRatingsPath } from '../../ratings-path';
 import styles from './ClubRatings.module.scss';
+
+const SORTS: Partial<Record<TFilmTableColumnKey, TClubRatingsQuery['sort']>> = {
+    film: 'title',
+    year: 'year',
+    genre: 'genre',
+    value: 'rating',
+};
 
 export default function ClubRatings({
     clubId,
@@ -85,13 +96,10 @@ export default function ClubRatings({
                 variant="leaderboard"
                 isLoading={isPending}
                 caption="Club rating leaderboard"
-                columns={[
-                    { key: 'rank', header: '#', isNumeric: true },
-                    { key: 'film', header: 'Film', ...sortable('title') },
-                    { key: 'year', header: 'Year', ...sortable('year') },
-                    { key: 'genre', header: 'Genre', ...sortable('genre') },
-                    { key: 'value', header: 'Rating', isNumeric: true, ...sortable('rating') },
-                ]}
+                columns={getFilmTableColumns('club-ratings').map((column) => {
+                    const sort = SORTS[column.key];
+                    return sort ? { ...column, ...sortable(sort) } : column;
+                })}
                 rows={
                     isPending
                         ? buildFilmTableSkeletonRows('club-ratings', ratings.items.length || 1)
