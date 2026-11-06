@@ -1032,8 +1032,8 @@ Movie selection and wizard persistence, leaderboard framing and temporary button
 progress now uses all active Club members for Nomination and Watching. The alignment run passes
 310 UI contract checks and 112 pinned-Linux visual checks. All 51 changed/new baselines and eight
 actual before/after phone pairs were reviewed. The real two-account Hub refresh journey passes,
-and both local test emails have provider-confirmed delivery. [Current evidence](_docs/phase-18-human-verification-3.md#current-alignment-evidence)
-records the evidence and limits. Exact-head hosted CI and owner acceptance remain pending.
+and both local test emails have provider-confirmed delivery. Exact-head hosted CI and owner
+acceptance remain pending.
 
 Phase 12 compared every prototype file with the live app on 2026-10-21 at 390, 768, 844×390,
 1024 and 1440px as Admin, participant and non-participant, across Nomination, Selection, Watching,

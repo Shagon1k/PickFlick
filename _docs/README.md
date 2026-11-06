@@ -60,14 +60,11 @@ latest explicit developer decision
 
 The retired blueprint was removed after synthesis and is not a source of truth.
 
-## Current verification
-
-[Phase 18 — Human Verification & Bug Fixing III](phase-18-human-verification-3.md) holds the
-severity-classified register for #63.
+## Historical audits
 
 The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,
 decisions and implementation notes from before the fixes. Its raw area reports were removed after
-consolidation. Use the Phase 18 register for current verification and disposition.
+consolidation. Phase 18 evidence is summarized in the [Roadmap](../ROADMAP.md#phase-18--human-verification--bug-fixing-iii--in-progress).
 
 The temporary Phase 6–11 and 13–17 documents were consolidated into the canonical references above
 and removed. [Roadmap phase evidence](../ROADMAP.md#11-progress) and

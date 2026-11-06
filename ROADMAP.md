@@ -1328,7 +1328,7 @@ Notification email dispatch, Card templates, bounded provider retries, signed de
 address suppression and best-effort alerts are implemented under #62 and ADR-020. Optional channel
 decisions remain fixed at event creation; provider suppression also blocks mandatory email, while
 the inbox remains available. Live sandbox delivery, exact-head hosted preview and final owner visual
-acknowledgement remain acceptance gates. See the [Phase 18 register](_docs/phase-18-human-verification-3.md) for current verification evidence.
+acknowledgement remain acceptance gates. Phase 18 below summarizes the verification evidence.
 
 **Out of scope:** Web push and Paddle events before Phase 20.
 
@@ -1343,7 +1343,8 @@ notifications as one retention loop.
 
 **Scope:**
 
-- [x] Create `_docs/phase-18-human-verification-3.md` and a severity-classified register.
+- [x] Create a severity-classified register (the temporary Phase 18 document, removed after the
+      fixes).
 - [ ] Run Watch → Rate → Complete → History → Library → Statistics and Achievements across several
       Clubs and Users.
 - [ ] Verify partial Rating closure, multiple Rating Sessions, past data, repeat viewings,
@@ -1352,7 +1353,7 @@ notifications as one retention loop.
       error states, and email-safe content.
 - [ ] Compare every delivered surface at representative widths with keyboard, touch, and reduced
       motion.
-- [ ] Fix Blockers and Majors, retest, consolidate docs, delete staging docs, and schedule remaining
+- [x] Fix Blockers and Majors, retest, consolidate docs, delete staging docs, and schedule remaining
       debt.
 
 **Acceptance:**
@@ -1374,8 +1375,8 @@ has fixture evidence; live TheTVDB production-country response validation remain
 Baseline verification at `666ea16` on 2026-11-01 passes the static gate (609 unit tests and builds), 320 database
 integration tests, 16 real-API journeys and the final six Past Session checks. The Linux UI run
 passes 400/402; after repairing its two test-timing failures, all six affected responsive cases
-pass three repeats without retries. The [Phase 18 register](_docs/phase-18-human-verification-3.md)
-and [baseline review](_docs/ui-quality.md#phase-18-baseline-review-2026-11-01) record the evidence.
+pass three repeats without retries. The
+[baseline review](_docs/ui-quality.md#phase-18-baseline-review-2026-11-01) records the evidence.
 Full CI and exact-head hosted owner acceptance remain required before this gate closes.
 
 The owner reopened alignment on 2026-11-01 after rejecting earlier green tests as proof of design
@@ -1385,8 +1386,7 @@ is recorded in [Design QA](DESIGN.md#alignment-review-2026-11-01).
 The alignment run passed the Linux static gate (624 unit tests and builds), 325 database checks
 and 17 real-API journeys, including the two-account empty-inbox Hub refresh regression. Two local
 emails were confirmed delivered by provider GET; local database status remains ACCEPTED without
-signed callbacks. [Current evidence](_docs/phase-18-human-verification-3.md#current-alignment-evidence)
-records scope and limits. The final native static rerun passes; UI contract passes 310/310 and
+signed callbacks. The final native static rerun passes; UI contract passes 310/310 and
 pinned-Linux visual comparison passes 112/112 after all 51 changed/new PNGs were reviewed.
 Exact-head hosted CI and owner acceptance remain pending.
 
@@ -1394,10 +1394,16 @@ The owner resumed automated verification on 2026-11-04 after the later UI/visibi
 The local rerun passes `pnpm verify` (648 unit tests and production builds), 329 database/API
 checks, 315 UI contract checks, 17 real-API journeys and 112 pinned-Linux visual comparisons.
 All 77 refreshed existing PNGs were reviewed; no screenshot tolerance or quality gate changed.
-Worker recovery, built-runtime smoke and deployment-definition checks also pass. The
-[verification follow-up](_docs/phase-18-human-verification-3.md#verification-resumed--2026-11-04)
-records the fixes, isolated test environment and limits. Exact-head hosted CI and owner acceptance
-still gate Phase 18 completion.
+Worker recovery, built-runtime smoke and deployment-definition checks also pass. Exact-head hosted
+CI and owner acceptance still gate Phase 18 completion.
+
+The register closed on 2026-11-06. Every finding is fixed or dispositioned: #39 and #40 were
+expected local data, and #58 was accepted as designed. Owner decisions are in the Decision Log
+below and DES-012–DES-017. Two simplification passes followed. The first, at `1110695c`, passed
+`pnpm verify` (659 unit tests), 322 integration checks, 326 UI contract checks, 17 journeys and
+112 pinned-Linux visual comparisons. The second, PR #205, passed `pnpm verify` (658 unit tests),
+333 integration checks and the full UI suite at 434/438. Every visual matched, and the four
+intermittent failures also occur on `main`. Owner deferrals from these passes were dropped.
 
 ### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
 
@@ -1706,6 +1712,7 @@ the MVP
 | Automatic Nomination closure       | Product owner | Closing because everyone nominated requires at least two accepted participants; deadlines and operator closure keep their existing rules.                                                                                                                                                     | Phase 18 verification #49, 2026-10-31.                                                                                                            |
 | Rating history protection          | Product owner | Refuse cancellation after any rating arrives. Members cannot join or rate a Rating Session scheduled before their current Membership began; undated Sessions remain eligible.                                                                                                                 | Phase 18 verification #51 and #60, 2026-10-31.                                                                                                    |
 | Notification audience and awards   | Product owner | Notify a removed Session participant; omit the actor's own notifications. Achievement awards continue to be evaluated when an achievements view opens.                                                                                                                                        | Phase 18 verification #56, #58–59, 2026-10-31.                                                                                                    |
+| Unbuilt destinations               | Product owner | Menu entries for pages of later phases stay visible and lead to 404 until their phase ships.                                                                                                                                                                                                  | Phase 18 verification #62, 2026-10-31.                                                                                                            |
 | Nomination closure amendment       | Product owner | Supersedes the 2026-10-31 automatic-closure rule: every active Club member must have joined and nominated, and at least two participants must be accepted. Unjoined active members keep Nomination open; deadline and operator closure retain their rules.                                    | Owner alignment request, 2026-11-01.                                                                                                              |
 | Rating and action feedback         | Product owner | Own and historical ratings omit visible N/10 labels. Save and Copy use temporary animated feedback inside the existing button; Watchlist pending and success narration stays assistive-only. Existing selected Phase 18 compositions remain authoritative.                                    | Owner alignment request, 2026-11-01; [DES-017](DESIGN.md#7-design-decisions).                                                                     |
 | Local email verification           | Product owner | Allow explicitly opted-in local live email only to approved test accounts, with an activation cutoff and [LOCAL] subjects. Exclude existing notification backlog and operator alerts; keep test and preview delivery disabled.                                                                | Owner alignment request, 2026-11-01; [ADR-020 amendment](_docs/decisions/README.md#adr-020-amendment--scoped-local-live-verification-2026-11-01). |
