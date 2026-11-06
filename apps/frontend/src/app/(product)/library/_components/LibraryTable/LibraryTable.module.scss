@@ -16,14 +16,6 @@
     overflow-wrap: anywhere;
 }
 
-.libraryTable__pagination {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    align-items: center;
-    justify-content: space-between;
-}
-
 .libraryTable__film {
     min-width: 150px;
     max-width: 28ch;

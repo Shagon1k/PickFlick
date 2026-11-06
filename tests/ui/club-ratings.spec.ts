@@ -22,9 +22,10 @@ for (const width of [390, 768, 1024, 1440]) {
                 const page = await context.newPage();
                 await page.goto(PATH, { waitUntil: 'load' });
                 await expect(page.getByRole('row')).toHaveCount(26);
-                await expect(
-                    page.getByRole('button', { name: 'Previous page', exact: true }),
-                ).toBeDisabled();
+                await expect(page.getByLabel('Previous page', { exact: true })).toHaveAttribute(
+                    'aria-disabled',
+                    'true',
+                );
                 await expect(page.getByRole('row').nth(1)).toContainText('Synthetic film 28');
                 const region = page.getByRole('region', {
                     name: 'Club rating leaderboard scroll region',
@@ -40,7 +41,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 await region.evaluate((element) => {
                     element.scrollLeft = 0;
                 });
-                await page.getByRole('button', { name: 'Next page', exact: true }).tap();
+                await page.getByRole('link', { name: 'Next page', exact: true }).tap();
                 await expect(page).toHaveURL(/page=2/u);
                 await expect(page.getByRole('row')).toHaveCount(4);
                 await page.getByRole('columnheader', { name: /^Film/u }).getByRole('button').tap();

@@ -9,9 +9,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
 import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
-import Button from '#components/ui/Button/Button';
-import Icon from '#components/ui/Icon/Icon';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatAverage, formatCount, formatMovieTitle } from '#lib/format';
@@ -120,28 +119,14 @@ export default function ClubRatings({
                 }
                 emptyMessage={query.q ? 'No rated films match your search.' : 'No rated films yet.'}
             />
-            <nav aria-label="Club Ratings pages" className={styles.clubRatings__pagination}>
-                <Button
-                    aria-label="Previous page"
-                    variant="navigation"
-                    disabled={isPending || ratings.page === 1}
-                    onClick={() => navigate({ ...query, page: ratings.page - 1 })}
-                >
-                    <Icon name="arrow-left" />
-                </Button>
-                <span>
-                    Page {ratings.page} of {ratings.pages}
-                </span>
-                <Button
-                    aria-label="Next page"
-                    variant="navigation"
-                    data-direction="next"
-                    disabled={isPending || ratings.page === ratings.pages}
-                    onClick={() => navigate({ ...query, page: ratings.page + 1 })}
-                >
-                    <Icon name="arrow-left" />
-                </Button>
-            </nav>
+            <FilmTablePagination
+                label="Club Ratings pages"
+                page={ratings.page}
+                pages={ratings.pages}
+                disabled={isPending}
+                getHref={(page) => buildClubRatingsPath(clubId, { ...query, page })}
+                onNavigate={(page) => navigate({ ...query, page })}
+            />
         </section>
     );
 }

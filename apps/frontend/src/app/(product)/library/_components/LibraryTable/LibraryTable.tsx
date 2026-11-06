@@ -10,11 +10,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
+import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
 import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import Icon from '#components/ui/Icon/Icon';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
@@ -192,36 +192,14 @@ export default function LibraryTable({
                 }
                 emptyMessage={emptyMessage}
             />
-            <nav aria-label={`${title} pages`} className={styles.libraryTable__pagination}>
-                <ButtonLink
-                    aria-label="Previous page"
-                    variant="navigation"
-                    href={buildLibraryPath(query, library.page - 1)}
-                    onNavigate={(event) => {
-                        event.preventDefault();
-                        navigate({ ...query, page: library.page - 1 });
-                    }}
-                    disabled={isPending || library.page === 1}
-                >
-                    <Icon name="arrow-left" />
-                </ButtonLink>
-                <span>
-                    Page {library.page} of {library.pages}
-                </span>
-                <ButtonLink
-                    aria-label="Next page"
-                    variant="navigation"
-                    data-direction="next"
-                    href={buildLibraryPath(query, library.page + 1)}
-                    onNavigate={(event) => {
-                        event.preventDefault();
-                        navigate({ ...query, page: library.page + 1 });
-                    }}
-                    disabled={isPending || library.page === library.pages}
-                >
-                    <Icon name="arrow-left" />
-                </ButtonLink>
-            </nav>
+            <FilmTablePagination
+                label={`${title} pages`}
+                page={library.page}
+                pages={library.pages}
+                disabled={isPending}
+                getHref={(page) => buildLibraryPath(query, page)}
+                onNavigate={(page) => navigate({ ...query, page })}
+            />
         </section>
     );
 }

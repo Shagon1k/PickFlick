@@ -37,11 +37,3 @@
 .clubRatings tbody tr:is(:hover, :focus-within) .clubRatings__rating {
     color: var(--gold-light);
 }
-
-.clubRatings__pagination {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    align-items: center;
-    justify-content: space-between;
-}
