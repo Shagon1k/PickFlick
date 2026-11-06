@@ -8,18 +8,18 @@ import {
 } from '@pickflick/contracts';
 import { type ReactNode, useState } from 'react';
 
-import {
-    createInvitationAction,
-    loadInvitationsAction,
-    revokeInvitationAction,
-    type TInvitationResult,
-} from '#app/(product)/clubs/[clubId]/(hub)/settings/invitation-actions';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Modal from '#components/ui/Modal/Modal';
 import { toIsoDate } from '#lib/format';
 
+import {
+    createInvitationAction,
+    loadInvitationsAction,
+    revokeInvitationAction,
+    type TInvitationResult,
+} from './invitation-actions';
 import styles from './InviteDialog.module.scss';
 
 const INVITATION_ID_LENGTH = 8;

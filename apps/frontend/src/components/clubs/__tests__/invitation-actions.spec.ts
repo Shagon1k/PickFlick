@@ -1,6 +1,6 @@
 import type { ICreatedInvitation, IManagedInvitation } from '@pickflick/contracts';
 
-import { createInvitationAction, revokeInvitationAction } from '../invitation-actions';
+import { createInvitationAction, revokeInvitationAction } from '../InviteDialog/invitation-actions';
 
 const api = vi.hoisted(() => ({
     createInvitation: vi.fn<() => Promise<ICreatedInvitation>>(),
