@@ -1,6 +1,7 @@
 'use client';
 
 import { formatRatingScore, type TRating } from '@pickflick/contracts';
+import clsx from 'clsx';
 import { useId, useState } from 'react';
 
 import Avatar from '#components/ui/Avatar/Avatar';
@@ -9,6 +10,7 @@ import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 
+import page from '../../page.module.scss';
 import styles from './Rating.module.scss';
 
 type TEntry = Pick<
@@ -26,7 +28,7 @@ export default function Rating({
     isLoading?: boolean;
 }) {
     return (
-        <section className={styles.rating} aria-labelledby="rating-heading">
+        <section className={clsx(page.panel, styles.rating)} aria-labelledby="rating-heading">
             <h2 id="rating-heading" tabIndex={-1}>
                 Ratings
             </h2>

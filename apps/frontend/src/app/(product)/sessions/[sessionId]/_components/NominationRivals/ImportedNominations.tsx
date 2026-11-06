@@ -4,6 +4,7 @@ import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatCount } from '#lib/format';
 
+import page from '../../page.module.scss';
 import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
 import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import styles from './NominationRivals.module.scss';
@@ -19,7 +20,7 @@ export default function ImportedNominations({
     isLoading?: boolean;
 }) {
     return (
-        <section className={styles.rivals} aria-labelledby="rivals-heading">
+        <section className={page.panel} aria-labelledby="rivals-heading">
             <div className={styles.header}>
                 <h2 id="rivals-heading">Nomination Rivals</h2>
             </div>

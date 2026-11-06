@@ -1,5 +1,7 @@
 import type { TSession } from '@pickflick/contracts';
+import clsx from 'clsx';
 
+import page from '../../page.module.scss';
 import ImportedNominations from '../NominationRivals/ImportedNominations';
 import NominationAuthors from '../NominationRivals/NominationAuthors';
 import NominationRivals from '../NominationRivals/NominationRivals';
@@ -24,7 +26,7 @@ export default function SessionResults({
                         isLoading={isLoading}
                     />
                 ) : (
-                    <section className={styles.panel}>
+                    <section className={clsx(page.panel, styles.panel)}>
                         <h2>Ratings</h2>
                         <p>No rating record is available for this screening.</p>
                     </section>
@@ -60,7 +62,7 @@ function SessionRivals({ session, isLoading }: { session: TSession; isLoading: b
     if (session.nominationAuthors)
         return <NominationAuthors authors={session.nominationAuthors} isLoading={isLoading} />;
     return (
-        <section className={styles.panel} aria-labelledby="rivals-heading">
+        <section className={clsx(page.panel, styles.panel)} aria-labelledby="rivals-heading">
             <h2 id="rivals-heading">Nomination Rivals</h2>
             <p>{describeMissingRivals(session)}</p>
         </section>

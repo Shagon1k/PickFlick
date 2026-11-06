@@ -13,6 +13,7 @@ import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { formatMovieTitle } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
 
+import page from '../../page.module.scss';
 import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
 import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -71,7 +72,11 @@ export default function Nomination({
             <div className={styles.columns}>
                 {data.canSubmit || submittedMovie ? (
                     <section
-                        className={clsx(styles.card, submittedMovie && styles.submittedCard)}
+                        className={clsx(
+                            page.panel,
+                            styles.card,
+                            submittedMovie && styles.submittedCard,
+                        )}
                         aria-labelledby="nominate-heading"
                     >
                         <h2 id="nominate-heading" ref={headingRef} tabIndex={-1}>
@@ -99,7 +104,7 @@ export default function Nomination({
                     </section>
                 ) : null}
                 <section
-                    className={`${styles.card} ${styles.currentCard}`}
+                    className={clsx(page.panel, styles.card, styles.currentCard)}
                     aria-labelledby="nominations-heading"
                 >
                     <h2 id="nominations-heading">Current Nominations</h2>

@@ -16,14 +16,7 @@
 }
 
 .card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-md);
-    min-width: 0;
     min-height: 280px;
-    padding: var(--gap-md);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
 }
 
 .card:only-child {

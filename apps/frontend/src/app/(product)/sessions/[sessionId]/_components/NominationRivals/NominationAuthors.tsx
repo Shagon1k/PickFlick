@@ -1,5 +1,6 @@
 import type { TSessionNominationAuthors } from '@pickflick/contracts';
 
+import page from '../../page.module.scss';
 import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
 import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import styles from './NominationRivals.module.scss';
@@ -13,7 +14,7 @@ export default function NominationAuthors({
     isLoading?: boolean;
 }) {
     return (
-        <section aria-labelledby="rivals-heading" className={styles.rivals}>
+        <section aria-labelledby="rivals-heading" className={page.panel}>
             <div className={styles.header}>
                 <h2 id="rivals-heading">Nomination Rivals</h2>
             </div>

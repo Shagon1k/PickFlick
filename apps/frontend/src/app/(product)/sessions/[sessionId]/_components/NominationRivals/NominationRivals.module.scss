@@ -1,14 +1,4 @@
 /* The prototype's Nomination Rivals card: one film card per nominee and an average-vote button. */
-.rivals {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-md);
-    min-width: 0;
-    padding: var(--gap-md);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-}
-
 .header {
     display: flex;
     flex-wrap: wrap;
