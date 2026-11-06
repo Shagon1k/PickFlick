@@ -56,6 +56,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.goto('/library?sort=title');
         await expect(page.getByRole('row')).toHaveCount(26);
         const statistics = page.getByRole('region', { name: 'Personal statistics', exact: true });
+        const ratingPages = page.getByRole('navigation', { name: 'My Ratings pages', exact: true });
         await expect(statistics.locator('dd')).toHaveText([
             '28',
             '28',
@@ -67,7 +68,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
             '—',
         ]);
         await page.getByRole('link', { name: 'Next page', exact: true }).click();
-        await expect(page.getByText('Page 2 of 2')).toBeVisible();
+        await expect(ratingPages.getByText('Page 2 of 2')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(4);
         await page
             .getByRole('searchbox', { name: 'Search rated films…', exact: true })
@@ -79,7 +80,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.goto('/library?q=Library+journey+00&score=8');
         await expect(page.getByRole('row')).toHaveCount(2);
         await expect(statistics.locator('dd').first()).toHaveText('28');
-        await expect(page.getByText('Page 1 of 1')).toBeVisible();
+        await expect(ratingPages.getByText('Page 1 of 1')).toBeVisible();
         await page.reload();
         await expect(
             page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
@@ -88,7 +89,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         const dialog = page.getByRole('dialog');
         await dialog.getByRole('radio', { name: '9 of 10', exact: true }).click();
         await expect(
-            page.getByText('No films match your search or filters.', { exact: false }),
+            page.getByRole('cell', { name: /^No films match your search or filters\./u }),
         ).toBeVisible();
         await expect(page.getByRole('heading', { name: 'My Ratings', exact: true })).toBeFocused();
         await page.goto(`/movies/${movie.id}`);
@@ -100,7 +101,7 @@ test('Library filters, pages and Movie mutations persist through the real API', 
         await page.getByRole('button', { name: 'Edit watchlist priority' }).click();
         await dialog.getByRole('button', { name: 'Low', exact: true }).click();
         await expect(
-            page.getByText('No films match your search or filters.', { exact: false }),
+            page.getByRole('cell', { name: /^No films match your search or filters\./u }),
         ).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Watchlist', exact: true })).toBeFocused();
         await page.getByRole('link', { name: 'Clear filters', exact: true }).click();

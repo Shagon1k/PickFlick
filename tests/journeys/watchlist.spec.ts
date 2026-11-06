@@ -79,7 +79,7 @@ test('Watchlist persists from Movie to Library and back through the real API', a
             page.getByRole('button', { name: 'Add to watchlist', exact: true }),
         ).toBeVisible();
         await page.goto('/library?tab=watchlist');
-        await expect(page.getByText('Your Watchlist is empty.', { exact: false })).toBeVisible();
+        await expect(page.getByRole('cell', { name: /^Your Watchlist is empty\./u })).toBeVisible();
         expect(await prisma.watchlistItem.findMany({ where: { userId } })).toEqual([]);
     } finally {
         await context.close();
