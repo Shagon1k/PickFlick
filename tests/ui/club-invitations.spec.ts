@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { holdRoute, settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
@@ -116,7 +117,7 @@ test('Club invitation declines without membership and keeps network failures ret
     await expect(page.getByRole('heading', { name: 'Invitation declined' })).toBeVisible();
 });
 
-test('Club invitation states keep stable geometry, privacy, and accessible recovery at every width', async ({
+test('Closed Club invitation states keep the valid card geometry and stay private at every width', async ({
     context,
     page,
 }) => {
@@ -148,13 +149,15 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
             expect(box?.height, `${viewport.name} ${state}`).toBe(validBox?.height);
             expect(box?.width, `${viewport.name} ${state}`).toBe(validBox?.width);
             await expect(page.getByText('Midnight Society')).toHaveCount(0);
-            const dimensions = await page.evaluate(() => ({
-                scroll: document.documentElement.scrollWidth,
-                width: document.documentElement.clientWidth,
-            }));
-            expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width);
+            await expectNoPageOverflow(page, `${viewport.name} ${state}`);
         }
     }
+});
+
+test('Club invitation outcomes keep the card height after accepting, declining and signing out', async ({
+    context,
+    page,
+}) => {
     for (const viewport of canonicalViewports) {
         await page.setViewportSize(viewport);
         await signIn(context, `success-${viewport.name}`);
@@ -176,6 +179,9 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
         await expect(page.getByRole('heading', { name: 'Your invitation awaits' })).toBeVisible();
         expect((await card.boundingBox())?.height).toBe(original?.height);
     }
+});
+
+test('Club invitation passes axe with 44px buttons', async ({ context, page }) => {
     await signIn(context, 'accessibility');
     for (const viewport of screenshotViewports) {
         await page.setViewportSize(viewport);
@@ -202,11 +208,7 @@ test('Maximum-length Club names keep invitation geometry after acceptance and de
             await settle(page);
             const card = page.locator('[aria-label="Club invitation"] [aria-busy]');
             const original = await card.boundingBox();
-            const dimensions = await page.evaluate(() => ({
-                scroll: document.documentElement.scrollWidth,
-                width: document.documentElement.clientWidth,
-            }));
-            expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width);
+            await expectNoPageOverflow(page);
             expect(await name.evaluate((heading) => heading.scrollWidth)).toBeGreaterThan(
                 await name.evaluate((heading) => heading.clientWidth),
             );
