@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
 import { expectSessionPhase } from '../ui/session-facts';
 import { openVisitor } from './visitors';
 
@@ -22,21 +21,16 @@ test('Only Club operators open Rating and both clients see the manual transition
         for (const role of ['ADMIN', 'MODERATOR', 'MEMBER'] as const) {
             const userId = await backend.createUser(`Watching ${role}`);
             users.push(userId);
-            await prisma.membership.create({ data: { id: randomUUID(), clubId, userId, role } });
+            await backend.addMember(clubId, userId, role);
             contexts.push(await openVisitor(browser, backend, userId));
         }
-        const session = await prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId,
-                type: 'PRE_SELECTED',
-                phase: 'WATCHING',
-                movieId,
-                topic: 'Watching journey',
-                location: 'Screening room',
-                scheduledAt: new Date('2026-12-01T20:00:00Z'),
-                ...(await snapshotSessionSettings(prisma, clubId)),
-            },
+        const session = await backend.createSession(clubId, {
+            type: 'PRE_SELECTED',
+            phase: 'WATCHING',
+            movieId,
+            topic: 'Watching journey',
+            location: 'Screening room',
+            scheduledAt: new Date('2026-12-01T20:00:00Z'),
         });
         const adminPage = await contexts[0]!.newPage();
         const operatorPage = await contexts[1]!.newPage();

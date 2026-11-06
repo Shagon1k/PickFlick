@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { type Browser, type BrowserContext, expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
 import { expectSessionPhase } from '../ui/session-facts';
 import { openVisitor } from './visitors';
 
@@ -15,17 +14,12 @@ async function createRatingJourney(browser: Browser) {
     const contexts: BrowserContext[] = [];
     const movie = await prisma.movie.create({ data: { title: 'Rating journey screening' } });
     await prisma.club.create({ data: { id: clubId, name: 'Rating Journey' } });
-    const session = await prisma.session.create({
-        data: {
-            id: randomUUID(),
-            clubId,
-            type: 'PRE_SELECTED',
-            phase: 'RATING',
-            movieId: movie.id,
-            scheduledAt: new Date('2026-12-01T20:00:00Z'),
-            location: 'Screening room',
-            ...(await snapshotSessionSettings(prisma, clubId)),
-        },
+    const session = await backend.createSession(clubId, {
+        type: 'PRE_SELECTED',
+        phase: 'RATING',
+        movieId: movie.id,
+        scheduledAt: new Date('2026-12-01T20:00:00Z'),
+        location: 'Screening room',
     });
     async function cleanup() {
         for (const context of contexts) await context.close();
@@ -37,14 +31,12 @@ async function createRatingJourney(browser: Browser) {
         for (const role of ['ADMIN', 'MODERATOR', 'MEMBER'] as const) {
             const userId = await backend.createUser(`Rating ${role}`);
             users.push(userId);
-            const membership = await prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role },
-            });
+            const membershipId = await backend.addMember(clubId, userId, role);
             await prisma.sessionParticipant.create({
                 data: {
                     sessionId: session.id,
                     clubId,
-                    membershipId: membership.id,
+                    membershipId,
                     status: 'ACCEPTED',
                 },
             });

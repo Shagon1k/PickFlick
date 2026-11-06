@@ -17,9 +17,7 @@ test('A Club member with an empty inbox sees another member schedule a Session w
     const clubId = randomUUID();
     await backend.prisma.club.create({ data: { id: clubId, name: 'Live Hub review' } });
     for (const [index, userId] of users.entries()) {
-        await backend.prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId, role: index === 0 ? 'ADMIN' : 'MEMBER' },
-        });
+        await backend.addMember(clubId, userId, index === 0 ? 'ADMIN' : 'MEMBER');
     }
     const admin = await openVisitor(browser, backend, users[0]);
     const member = await openVisitor(browser, backend, users[1]);

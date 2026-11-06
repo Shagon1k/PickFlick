@@ -5,7 +5,6 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
 import { selectionResultSchema } from '../../apps/backend/src/modules/sessions/selection/selection-result.ts';
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
 import { openVisitor } from './visitors';
 
 async function submitScores(page: Page, sessionId: string, score: number) {
@@ -46,21 +45,12 @@ test('Club members join by the shared link, nominate, submit immutable ballots a
                 showNominationAuthorsDuring: true,
             },
         });
-        await prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: adminId, role: 'ADMIN' },
-        });
-        await prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId: memberId, role: 'MEMBER' },
-        });
-        const session = await prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId,
-                ...(await snapshotSessionSettings(prisma, clubId)),
-                type: 'FULL_CYCLE',
-                phase: 'NOMINATION',
-                topic: 'Selection journey',
-            },
+        await backend.addMember(clubId, adminId, 'ADMIN');
+        await backend.addMember(clubId, memberId, 'MEMBER');
+        const session = await backend.createSession(clubId, {
+            type: 'FULL_CYCLE',
+            phase: 'NOMINATION',
+            topic: 'Selection journey',
         });
         const query = `selection-journey-${randomUUID()}`;
         const movies = [

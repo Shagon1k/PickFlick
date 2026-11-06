@@ -5,7 +5,9 @@ import { movieSearchSchema, type TMovieSearchResults } from '@pickflick/contract
 import {
     assertSafeSeedOrResetTarget,
     createDatabaseClient,
+    type Prisma,
     type PrismaClient,
+    snapshotSessionSettings,
 } from '@pickflick/database';
 import { testUtils } from 'better-auth/plugins';
 
@@ -24,6 +26,10 @@ interface IBrowserCookie {
     expires?: number;
 }
 
+type TMemberRole = 'ADMIN' | 'MODERATOR' | 'MEMBER';
+type TJourneySessionData = Partial<Prisma.SessionUncheckedCreateInput> &
+    Pick<Prisma.SessionUncheckedCreateInput, 'type' | 'phase'>;
+
 interface IJourneyMovie {
     id: string;
     title: string;
@@ -37,6 +43,10 @@ interface IJourneyMovie {
 export interface IJourneyBackend {
     prisma: PrismaClient;
     createUser(displayName: string): Promise<string>;
+    /** Adds an active membership and returns its id. */
+    addMember(clubId: string, userId: string, role: TMemberRole): Promise<string>;
+    /** Creates a Session with the Club's current settings snapshot; `data` overrides any column. */
+    createSession(clubId: string, data: TJourneySessionData): ReturnType<typeof createSession>;
     /** Removes the users with every Club, Session and audit row tied to them. */
     removeUsers(userIds: string[]): Promise<void>;
     /** Removes Movies with their cached searches and details. */
@@ -68,6 +78,10 @@ export async function connectJourneyBackend(): Promise<IJourneyBackend> {
     return {
         prisma,
         createUser: (displayName) => createUser(prisma, displayName),
+        addMember: async (clubId, userId, role) =>
+            (await prisma.membership.create({ data: { id: randomUUID(), clubId, userId, role } }))
+                .id,
+        createSession: (clubId, data) => createSession(prisma, clubId, data),
         removeUsers: (userIds) => removeUsers(prisma, userIds),
         removeMovies: (movieIds) => removeMovies(prisma, movieIds),
         cookiesFor: (userId, domain) => context.test.getCookies({ userId, domain }),
@@ -90,6 +104,17 @@ async function createUser(prisma: PrismaClient, displayName: string): Promise<st
         data: { id, email: `journey-${id}@example.invalid`, emailVerified: true, displayName },
     });
     return id;
+}
+
+async function createSession(prisma: PrismaClient, clubId: string, data: TJourneySessionData) {
+    return prisma.session.create({
+        data: {
+            id: randomUUID(),
+            clubId,
+            ...(await snapshotSessionSettings(prisma, clubId)),
+            ...data,
+        },
+    });
 }
 
 async function removeMovies(prisma: PrismaClient, movieIds: string[]): Promise<void> {

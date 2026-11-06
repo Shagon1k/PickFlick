@@ -271,169 +271,155 @@ test('Retrying after a lost committed response rejects changed evidence and pres
 });
 
 for (const viewport of canonicalViewports) {
-    test(
-        `Past Session preserves partial imported evidence at ${viewport.name}`,
-        { tag: '@smoke' },
-        async ({ browser }) => {
-            const journey = await createPastJourney(browser);
-            const { clubId, query, rivalQuery, context, prisma } = journey;
-            const page = await context.newPage();
-            const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
-            await page.setViewportSize(viewport);
-            await page.emulateMedia({ reducedMotion: 'reduce' });
-            try {
-                await page.goto(`/clubs/${clubId}/sessions`);
-                await page.getByRole('link', { name: 'Log Past', exact: true }).click();
-                await settle(page);
-                await expect(
-                    page.getByRole('heading', { name: 'Log a Past Session' }),
-                ).toBeVisible();
-                expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await next(page);
-                await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeFocused();
-                await fillFilm(page, query);
-                await form.getByLabel('Date').fill('2999-01-01');
-                await next(page);
-                await expect(
-                    page.getByText('Choose a valid date in the past.').last(),
-                ).toBeVisible();
-                await form.getByLabel('Date').fill('2020-01-01');
-                await form.getByLabel('Notes').fill('Only one historical rating is known.');
-                await next(page);
-                await page
-                    .getByRole('checkbox', { name: 'Former attendee (former member)' })
-                    .check();
-                await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
-                const ratings = ratingFor(page, 'Former attendee');
-                await ratings.getByRole('radio', { name: '1 of 10', exact: true }).focus();
-                await page.keyboard.press('End');
-                await page.keyboard.press('ArrowLeft');
-                await expect(ratings.getByRole('radio', { name: '9 of 10' })).toBeFocused();
-                // Choosing the same star again clears the rating.
-                await page.keyboard.press('Enter');
-                await expect(ratings.getByRole('radio', { checked: true })).toHaveCount(0);
-                await ratings.getByRole('radio', { name: '9 of 10', exact: true }).tap();
-                await expect(
-                    ratings.getByRole('radio', { name: '9 of 10', exact: true }),
-                ).toBeChecked();
-                await next(page);
-                // The screened film starts as a nominee.
-                await expect(
-                    page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
-                ).toBeVisible();
-                await addNomination(page, rivalQuery);
-                await expect(
-                    page.getByRole('combobox', { name: /^Nominated films · 2\/2/u }),
-                ).toBeDisabled();
-                const zero = page.getByRole('combobox', {
-                    name: 'Selection score for Former attendee: A remembered film',
-                    exact: true,
-                });
-                await zero.focus();
-                await zero.selectOption('0');
-                await expect(zero).toHaveValue('0');
-                const unknown = page.getByRole('combobox', {
-                    name: 'Selection score for Current attendee: A remembered rival',
-                    exact: true,
-                });
-                await unknown.selectOption('5');
-                await unknown.selectOption('');
-                await expect(unknown).toHaveValue('');
-                await page
-                    .getByRole('button', { name: 'Remove A remembered film', exact: true })
-                    .click();
-                await expect(
-                    page.getByRole('combobox', { name: /^Nominated films/u }),
-                ).toBeFocused();
-                await back(page);
-                await back(page);
-                await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
-                    'A remembered film',
-                );
-                await next(page);
-                await next(page);
-                await expect(
-                    page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
-                ).toHaveCount(0);
-                await expect(
-                    page.getByRole('button', { name: 'Remove A remembered rival', exact: true }),
-                ).toBeVisible();
-                await addNomination(page, query);
-                await expect(zero).toHaveValue('');
-                await zero.selectOption('0');
-                const nominator = page.getByRole('combobox', {
-                    name: 'Nominated by · A remembered film',
-                });
-                await nominator.click();
-                await page
-                    .getByRole('option', { name: 'Former attendee (former member)', exact: true })
-                    .click();
-                await context.setOffline(true);
-                await logSession(page);
-                await expect(
-                    page.getByRole('status').filter({ hasText: /offline/iu }),
-                ).toBeVisible();
-                await context.setOffline(false);
-                await expect(zero).toHaveValue('0');
-                await settle(page);
-                await expectNoPageOverflow(page);
-                expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await logSession(page);
-                await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
-                // A logged Session carries one LOGGED note instead of per-section caveats.
-                await expect(
-                    page.getByRole('button', { name: 'About logged Sessions' }),
-                ).toBeVisible();
-                await expect(page.getByText(/This session has ended/)).toBeVisible();
-                await page.getByRole('list', { name: 'Session ratings' }).scrollIntoViewIfNeeded();
-                await expect(
-                    page
-                        .getByRole('list', { name: 'Session ratings' })
-                        .getByText('9.0', { exact: true })
-                        .first(),
-                ).toBeVisible();
-                const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
-                await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
-                await expect(rivals.getByText('0', { exact: true }).first()).toBeVisible();
-                await expect(rivals.getByText('total · 1 score', { exact: true })).toBeVisible();
-                await expect(rivals.getByText('Watched', { exact: true })).toBeVisible();
-                await expect(rivals.getByText('by Former attendee', { exact: true })).toBeVisible();
-                await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
-                expect(
-                    await prisma.sessionRating.findMany({ where: { session: { clubId } } }),
-                ).toEqual([expect.objectContaining({ score: 9, submittedAt: null })]);
-                expect(
-                    await prisma.nomination.findMany({ where: { session: { clubId } } }),
-                ).toEqual([]);
-                expect(
-                    await prisma.selectionBallot.findMany({ where: { session: { clubId } } }),
-                ).toEqual([]);
-                await settle(page);
-                await expectNoPageOverflow(page);
-                expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await journey.signInMember();
-                await page.reload();
-                await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
-                await prisma.club.update({
-                    where: { id: clubId },
-                    data: {
-                        showSelectionScoresAfter: false,
-                        showNominationAuthorsAfter: false,
-                        showRatingsAfter: false,
-                    },
-                });
-                await page.reload();
-                await expect(
-                    page
-                        .getByRole('region', { name: 'Session details', exact: true })
-                        .getByText('9.0', { exact: true })
-                        .first(),
-                ).toBeVisible();
-                await expect(page.getByText('Votes are hidden for this Session.')).toBeVisible();
-                await expect(page.getByText('A remembered rival', { exact: true })).toHaveCount(0);
-            } finally {
-                await journey.cleanup();
-            }
-        },
-    );
+    test(`Past Session preserves partial imported evidence at ${viewport.name}`, async ({
+        browser,
+    }) => {
+        const journey = await createPastJourney(browser);
+        const { clubId, query, rivalQuery, context, prisma } = journey;
+        const page = await context.newPage();
+        const form = page.getByRole('region', { name: 'Log a Past Session', exact: true });
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        try {
+            await page.goto(`/clubs/${clubId}/sessions`);
+            await page.getByRole('link', { name: 'Log Past', exact: true }).click();
+            await settle(page);
+            await expect(page.getByRole('heading', { name: 'Log a Past Session' })).toBeVisible();
+            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+            await next(page);
+            await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toBeFocused();
+            await fillFilm(page, query);
+            await form.getByLabel('Date').fill('2999-01-01');
+            await next(page);
+            await expect(page.getByText('Choose a valid date in the past.').last()).toBeVisible();
+            await form.getByLabel('Date').fill('2020-01-01');
+            await form.getByLabel('Notes').fill('Only one historical rating is known.');
+            await next(page);
+            await page.getByRole('checkbox', { name: 'Former attendee (former member)' }).check();
+            await page.getByRole('checkbox', { name: 'Current attendee', exact: true }).check();
+            const ratings = ratingFor(page, 'Former attendee');
+            await ratings.getByRole('radio', { name: '1 of 10', exact: true }).focus();
+            await page.keyboard.press('End');
+            await page.keyboard.press('ArrowLeft');
+            await expect(ratings.getByRole('radio', { name: '9 of 10' })).toBeFocused();
+            // Choosing the same star again clears the rating.
+            await page.keyboard.press('Enter');
+            await expect(ratings.getByRole('radio', { checked: true })).toHaveCount(0);
+            await ratings.getByRole('radio', { name: '9 of 10', exact: true }).tap();
+            await expect(
+                ratings.getByRole('radio', { name: '9 of 10', exact: true }),
+            ).toBeChecked();
+            await next(page);
+            // The screened film starts as a nominee.
+            await expect(
+                page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
+            ).toBeVisible();
+            await addNomination(page, rivalQuery);
+            await expect(
+                page.getByRole('combobox', { name: /^Nominated films · 2\/2/u }),
+            ).toBeDisabled();
+            const zero = page.getByRole('combobox', {
+                name: 'Selection score for Former attendee: A remembered film',
+                exact: true,
+            });
+            await zero.focus();
+            await zero.selectOption('0');
+            await expect(zero).toHaveValue('0');
+            const unknown = page.getByRole('combobox', {
+                name: 'Selection score for Current attendee: A remembered rival',
+                exact: true,
+            });
+            await unknown.selectOption('5');
+            await unknown.selectOption('');
+            await expect(unknown).toHaveValue('');
+            await page
+                .getByRole('button', { name: 'Remove A remembered film', exact: true })
+                .click();
+            await expect(page.getByRole('combobox', { name: /^Nominated films/u })).toBeFocused();
+            await back(page);
+            await back(page);
+            await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
+                'A remembered film',
+            );
+            await next(page);
+            await next(page);
+            await expect(
+                page.getByRole('button', { name: 'Remove A remembered film', exact: true }),
+            ).toHaveCount(0);
+            await expect(
+                page.getByRole('button', { name: 'Remove A remembered rival', exact: true }),
+            ).toBeVisible();
+            await addNomination(page, query);
+            await expect(zero).toHaveValue('');
+            await zero.selectOption('0');
+            const nominator = page.getByRole('combobox', {
+                name: 'Nominated by · A remembered film',
+            });
+            await nominator.click();
+            await page
+                .getByRole('option', { name: 'Former attendee (former member)', exact: true })
+                .click();
+            await context.setOffline(true);
+            await logSession(page);
+            await expect(page.getByRole('status').filter({ hasText: /offline/iu })).toBeVisible();
+            await context.setOffline(false);
+            await expect(zero).toHaveValue('0');
+            await settle(page);
+            await expectNoPageOverflow(page);
+            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+            await logSession(page);
+            await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
+            // A logged Session carries one LOGGED note instead of per-section caveats.
+            await expect(page.getByRole('button', { name: 'About logged Sessions' })).toBeVisible();
+            await expect(page.getByText(/This session has ended/)).toBeVisible();
+            await page.getByRole('list', { name: 'Session ratings' }).scrollIntoViewIfNeeded();
+            await expect(
+                page
+                    .getByRole('list', { name: 'Session ratings' })
+                    .getByText('9.0', { exact: true })
+                    .first(),
+            ).toBeVisible();
+            const rivals = page.getByRole('region', { name: 'Nomination Rivals' });
+            await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
+            await expect(rivals.getByText('0', { exact: true }).first()).toBeVisible();
+            await expect(rivals.getByText('total · 1 score', { exact: true })).toBeVisible();
+            await expect(rivals.getByText('Watched', { exact: true })).toBeVisible();
+            await expect(rivals.getByText('by Former attendee', { exact: true })).toBeVisible();
+            await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
+            expect(await prisma.sessionRating.findMany({ where: { session: { clubId } } })).toEqual(
+                [expect.objectContaining({ score: 9, submittedAt: null })],
+            );
+            expect(await prisma.nomination.findMany({ where: { session: { clubId } } })).toEqual(
+                [],
+            );
+            expect(
+                await prisma.selectionBallot.findMany({ where: { session: { clubId } } }),
+            ).toEqual([]);
+            await settle(page);
+            await expectNoPageOverflow(page);
+            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+            await journey.signInMember();
+            await page.reload();
+            await expect(rivals.getByText('A remembered rival', { exact: true })).toBeVisible();
+            await prisma.club.update({
+                where: { id: clubId },
+                data: {
+                    showSelectionScoresAfter: false,
+                    showNominationAuthorsAfter: false,
+                    showRatingsAfter: false,
+                },
+            });
+            await page.reload();
+            await expect(
+                page
+                    .getByRole('region', { name: 'Session details', exact: true })
+                    .getByText('9.0', { exact: true })
+                    .first(),
+            ).toBeVisible();
+            await expect(page.getByText('Votes are hidden for this Session.')).toBeVisible();
+            await expect(page.getByText('A remembered rival', { exact: true })).toHaveCount(0);
+        } finally {
+            await journey.cleanup();
+        }
+    });
 }

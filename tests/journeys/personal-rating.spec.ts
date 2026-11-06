@@ -6,7 +6,6 @@ import { buildDetailsCacheKey } from '../../apps/backend/src/modules/movies/cata
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
 import { buildCanonicalDetails } from '../../apps/backend/src/testing/movie-fixtures.ts';
 import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
 import { expectSessionPhase } from '../ui/session-facts';
 import { openVisitor } from './visitors';
 
@@ -22,24 +21,17 @@ test('A Session Rating becomes an editable personal opinion while Completed hist
     const context = await openVisitor(browser, backend, userId);
     try {
         await prisma.club.create({ data: { id: clubId, name: 'Personal Rating Journey' } });
-        const membership = await prisma.membership.create({
-            data: { id: randomUUID(), clubId, userId, role: 'ADMIN' },
-        });
-        const session = await prisma.session.create({
-            data: {
-                id: randomUUID(),
-                clubId,
-                movieId: movie.id,
-                type: 'PRE_SELECTED',
-                phase: 'RATING',
-                ...(await snapshotSessionSettings(prisma, clubId)),
-            },
+        const membershipId = await backend.addMember(clubId, userId, 'ADMIN');
+        const session = await backend.createSession(clubId, {
+            movieId: movie.id,
+            type: 'PRE_SELECTED',
+            phase: 'RATING',
         });
         await prisma.sessionParticipant.create({
             data: {
                 sessionId: session.id,
                 clubId,
-                membershipId: membership.id,
+                membershipId,
                 status: 'ACCEPTED',
             },
         });

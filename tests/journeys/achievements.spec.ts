@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { snapshotSessionSettings } from '../../packages/database/src/index.ts';
 import { openVisitor } from './visitors';
 
 test('Achievement shelves retain earned history and isolate owners through the real API', async ({
@@ -32,24 +31,17 @@ test('Achievement shelves retain earned history and isolate owners through the r
             })),
         });
         await prisma.club.create({ data: { id: clubId, name: 'Achievement Club' } });
-        const member = await prisma.membership.create({
-            data: { id: randomUUID(), userId: users[0], clubId, role: 'ADMIN' },
-        });
-        const session = await prisma.session.create({
-            data: {
-                ...(await snapshotSessionSettings(prisma, clubId)),
-                id: randomUUID(),
-                clubId,
-                type: 'PAST',
-                phase: 'COMPLETED',
-                movieId: movies[0]!.id,
-                scheduledAt: new Date(),
-            },
+        const memberId = await backend.addMember(clubId, users[0], 'ADMIN');
+        const session = await backend.createSession(clubId, {
+            type: 'PAST',
+            phase: 'COMPLETED',
+            movieId: movies[0]!.id,
+            scheduledAt: new Date(),
         });
         await prisma.sessionParticipant.create({
             data: {
                 clubId,
-                membershipId: member.id,
+                membershipId: memberId,
                 sessionId: session.id,
                 status: 'ACCEPTED',
                 attended: true,
