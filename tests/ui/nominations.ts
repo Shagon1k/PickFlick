@@ -21,7 +21,6 @@ interface INominationState {
     phase: TSession['phase'];
     version: number;
     departed?: boolean;
-    sendDetail?: () => void;
     recoverAt?: number;
     failedPath?: string;
 }
@@ -35,16 +34,22 @@ const movie: TNominationMovie = {
     genres: ['Drama', 'Mystery'],
 };
 function stateFor(token: string | undefined): INominationState {
-    const state = states.get(token) ?? { own: null, phase: 'NOMINATION', version: 1 };
+    const state = states.get(token) ?? {
+        own: token?.includes('waiting-member') ? movie : null,
+        phase: 'NOMINATION',
+        version: 1,
+    };
     states.set(token, state);
     return state;
 }
 function projection(token: string, state: INominationState): TNominations {
     const isHidden = token.includes('hidden') && !state.own;
     return {
-        acceptedCount: state.departed ? 2 : 3,
+        memberCount: 3,
+        acceptedCount: state.departed || /waiting-member|removed|unjoined/u.test(token) ? 2 : 3,
         nominatedCount: state.own ? 2 : 1,
-        canSubmit: !state.own && state.phase === 'NOMINATION' && !token.includes('readonly'),
+        canSubmit:
+            !state.own && state.phase === 'NOMINATION' && !/readonly|removed|unjoined/u.test(token),
         canClose: token.includes('operator') && state.phase === 'NOMINATION',
         hidden: isHidden,
         ownMovie: state.own,
@@ -60,6 +65,7 @@ function projection(token: string, state: INominationState): TNominations {
                       : []),
               ],
         suggestions: state.own || token.includes('empty') ? [] : [movie],
+        watchlist: [],
     };
 }
 function handleRoster(
@@ -70,32 +76,32 @@ function handleRoster(
 ): boolean {
     if (!token?.includes('nomination') || pathname !== `/sessions/${SESSION_ID}/roster`)
         return false;
-    const version = state.version;
-    const hasDeparted = state.departed;
-    // Commit a departure after the roster snapshot, before the detail response.
-    if (token.includes('split-roster') && !hasDeparted) {
+    // The initial detail read has completed; the roster sees the later departure.
+    if (token.includes('split-roster') && !state.departed) {
         state.departed = true;
         state.version++;
-        state.sendDetail?.();
     }
+    const version = state.version;
+    const hasDeparted = state.departed;
+    let participantNames = ['Avery', 'Jordan', 'You'];
+    if (/removed|unjoined/u.test(token)) participantNames = ['Avery', 'Jordan'];
+    else if (hasDeparted || token.includes('waiting-member')) participantNames = ['Avery', 'You'];
     const roster: ISessionRoster = {
         progressVersion: version,
-        acceptedCount: hasDeparted ? 2 : 3,
-        canJoin: false,
-        canInvite: false,
+        memberCount: 3,
+        acceptedCount: participantNames.length,
+        canJoin: token.includes('unjoined'),
+        isRemoved: token.includes('removed'),
         canManage: false,
         canLeave: false,
-        participants: (hasDeparted ? ['Avery', 'You'] : ['Avery', 'Jordan', 'You']).map(
-            (name, index) => ({
-                id: `30000000-0000-4000-8000-00000000000${index}`,
-                membershipId: `40000000-0000-4000-8000-00000000000${index}`,
-                displayName: name,
-                status: 'ACCEPTED',
-                canRemove: false,
-                invitation: null,
-            }),
-        ),
-        eligibleMembers: [],
+        participants: participantNames.map((name, index) => ({
+            id: `30000000-0000-4000-8000-00000000000${index}`,
+            membershipId: `40000000-0000-4000-8000-00000000000${index}`,
+            displayName: name,
+            status: 'ACCEPTED',
+            canRemove: false,
+            invitation: null,
+        })),
     };
     sendJson(response, 200, roster);
     return true;
@@ -124,34 +130,30 @@ export function handleNominations(
         return true;
     }
     if (pathname === `/sessions/${SESSION_ID}`) {
-        const sendDetail = () => {
-            const detail: TSession = {
-                id: SESSION_ID,
-                clubId: CLUB_ID,
-                clubName: 'Midnight Society',
-                topic: 'Nomination night',
-                notes: 'Everyone nominates one film.',
-                type: 'FULL_CYCLE',
-                phase: state.phase,
-                location: 'Room A',
-                scheduledAt: '2026-12-01T00:00:00.000Z',
-                deadlineAt: null,
-                movieId: null,
-                version: 5,
-                phaseVersion: 1,
-                progressVersion: state.version,
-                nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
-                selection: null,
-                selectionOutcome: null,
-                rating: null,
-                canEdit: token.includes('operator'),
-                canCancel: token.includes('operator'),
-            };
-            sendJson(response, 200, detail);
+        const detail: TSession = {
+            id: SESSION_ID,
+            clubId: CLUB_ID,
+            clubName: 'Midnight Society',
+            topic: 'Nomination night',
+            notes: 'Everyone nominates one film.',
+            type: 'FULL_CYCLE',
+            phase: state.phase,
+            location: 'Room A',
+            scheduledAt: '2026-12-01T00:00:00.000Z',
+            deadlineAt: null,
+            movieId: null,
+            version: 5,
+            phaseVersion: 1,
+            progressVersion: state.version,
+            nominations: state.phase === 'NOMINATION' ? projection(token, state) : null,
+            selection: null,
+            selectionOutcome: null,
+            selectionScores: null,
+            nominationAuthors: null,
+            rating: null,
+            canManage: token.includes('operator'),
         };
-        // Ensure the roster's departure commits between these two read snapshots.
-        if (token.includes('split-roster') && !state.departed) state.sendDetail = sendDetail;
-        else sendDetail();
+        sendJson(response, 200, detail);
     } else if (request.method === 'GET') sendJson(response, 200, projection(token, state));
     else
         readJson<Partial<TCloseNomination & TSubmitNomination>>(request, (input) => {

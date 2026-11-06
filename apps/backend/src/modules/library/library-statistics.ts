@@ -1,7 +1,7 @@
-import { movieDetailsSchema, type TLibraryStatistics } from '@pickflick/contracts';
+import type { TLibraryStatistics } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-const MINUTES_PER_HOUR = 60;
+import { getTotalWatchHours, readCachedDetails, summarizeFilms } from '../movies/cached-details.js';
 
 interface IRatedMovie {
     score: number;
@@ -14,10 +14,8 @@ export function buildLibraryStatistics(
     watchlistCount: number,
     now = new Date(),
 ): TLibraryStatistics {
-    const movies = ratings.map(({ movie }) => {
-        const parsed = movieDetailsSchema.safeParse(movie.details[0]?.data);
-        return parsed.success ? parsed.data : null;
-    });
+    const films = ratings.map(({ movie }) => readCachedDetails(movie.details[0]));
+    const { topGenre, topDirector, topActor } = summarizeFilms(films);
     return {
         filmsRated: ratings.length,
         ratedThisYear: ratings.filter(
@@ -26,29 +24,10 @@ export function buildLibraryStatistics(
         averageRating: ratings.length
             ? ratings.reduce((sum, rating) => sum + rating.score, 0) / ratings.length
             : null,
-        totalWatchHours: movies.every((movie) => movie?.runtime)
-            ? movies.reduce((sum, movie) => sum + movie!.runtime!, 0) / MINUTES_PER_HOUR
-            : null,
+        totalWatchHours: getTotalWatchHours(films),
         watchlistCount,
-        favoriteGenre: getMostFrequent(movies.map((movie) => movie?.genres)),
-        topDirector: getMostFrequent(
-            movies.map((movie) => movie?.directors?.map((person) => person.name)),
-        ),
-        topActor: getMostFrequent(movies.map((movie) => movie?.cast?.map((person) => person.name))),
+        favoriteGenre: topGenre,
+        topDirector,
+        topActor,
     };
-}
-
-function getMostFrequent(movies: (string[] | null | undefined)[]): string | null {
-    if (movies.some((values) => !values?.length)) return null;
-    const counts = new Map<string, number>();
-    for (const values of movies) {
-        for (const value of new Set(values)) counts.set(value, (counts.get(value) ?? 0) + 1);
-    }
-    // Exact cached names are the identity available in our catalog contract. Code-unit order
-    // breaks equal counts consistently without relying on the host's collation or input order.
-    return (
-        [...counts].sort(
-            ([a, aCount], [b, bCount]) => bCount - aCount || (a < b ? -1 : 1),
-        )[0]?.[0] ?? null
-    );
 }

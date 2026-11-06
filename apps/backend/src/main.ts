@@ -9,6 +9,7 @@ import {
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module.js';
+import { describeError } from './common/describe-error.js';
 import { configureApplication } from './config/configure-application.js';
 
 /** Writes one structured line to stderr; the pino logger may not exist yet or may be the failure. */
@@ -44,7 +45,7 @@ try {
     const failures = getSafeEnvironmentValidationFailures(error);
     writeFatal(
         failures ? 'configuration.invalid' : 'service.start.failed',
-        failures ? { failures } : {},
+        failures ? { failures } : describeError(error),
     );
     process.exitCode = 1;
 }

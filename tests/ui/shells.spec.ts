@@ -1,8 +1,43 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { formatViolations, openShell, shellRoutes } from './shell-fixtures';
+import { formatViolations } from './axe';
+import { signInMock } from './mock-session';
+import { settle } from './settle';
+import { openShell, shellRoutes } from './shell-fixtures';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
+
+test(
+    'An empty invitation ticket leaves no extra gap below the mobile footer',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, 'valid-settings-admin-compact-footer');
+        for (const width of [390, 768]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings', {
+                waitUntil: 'load',
+            });
+            await settle(page);
+            await expect(page.locator('[data-invite-ticket]')).toBeHidden();
+            await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+            await settle(page);
+            const footer = await page.getByRole('contentinfo').boundingBox();
+            const links = await page
+                .getByRole('navigation', { name: 'Footer navigation' })
+                .boundingBox();
+            const bar = await page
+                .getByRole('navigation', { name: 'Mobile product navigation' })
+                .boundingBox();
+            expect(footer).not.toBeNull();
+            expect(links).not.toBeNull();
+            expect(bar).not.toBeNull();
+            expect(Math.abs(footer!.y + footer!.height - bar!.y)).toBeLessThanOrEqual(1);
+            expect(footer!.y + footer!.height - links!.y - links!.height).toBeLessThanOrEqual(
+                width < 768 ? 24 : 56,
+            );
+        }
+    },
+);
 
 for (const shell of shellRoutes) {
     test(`${shell} shell has no automated accessibility violations`, async ({ page }) => {
@@ -43,10 +78,10 @@ for (const shell of shellRoutes) {
             async ({ page }) => {
                 await openShell(page, shell, viewport);
                 await expect(page).toHaveScreenshot(`shell-${shell}-${viewport.name}.png`, {
-                    animations: 'disabled',
-                    caret: 'hide',
                     fullPage: true,
-                    scale: 'css',
+                    // Signed out, the invite ticket shows its load error and renders unevenly;
+                    // the pending-invite captures cover the ticket itself.
+                    mask: [page.locator('[data-invite-ticket]')],
                 });
             },
         );
@@ -54,14 +89,7 @@ for (const shell of shellRoutes) {
 }
 
 test('header overlays are mutually exclusive and return focus', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-shell-overlays',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-shell-overlays');
     await openShell(page, 'product', canonicalViewports[2]);
 
     const searchTrigger = page.getByRole('button', { name: 'Search films' });
@@ -76,7 +104,7 @@ test('header overlays are mutually exclusive and return focus', async ({ context
     await page.keyboard.press('Tab');
     await expect(page.getByRole('combobox', { name: 'Search films' })).toBeFocused();
     await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
-    await expect(searchOverlay.getByRole('status')).toHaveText('2 films found.');
+    await expect(searchOverlay.getByRole('status')).toHaveText('2 films found');
     await expect(searchOverlay.getByRole('option')).toHaveCount(2);
     await page.getByRole('button', { name: 'Close search' }).click();
     await expect(searchTrigger).toBeFocused();

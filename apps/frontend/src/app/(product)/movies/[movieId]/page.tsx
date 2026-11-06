@@ -3,20 +3,22 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { buildLoginPath, getSessionState } from '#api/auth-session.server';
 import { getMovieDetails } from '#api/movies.server';
 import { getPersonalRating } from '#api/personal-rating.server';
-import { buildLoginPath, getSessionState } from '#api/session.server';
 import { getWatchlistItem } from '#api/watchlist.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
+import SystemState from '#components/shells/SystemState/SystemState';
 import Alert from '#components/ui/Alert/Alert';
-import ButtonLink from '#components/ui/Button/ButtonLink';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
-import { formatUtcDate } from '#lib/format';
+import { formatMovieTitle } from '#lib/format';
 
 import MovieHero from './_components/MovieHero/MovieHero';
 import MovieLinks from './_components/MovieLinks/MovieLinks';
 import RelatedMovies from './_components/RelatedMovies/RelatedMovies';
+import RelatedMoviesLoading from './_components/RelatedMovies/RelatedMoviesLoading';
 import styles from './page.module.scss';
 
 const MAX_RELATED_MOVIES = 6;
@@ -42,12 +44,9 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     if (!result || result.state === 'unavailable') {
         return <MovieUnavailable movieId={movieId} reason={result?.reason} />;
     }
-    const [rating, watchlistItem] = await Promise.all([
-        getPersonalRating(movieId),
-        getWatchlistItem(movieId),
-    ]);
+    const [rating, watchlistItem] = await loadPersonalState(movieId);
     const movie = result.data;
-    const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
+    const title = formatMovieTitle(movie);
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
         .filter((id) => id !== movieId)
         .slice(0, MAX_RELATED_MOVIES);
@@ -57,7 +56,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 {result.state === 'stale' ? (
                     <Alert tone="warning">
                         Showing cached details while the provider is unavailable. Last updated{' '}
-                        {formatUtcDate(result.fetchedAt)}.
+                        <LocalTime format="date" value={result.fetchedAt} />.
                     </Alert>
                 ) : null}
                 {result.state === 'partial' ? (
@@ -81,7 +80,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
                 <section className={styles.related} aria-labelledby="related-title">
                     <h2 id="related-title">You may also like</h2>
                     {relatedIds.length ? (
-                        <Suspense fallback={<p role="status">Loading related titles…</p>}>
+                        <Suspense fallback={<RelatedMoviesLoading count={relatedIds.length} />}>
                             <RelatedMovies ids={relatedIds} />
                         </Suspense>
                     ) : (
@@ -109,15 +108,24 @@ async function loadDetails(movieId: string) {
 
 function MovieUnavailable({ movieId, reason }: { movieId: string; reason?: string }) {
     return (
-        <ProductFrame>
-            <main className={styles.movieMain}>
-                <h1>Movie Details unavailable</h1>
-                <Alert tone="warning">{getUnavailableMessage(reason)}</Alert>
-                <div className={styles.links}>
-                    <ButtonLink href={`/movies/${movieId}`}>Try again</ButtonLink>
-                    <ButtonLink href="/app">Back to Hub</ButtonLink>
-                </div>
-            </main>
-        </ProductFrame>
+        <SystemState
+            description={getUnavailableMessage(reason)}
+            isSignedIn
+            retryHref={`/movies/${movieId}`}
+            title="Film unavailable"
+            variant="application-error"
+        />
     );
+}
+
+/** The rating and Watchlist controls are secondary: a failed read shows them empty, not a broken page. */
+async function loadPersonalState(movieId: string) {
+    try {
+        return await Promise.all([getPersonalRating(movieId), getWatchlistItem(movieId)]);
+    } catch (error) {
+        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
+            redirect(buildLoginPath(`/movies/${movieId}`));
+        console.error('Personal film state unavailable.', { movieId, error });
+        return [null, null] as const;
+    }
 }

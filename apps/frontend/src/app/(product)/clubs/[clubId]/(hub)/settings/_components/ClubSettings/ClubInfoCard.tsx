@@ -8,17 +8,18 @@ import {
 } from '@pickflick/contracts';
 import { useActionState } from 'react';
 
-import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import {
+    removeClubAvatarAction,
+    saveClubInfoAction,
+} from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 
-import { initialClubActionState } from '../../action-state';
-import { removeClubAvatarAction, saveClubInfoAction } from '../../actions';
 import styles from '../../page.module.scss';
-import { isWritable } from './club-settings';
 import ClubAvatarField from './ClubAvatarField';
 import SaveRow from './SaveRow';
-import StoredVisibility from './StoredVisibility';
 
 const DESCRIPTION_ROWS = 3;
 
@@ -27,12 +28,17 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
     const remove = removeClubAvatarAction.bind(null, projection.club.id);
     const [saveState, formAction, isSaving] = useActionState(save, initialClubActionState);
     const [removeState, removeAction, isRemoving] = useActionState(remove, initialClubActionState);
-    const canEdit = isWritable(projection);
+    const canEdit = projection.permissions.manageSettings;
     return (
         <section aria-labelledby="club-info-title" className={styles.card}>
-            <h2 id="club-info-title">Club Info</h2>
+            <div className={styles.cardTitle}>
+                <h2 id="club-info-title">Club Info</h2>
+                <InfoTip label="About Club Info">
+                    Club images accept PNG, JPEG or WebP up to 512 KiB and are stored privately.
+                    Admins can click the image and use Save Changes to upload a replacement.
+                </InfoTip>
+            </div>
             <form action={formAction} className={styles.cardForm}>
-                <StoredVisibility projection={projection} />
                 <ClubAvatarField
                     // A saved or removed avatar clears the local preview.
                     key={`${saveState.revision}-${removeState.revision}`}
@@ -61,14 +67,8 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                     name="description"
                     rows={DESCRIPTION_ROWS}
                 />
-                <SelectionScaleField
-                    defaultMax={projection.club.selectionScaleMax}
-                    disabled={!canEdit}
-                    idPrefix="selection-scale"
-                    min={projection.club.selectionScaleMin}
-                />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} pending={isSaving} state={saveState} />
+                    <SaveRow isPending={isSaving} state={saveState} />
                 ) : null}
             </form>
         </section>

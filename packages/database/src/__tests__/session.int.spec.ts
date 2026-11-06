@@ -45,7 +45,6 @@ describe('Session foundation', () => {
     });
     afterEach(async () => {
         const clubs = { clubId: { in: [clubId, otherClubId] } };
-        await database.sessionInvite.deleteMany({ where: clubs });
         await database.sessionParticipant.deleteMany({ where: clubs });
         await database.session.deleteMany({ where: clubs });
         await database.membership.deleteMany({ where: clubs });
@@ -129,7 +128,7 @@ describe('Session foundation', () => {
     });
 
     it.each([0, 1])(
-        'should preserve the %i-based score and visibility snapshot after Club edits',
+        'should preserve the %i-based Selection scale snapshot after Club edits',
         async (min) => {
             await database.club.update({ where: { id: clubId }, data: { selectionScaleMin: min } });
             const session = await createSession('NOMINATION');
@@ -138,43 +137,31 @@ describe('Session foundation', () => {
                 data: {
                     selectionScaleMin: 1,
                     selectionScaleMax: 5,
-                    showNominationAuthors: false,
-                    showNominationsBeforeSubmit: false,
-                    showVoteResults: true,
-                    showRatingResults: false,
-                    useMonochromeMedia: false,
                 },
             });
             const saved = await database.session.findUniqueOrThrow({ where: { id: session.id } });
             expect(saved).toMatchObject({
                 selectionScaleMin: min,
                 selectionScaleMax: 10,
-                showNominationAuthors: true,
-                showNominationsBeforeSubmit: true,
-                showVoteResults: false,
-                showRatingResults: true,
-                useMonochromeMedia: true,
             });
             const later = await createSession('RATING');
             expect(later).toMatchObject({
                 selectionScaleMin: 1,
                 selectionScaleMax: 5,
-                showNominationAuthors: false,
-                showVoteResults: true,
             });
         },
     );
 
     it('should reject invalid score snapshots and nonpositive versions', async () => {
         const session = await createSession('RATING');
-        for (const data of [
-            { selectionScaleMax: 11 },
-            { selectionScaleMin: 1, selectionScaleMax: 1 },
-            { phaseVersion: 0 },
-        ]) {
+        for (const [data, constraint] of [
+            [{ selectionScaleMax: 11 }, 'Session_selection_scale_check'],
+            [{ selectionScaleMin: 1, selectionScaleMax: 1 }, 'Session_selection_scale_check'],
+            [{ phaseVersion: 0 }, 'Session_phase_version_check'],
+        ] as const) {
             await expect(
                 database.session.update({ where: { id: session.id }, data }),
-            ).rejects.toThrow();
+            ).rejects.toThrow(constraint);
         }
     });
 
@@ -209,13 +196,15 @@ describe('Session foundation', () => {
         const session = await createSession('NOMINATION');
         const data = { sessionId: session.id, clubId, membershipId, status: 'ACCEPTED' as const };
         const participant = await database.sessionParticipant.create({ data });
-        await expect(database.sessionParticipant.create({ data })).rejects.toThrow();
+        await expect(database.sessionParticipant.create({ data })).rejects.toThrow(
+            'SessionParticipant_sessionId_membershipId_key',
+        );
         await expect(
             database.sessionParticipant.update({
                 where: { id: participant.id },
                 data: { membershipId: otherMembershipId },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionParticipant identity is immutable');
         const abort = async (transaction: Prisma.TransactionClient) => {
             await transaction.sessionParticipant.update({
                 where: { id: participant.id },
@@ -229,47 +218,16 @@ describe('Session foundation', () => {
         ).toMatchObject({ status: 'ACCEPTED' });
     });
 
-    it('should bind invite recipients and inviters to existing Memberships in the Session Club', async () => {
+    it('should bind participants to existing Memberships in the Session Club', async () => {
         const session = await createSession('NOMINATION');
         await expect(
             database.sessionParticipant.create({
                 data: { sessionId: session.id, clubId, membershipId: otherMembershipId },
             }),
-        ).rejects.toThrow();
-        const participant = await database.sessionParticipant.create({
+        ).rejects.toThrow('SessionParticipant_membershipId_clubId_fkey');
+        await database.sessionParticipant.create({
             data: { sessionId: session.id, clubId, membershipId },
         });
-        const invite = {
-            participantId: participant.id,
-            clubId,
-            inviterMembershipId: membershipId,
-            tokenDigest: 'a'.repeat(64),
-            expiresAt: new Date(Date.now() + 60_000),
-        };
-        await database.sessionInvite.create({ data: invite });
-        await expect(database.sessionInvite.create({ data: invite })).rejects.toThrow();
-        await expect(
-            database.sessionInvite.create({
-                data: {
-                    ...invite,
-                    tokenDigest: 'b'.repeat(64),
-                    inviterMembershipId: otherMembershipId,
-                },
-            }),
-        ).rejects.toThrow();
-        await expect(
-            database.sessionInvite.create({ data: { ...invite, tokenDigest: 'raw-token' } }),
-        ).rejects.toThrow();
-        await expect(
-            database.sessionInvite.create({
-                data: { ...invite, tokenDigest: 'c'.repeat(64), expiresAt: new Date(0) },
-            }),
-        ).rejects.toThrow();
-        await expect(
-            database.sessionInvite.create({
-                data: { ...invite, tokenDigest: 'd'.repeat(64), accepted: true },
-            }),
-        ).rejects.toThrow();
         expect(await database.membership.count({ where: { clubId } })).toBe(1);
     });
 });

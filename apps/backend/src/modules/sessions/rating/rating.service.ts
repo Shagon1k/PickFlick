@@ -1,27 +1,31 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import type { TCloseRating, TRating, TSubmitRating } from '@pickflick/contracts';
+import type { TCloseRating, TOpenRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
-import { assertManager, canManage } from '../session-access.js';
+import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
+import { getParticipantAvatarPath } from '../../clubs/participant-avatars/participant-avatar-path.js';
+import { Transactions } from '../../notifications/transactions.js';
+import { assertManager, predatesMembership, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
+import { publishProgress } from '../session-progress.js';
+import { canViewRatingResults } from '../session-visibility.js';
 import { advanceRating, completeRating } from './rating-completion.js';
 
 @Injectable()
 export class RatingService {
-    constructor(private readonly notifications: NotificationTransactions) {}
+    constructor(private readonly transactions: Transactions) {}
 
     async loadRating(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        viewer: { membership: TMembership; canManage: boolean },
     ): Promise<TRating> {
+        const { membership } = viewer;
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: session.id },
             include: {
                 rating: true,
-                membership: { select: { user: { select: { displayName: true } } } },
+                membership: { select: { user: { select: { displayName: true, image: true } } } },
             },
             orderBy: { id: 'asc' },
         });
@@ -34,14 +38,21 @@ export class RatingService {
                           ...toRating(participant.rating),
                           id: participant.rating.id,
                           author: participant.membership.user.displayName,
+                          avatarUrl:
+                              participant.membership.user.image && participant.status === 'ACCEPTED'
+                                  ? getParticipantAvatarPath(
+                                        session.clubId,
+                                        session.id,
+                                        participant.id,
+                                    )
+                                  : null,
+                          isOwn: participant.membershipId === membership.id,
                       },
                   ]
                 : [],
         );
         const isOpen = session.phase === 'RATING';
-        const canSeeResults =
-            session.phase === 'COMPLETED' &&
-            (membership.role !== 'MEMBER' || session.showRatingResults);
+        const canSeeEntries = canViewRatingResults(session, membership.club, Boolean(own?.rating));
         return {
             acceptedCount: accepted.length,
             submittedCount: accepted.filter((participant) => participant.rating).length,
@@ -50,31 +61,60 @@ export class RatingService {
                 isOpen &&
                 membership.club.lifecycle === 'ACTIVE' &&
                 own?.status === 'ACCEPTED' &&
-                !own.rating,
-            canClose: isOpen && (await canManage(tx, membership)),
-            own: own?.rating ? toRating(own.rating) : null,
-            results: canSeeResults
+                !own.rating &&
+                !predatesMembership(session, membership.joinedAt),
+            canClose: isOpen && viewer.canManage,
+            own: own?.rating
                 ? {
-                      average: received.length
-                          ? received.reduce((total, rating) => total + rating.score, 0) /
-                            received.length
-                          : null,
-                      entries: received,
+                      ...toRating(own.rating),
+                      author: own.membership.user.displayName,
+                      avatarUrl: own.membership.user.image ? '/api/account/avatar' : null,
                   }
                 : null,
+            results: {
+                average: received.length
+                    ? received.reduce((total, rating) => total + rating.score, 0) / received.length
+                    : null,
+                entries: canSeeEntries ? received : null,
+            },
         };
     }
 
-    async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
-        await this.notifications.run(async (tx) => {
+    /** Watching → Rating moves only by hand (ROADMAP); it frees the Club's blocking Session slot. */
+    async open(userId: string, id: string, input: TOpenRating): Promise<void> {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            await assertManager(tx, membership);
+            if (session.phase === 'RATING') return;
+            if (session.phase !== 'WATCHING' || session.phaseVersion !== input.phaseVersion)
+                throw new ConflictException({ reason: 'WATCHING_CHANGED' });
+            // Leaving Watching releases the partial unique index's Club slot in this transaction.
+            await tx.session.update({
+                where: { id },
+                data: {
+                    phase: 'RATING',
+                    phaseVersion: { increment: 1 },
+                    detailsVersion: { increment: 1 },
+                },
+            });
+            await recordSessionAction(tx, id, membership, 'SESSION_RATING_OPENED');
+            await publishProgress(tx, id, 'MANUAL');
+        });
+    }
+
+    async submit(userId: string, id: string, input: TSubmitRating): Promise<void> {
+        await this.transactions.write(async (tx) => {
+            const { session, membership } = await lockSessionForMember(tx, userId, id);
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { rating: true },
             });
-            if (participant?.status !== 'ACCEPTED') throw new ForbiddenException();
+            if (
+                participant?.status !== 'ACCEPTED' ||
+                predatesMembership(session, membership.joinedAt)
+            )
+                throw new ForbiddenException();
             if (participant.rating) {
                 if (
                     participant.rating.score === input.score &&
@@ -105,21 +145,14 @@ export class RatingService {
     }
 
     async close(userId: string, id: string, input: TCloseRating): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase === 'COMPLETED') return;
             if (session.phase !== 'RATING' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'RATING_CHANGED' });
             await advanceRating(tx, id, 'MANUAL');
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_RATING_CLOSED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_RATING_CLOSED');
         });
     }
 }

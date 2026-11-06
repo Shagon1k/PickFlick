@@ -15,10 +15,12 @@ describe('resolveAuthReturnTarget', () => {
         '/sessions/30000000-0000-4000-8000-000000000040',
         '/clubs/10000000-0000-4000-8000-000000000031/sessions/new',
         '/invite/club/invite_token-123',
-        '/invite/session/invite_token-123',
         '/clubs/new',
         '/clubs/10000000-0000-4000-8000-000000000031',
         '/clubs/10000000-0000-4000-8000-000000000031/settings',
+        '/clubs/10000000-0000-4000-8000-000000000031/members',
+        '/clubs/10000000-0000-4000-8000-000000000031/sessions',
+        '/clubs/10000000-0000-4000-8000-000000000031/sessions/past/new',
     ])('should keep the allowed target %s', (target) => {
         expect(resolveAuthReturnTarget(target)).toBe(target);
     });
@@ -29,6 +31,8 @@ describe('resolveAuthReturnTarget', () => {
         '/\\evil.example/app',
         '/app?next=https://evil.example',
         '/admin',
+        // Personal Session invitation links are no longer served.
+        '/invite/session/invite_token-123',
         '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=secret',
         '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=title&sort=time',
         '/clubs/10000000-0000-4000-8000-000000000031/ratings#hidden',

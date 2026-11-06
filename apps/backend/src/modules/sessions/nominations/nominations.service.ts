@@ -6,12 +6,16 @@ import {
 } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import {
+    assertActive,
+    countActiveMembers,
+    type TMembership,
+} from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
-import { assertManager } from '../session-access.js';
+import { Transactions } from '../../notifications/transactions.js';
+import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
-import { publishProgress } from '../session-progress.js';
+import { canViewNominationAuthors } from '../session-visibility.js';
 import { advanceNomination, completeNomination } from './nomination-completion.js';
 
 const MAX_SUGGESTIONS = 12;
@@ -19,7 +23,7 @@ const MAX_SUGGESTIONS = 12;
 @Injectable()
 export class NominationsService {
     constructor(
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
         private readonly movies: MoviesService,
     ) {}
 
@@ -28,7 +32,7 @@ export class NominationsService {
         session: Prisma.SessionGetPayload<object>,
         viewer: {
             userId: string;
-            membership: Awaited<ReturnType<typeof findMembership>>;
+            membership: TMembership;
             canManage: boolean;
         },
     ): Promise<TNominations> {
@@ -58,23 +62,32 @@ export class NominationsService {
                 (a, b) =>
                     a.submittedAt.getTime() - b.submittedAt.getTime() || a.id.localeCompare(b.id),
             );
-        const isHidden = !session.showNominationsBeforeSubmit && !own?.nomination;
+        const isHidden = !membership.club.showNominationsBeforeSubmit && !own?.nomination;
         const canSubmit =
             membership.club.lifecycle === 'ACTIVE' && Boolean(own) && !own?.nomination;
         const suggestionIds = canSubmit
             ? await findPastLosingNominations(tx, viewer.userId, session)
+            : [];
+        const watchlist = canSubmit
+            ? await tx.watchlistItem.findMany({
+                  where: { userId: viewer.userId },
+                  select: { movieId: true },
+                  orderBy: [{ priority: 'desc' }, { addedAt: 'asc' }, { movieId: 'asc' }],
+              })
             : [];
         const visible = isHidden ? [] : rows;
         const ids = [
             ...new Set([
                 ...visible.map((row) => row.movieId),
                 ...suggestionIds,
+                ...watchlist.map((item) => item.movieId),
                 ...(own?.nomination ? [own.nomination.movieId] : []),
             ]),
         ];
         const summaries = await this.movies.findSummaries(tx, ids);
         const getMovie = (movieId: string) => summaries.get(movieId)!;
         return {
+            memberCount: await countActiveMembers(tx, session.clubId),
             acceptedCount: participants.length,
             nominatedCount: rows.length,
             canSubmit,
@@ -83,19 +96,19 @@ export class NominationsService {
             ownMovie: own?.nomination ? getMovie(own.nomination.movieId) : null,
             nominations: visible.map((row) => ({
                 movie: getMovie(row.movieId),
-                author: session.showNominationAuthors ? row.author : null,
+                author: canViewNominationAuthors(session, membership.club) ? row.author : null,
             })),
             suggestions: suggestionIds.map(getMovie),
+            watchlist: watchlist.map((item) => getMovie(item.movieId)),
         };
     }
 
     async submit(userId: string, id: string, input: TSubmitNomination): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'NOMINATION')
                 throw new ConflictException({ reason: 'NOMINATION_CLOSED' });
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { nomination: true },
@@ -113,7 +126,7 @@ export class NominationsService {
     }
 
     async close(userId: string, id: string, input: TCloseNomination): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.phase !== 'NOMINATION' || session.phaseVersion !== input.phaseVersion)
@@ -123,16 +136,8 @@ export class NominationsService {
                 select: { movieId: true },
             });
             if (!nominations.length) throw new ConflictException({ reason: 'NO_NOMINATIONS' });
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_NOMINATION_CLOSED',
-            });
-            await advanceNomination(tx, session, nominations);
-            await publishProgress(tx, id, 'MANUAL');
+            await recordSessionAction(tx, id, membership, 'SESSION_NOMINATION_CLOSED');
+            await advanceNomination(tx, session, nominations, 'MANUAL');
         });
     }
 }

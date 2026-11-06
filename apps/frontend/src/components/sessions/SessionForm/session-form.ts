@@ -1,13 +1,15 @@
 import { createSessionSchema, type TSession, updateSessionSchema } from '@pickflick/contracts';
 
 import { toFieldErrors } from '#lib/form-errors';
-import { toIsoDate } from '#lib/format';
+import { toIsoDate, toScreeningTime } from '#lib/format';
 
 const MINUTES_PER_HOUR = 60;
 const MINUTE_MS = 60_000;
 
 export interface ISessionValues {
     date: string;
+    /** Optional `hh:mm` at the venue. */
+    time: string;
     location: string;
     topic: string;
     notes: string;
@@ -21,6 +23,7 @@ export interface ISessionValues {
 export function getInitialSessionValues(session?: TSession): ISessionValues {
     return {
         date: session?.scheduledAt ? toIsoDate(session.scheduledAt) : '',
+        time: session?.scheduledAt ? (toScreeningTime(session.scheduledAt) ?? '') : '',
         location: session?.location ?? '',
         topic: session?.topic ?? '',
         notes: session?.notes ?? '',
@@ -46,11 +49,9 @@ export function buildSessionInput(
     deadlineAt: string | null,
     session?: TSession,
 ) {
-    let scheduledAt = /^\d{4}-\d{2}-\d{2}$/u.test(values.date)
-        ? `${values.date}T00:00:00.000Z`
+    const scheduledAt = /^\d{4}-\d{2}-\d{2}$/u.test(values.date)
+        ? `${values.date}T${values.time || '00:00'}:00.000Z`
         : '';
-    if (session?.scheduledAt && toIsoDate(session.scheduledAt) === values.date)
-        scheduledAt = session.scheduledAt;
     const details = {
         scheduledAt,
         location: values.location,
@@ -79,13 +80,20 @@ export function validateSession(values: ISessionValues, session?: TSession) {
               type: 'Choose a Session type.',
           });
     const { scheduledAt, ...fields } = errors;
+    const isDurationInvalid =
+        !values.removeDeadline &&
+        Boolean(values.duration) &&
+        (!/^\d{2}:[0-5]\d$/u.test(values.duration) || values.duration === '00:00');
     return {
         ...fields,
-        ...(scheduledAt ? { date: scheduledAt } : {}),
-        ...(!values.removeDeadline &&
-        values.duration &&
-        (!/^\d{2}:[0-5]\d$/u.test(values.duration) || values.duration === '00:00')
-            ? { duration: 'Use hh:mm, greater than 00:00.' }
-            : {}),
+        date: scheduledAt ?? getPastDateError(values.date, session),
+        duration: isDurationInvalid ? 'Use hh:mm, greater than 00:00.' : undefined,
     };
+}
+
+/** A new or moved screening day must be today or later in the viewer's own calendar. */
+function getPastDateError(date: string, session?: TSession): string | undefined {
+    if (session?.scheduledAt && toIsoDate(session.scheduledAt) === date) return undefined;
+    const today = new Date().toLocaleDateString('en-CA');
+    return date < today ? 'Choose today or a later date.' : undefined;
 }

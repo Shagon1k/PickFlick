@@ -7,9 +7,11 @@ import {
     type TMovieExternalId,
     type TMovieSearch,
     type TTmdbMovie,
+    youtubeVideoIdSchema,
 } from '@pickflick/contracts';
 import type { z } from 'zod';
 
+import { getTmdbGenres } from './genre-names.js';
 import { MovieHttp } from './movie-http.js';
 import {
     createEmptyMetadata,
@@ -36,6 +38,7 @@ function toSummary(movie: TTmdbMovie) {
         originalLanguage: movie.original_language || null,
         posterUrl: toImageUrl(movie.poster_path),
         backdropUrl: toImageUrl(movie.backdrop_path),
+        genres: getTmdbGenres(movie.genre_ids),
         ratings:
             movie.vote_count > 0
                 ? [
@@ -154,7 +157,7 @@ export class TmdbClient implements IMovieProvider {
                         (video) =>
                             video.site === 'YouTube' &&
                             video.type === 'Trailer' &&
-                            /^[a-zA-Z0-9_-]{6,64}$/u.test(video.key),
+                            youtubeVideoIdSchema.safeParse(video.key).success,
                     )
                     .map((video) => ({
                         url: `https://www.youtube.com/watch?v=${video.key}`,

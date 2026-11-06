@@ -2,8 +2,10 @@ import PublicShell from '#components/shells/PublicShell/PublicShell';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import HorizontalScroll from '#components/ui/HorizontalScroll/HorizontalScroll';
 import { createPublicMetadata } from '#lib/public-metadata';
 
+import PlanHandoff from '../_components/PlanHandoff/PlanHandoff';
 import styles from '../marketing.module.scss';
 import {
     comparisonRows,
@@ -19,7 +21,7 @@ export const metadata = createPublicMetadata({
     path: '/pricing',
 });
 
-function SprocketDivider() {
+function SectionDivider() {
     return (
         <div aria-hidden="true" className={styles.divider}>
             <i />
@@ -104,10 +106,10 @@ export default function PricingPage() {
                                     <span>/ month</span>
                                 </div>
                                 <Button aria-describedby="pro-checkout-note" disabled>
-                                    Upgrade unavailable
+                                    Upgrade to Pro
                                 </Button>
                                 <p className={styles.checkoutNote} id="pro-checkout-note">
-                                    Pro checkout opens in the Paddle billing phase.
+                                    Pro checkout is coming soon.
                                 </p>
                                 <hr className={styles.planRule} />
                                 <PlanFeatures features={proPlanFeatures} />
@@ -116,7 +118,7 @@ export default function PricingPage() {
                     </div>
                 </section>
 
-                <SprocketDivider />
+                <SectionDivider />
 
                 <section
                     aria-labelledby="comparison-title"
@@ -127,12 +129,7 @@ export default function PricingPage() {
                             Full breakdown
                         </p>
                         <h2 id="comparison-title">Everything side by side</h2>
-                        <div
-                            aria-label="Plan comparison scroll region"
-                            className={styles.tableScroll}
-                            role="region"
-                            tabIndex={0}
-                        >
+                        <HorizontalScroll label="Plan comparison" variant="ruled">
                             <table className={styles.comparisonTable}>
                                 <caption>PickFlick Free and Pro plan comparison</caption>
                                 <thead>
@@ -152,11 +149,11 @@ export default function PricingPage() {
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
+                        </HorizontalScroll>
                     </div>
                 </section>
 
-                <SprocketDivider />
+                <SectionDivider />
 
                 <section
                     aria-labelledby="faq-title"
@@ -169,37 +166,17 @@ export default function PricingPage() {
                     <PricingFaq />
                 </section>
 
-                <section aria-labelledby="pricing-handoff-title" className={styles.handoff}>
-                    <div className={styles.handoffInner}>
-                        <div>
-                            <h2 id="pricing-handoff-title">
-                                Start free.{' '}
-                                <span className={styles.warmLine}>
-                                    Upgrade when the Club outgrows it.
-                                </span>
-                            </h2>
-                            <ul aria-label="Free plan includes" className={styles.handoffFacts}>
-                                <li>
-                                    <strong>1</strong> administered Club
-                                </li>
-                                <li>
-                                    Up to <strong>8</strong> members
-                                </li>
-                                <li>Unlimited Session history</li>
-                            </ul>
-                        </div>
-                        <div className={styles.handoffAction}>
-                            <div className={styles.handoffPrice}>
-                                <strong>€0</strong>
-                                <span>to start</span>
-                            </div>
-                            <p className={styles.handoffNote}>No credit card required.</p>
-                            <ButtonLink href="/login" variant="primary">
-                                Create your first Club
-                            </ButtonLink>
-                        </div>
-                    </div>
-                </section>
+                <PlanHandoff
+                    titleId="pricing-handoff-title"
+                    title={
+                        <>
+                            Start free.{' '}
+                            <span className={styles.warmLine}>
+                                Upgrade when the Club outgrows it.
+                            </span>
+                        </>
+                    }
+                />
             </div>
         </PublicShell>
     );

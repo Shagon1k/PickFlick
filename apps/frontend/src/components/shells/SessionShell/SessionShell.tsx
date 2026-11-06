@@ -11,21 +11,21 @@ import Pill from '#components/ui/Pill/Pill';
 import StatusBanner from '#components/ui/StatusBanner/StatusBanner';
 
 interface ISessionShellProps {
-    admin?: boolean;
+    isAdmin?: boolean;
     children: ReactNode;
     clubItems: readonly IShellNavigationItem[];
     routes?: IShellRouteMap;
 }
 
 export default function SessionShell({
-    admin = false,
+    isAdmin = false,
     children,
     clubItems,
     routes,
 }: ISessionShellProps) {
     return (
         <ProductChrome
-            admin={admin}
+            isAdmin={isAdmin}
             clubItems={clubItems}
             currentArea="session"
             routes={routes}

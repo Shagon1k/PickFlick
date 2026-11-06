@@ -160,7 +160,7 @@
     }
 }
 
-@media (width <= 1023px) {
+@media (width < 1024px) {
     .scene {
         grid-template-columns: 1fr;
         gap: 24px;
@@ -192,7 +192,7 @@
     }
 }
 
-@media (width <= 767px) {
+@media (width < 768px) {
     .scene {
         gap: 22px;
         width: min(620px, calc(100% - 32px));
@@ -232,7 +232,7 @@
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .stage[data-system-state='application-error'] .body {
         margin-top: 28px;
     }

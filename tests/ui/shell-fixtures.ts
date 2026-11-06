@@ -1,4 +1,3 @@
-import type AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 
 import { settle } from './settle';
@@ -26,21 +25,6 @@ export async function openShell(
     await page.setViewportSize(viewport);
     await page.goto(`/shell-preview/${shell}`, { waitUntil: 'load' });
     await settle(page);
-}
-
-export function formatViolations(
-    violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations'],
-) {
-    return violations
-        .map(
-            (violation) =>
-                `${violation.id}: ${violation.help}\n${violation.nodes
-                    .map(
-                        (node) => `  ${node.target.join(' ')}: ${node.failureSummary ?? node.html}`,
-                    )
-                    .join('\n')}`,
-        )
-        .join('\n');
 }
 
 export async function expectMobileAdminEntry(page: Page, shell: TPreviewShellRoute) {

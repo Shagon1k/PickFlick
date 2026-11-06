@@ -1,22 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
+import { expectSessionPhase } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const ROUTE = `/clubs/${CLUB_ID}/sessions/new`;
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `${token}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `${token}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -31,19 +24,25 @@ test(
                 .getByRole('region', { name: 'Active Session', exact: true })
                 .getByRole('link', { name: 'Open Session', exact: true }),
         ).toHaveCount(0);
-        await page.getByRole('link', { name: 'Create Session', exact: true }).click();
+        await page
+            .getByRole('region', { name: 'Active Session', exact: true })
+            .getByRole('link', { name: 'Schedule New', exact: true })
+            .click();
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
         await expect(page.getByLabel('Date')).toBeFocused();
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByLabel('Topic').fill('Noir night');
         await page.getByLabel('Nomination phase ends in').fill('01:30');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(page.getByText('Session created. Nomination is open.')).toBeVisible();
-        await page.goBack();
-        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toHaveCount(
-            0,
-        );
+        // Scheduling opens the new Session and offers its link once.
+        const share = page.getByRole('complementary', { name: 'Share this Session' });
+        await expect(share.getByRole('button', { name: 'Copy link' })).toBeVisible();
+        await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
+        await share.getByRole('button', { name: 'Dismiss' }).click();
+        await expect(share).toHaveCount(0);
+        await page.goto(`/clubs/${CLUB_ID}`);
+        await expect(page.getByRole('link', { name: 'Schedule New', exact: true })).toHaveCount(0);
         await page.getByRole('link', { name: 'Open Session: Noir night', exact: true }).focus();
         await page.keyboard.press('Enter');
         await expect(
@@ -89,9 +88,12 @@ test(
             page.getByText('This Session was cancelled. Its history is preserved.'),
         ).toBeVisible();
         await page.getByRole('link', { name: 'Back to Hub' }).click();
-        await page.getByText('Session history', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Noir night' }).first()).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Create Session', exact: true })).toBeVisible();
+        await expect(
+            page
+                .getByRole('region', { name: 'Active Session', exact: true })
+                .getByRole('link', { name: 'Schedule New', exact: true }),
+        ).toBeVisible();
     },
 );
 
@@ -103,20 +105,19 @@ test(
         await page.goto(ROUTE);
         await page.getByRole('radio', { name: 'Pre-selected Movie' }).check();
         await expect(page.getByLabel('Nomination phase ends in')).toHaveCount(0);
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         const search = page.getByRole('combobox', { name: 'Select a Movie' });
         await search.fill('film');
         await expect(page.getByRole('option')).toHaveCount(2);
         await search.press('ArrowDown');
         await search.press('Enter');
-        await expect(search).toHaveValue('<script>alert(1)</script> & Film');
+        await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
+            '<script>alert(1)</script> & Film',
+        );
+        await expect(page.locator('script').filter({ hasText: 'alert(1)' })).toHaveCount(0);
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(
-            page.getByText('Session created. Your Movie is ready for Watching.'),
-        ).toBeVisible();
-        await page.getByRole('link', { name: 'Open Session' }).click();
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
         await expect(page.getByRole('heading', { level: 1 }).getByRole('link')).toHaveAttribute(
             'href',
             '/movies/10000000-0000-4000-8000-000000000037',
@@ -130,7 +131,7 @@ test(
         ).toContainText('Watching');
         await activeSession.focus();
         await page.keyboard.press('Enter');
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
     },
 );
 
@@ -140,7 +141,8 @@ test('Session save failure keeps entries and offline submit explains recovery', 
 }) => {
     await authenticate(context, 'valid-session-workflow-failure');
     await page.goto(ROUTE);
-    await page.getByLabel('Date').fill('2026-12-01');
+    await settle(page);
+    await page.getByLabel('Date').fill('2090-12-01');
     await page.getByLabel('Location').fill('Room A');
     await page.getByLabel('Topic').fill('API failure');
     await page.getByRole('button', { name: 'Create Session', exact: true }).click();
@@ -170,23 +172,15 @@ for (const viewport of canonicalViewports) {
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        await page.screenshot({
-            path: `test-results/session-create-${viewport.name}.png`,
-            fullPage: true,
-        });
-        await page.getByLabel('Date').fill('2026-12-01');
+        await page.getByLabel('Date').fill('2090-12-01');
         await page.getByLabel('Location').fill('Room A');
         await page.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await page.getByRole('link', { name: 'Open Session' }).click();
+        await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
         await settle(page);
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        await page.screenshot({
-            path: `test-results/session-detail-${viewport.name}.png`,
-            fullPage: true,
-        });
     });
 }
 
@@ -215,9 +209,6 @@ for (const viewport of screenshotViewports) {
             await settle(page);
             await expect(page).toHaveScreenshot(`create-session-${viewport.name}.png`, {
                 fullPage: true,
-                animations: 'disabled',
-                caret: 'hide',
-                scale: 'css',
             });
         },
     );

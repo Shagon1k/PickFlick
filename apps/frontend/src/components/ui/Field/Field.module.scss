@@ -1,9 +1,47 @@
 .field {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 7px;
     min-width: 0;
     font-family: var(--font-body);
     color: var(--fg);
+}
+
+.field__control-wrapper {
+    position: relative;
+}
+
+.field__skeleton {
+    position: relative;
+    display: block;
+    border-radius: var(--radius);
+}
+
+.field__skeleton-paint {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.field__section[data-position='right'] {
+    position: absolute;
+    inset: 0 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: var(--input-right-section-width, var(--hit));
+    pointer-events: var(--input-right-section-pointer-events, none);
+}
+
+.control.m-end-action {
+    padding-right: calc(var(--input-right-section-width, var(--hit)) + var(--gap-sm));
+}
+
+.control.m-selected:read-only {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--fg);
+    background: var(--bg);
 }
 
 /* Labels sit a step below the value they describe. */
@@ -56,7 +94,7 @@
     opacity: 0.58;
 }
 
-.control:read-only:not(.m-select) {
+.control:read-only:not(.m-select, .m-selected) {
     color: var(--fg-secondary);
     background: transparent;
 }
@@ -84,8 +122,12 @@
     }
 }
 
+.control.m-transparent {
+    background: transparent;
+}
+
 .control.m-select {
-    padding-right: 44px;
+    padding-right: calc(var(--hit) + var(--gap-xs));
     appearance: none;
 }
 
@@ -111,10 +153,4 @@
 
 .field__message[data-tone='success'] {
     color: var(--success-text);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .control {
-        transition-duration: 0.01ms;
-    }
 }

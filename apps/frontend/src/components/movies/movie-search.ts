@@ -56,8 +56,8 @@ export function getSearchMessage(term: string, result: TMovieSearchResponse | nu
     return formatFilmCount(result.data.movies.length);
 }
 
-function formatFilmCount(count: number): string {
-    return `${formatCount(count, 'film')} found.`;
+export function formatFilmCount(count: number): string {
+    return `${formatCount(count, 'film')} found`;
 }
 
 /** Moves a listbox's active option for ArrowDown/ArrowUp, wrapping at both ends. */

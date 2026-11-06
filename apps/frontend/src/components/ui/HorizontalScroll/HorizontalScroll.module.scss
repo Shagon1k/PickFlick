@@ -1,0 +1,61 @@
+.horizontalScroll {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.horizontalScroll__content {
+    position: relative;
+    min-width: 0;
+    overflow: auto hidden;
+    border-radius: inherit;
+    -webkit-overflow-scrolling: touch;
+}
+
+.horizontalScroll__content:focus-visible {
+    outline: 1px solid var(--focus);
+    outline-offset: 3px;
+    box-shadow: var(--focus-ring);
+}
+
+.horizontalScroll__edge {
+    position: absolute;
+    inset-block: 0;
+    z-index: 1;
+    width: var(--gap-sm);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--motion-local) var(--ease-standard);
+}
+
+.horizontalScroll__edge.m-left {
+    left: 0;
+    background: linear-gradient(to right, var(--bg), transparent);
+    border-start-start-radius: inherit;
+    border-end-start-radius: inherit;
+}
+
+.horizontalScroll__edge.m-right {
+    right: 0;
+    background: linear-gradient(to left, var(--bg), transparent);
+    border-start-end-radius: inherit;
+    border-end-end-radius: inherit;
+}
+
+.horizontalScroll[data-scroll-left] .m-left,
+.horizontalScroll[data-scroll-right] .m-right {
+    opacity: 1;
+}
+
+.horizontalScroll.m-leaderboard,
+.horizontalScroll.m-ruled {
+    border-inline: 0;
+    border-radius: 0;
+}
+
+.horizontalScroll.m-plain {
+    border: 0;
+    border-radius: 0;
+}

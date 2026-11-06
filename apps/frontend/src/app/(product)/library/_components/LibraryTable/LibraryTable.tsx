@@ -1,17 +1,28 @@
 'use client';
 
-import type { TLibrary, TLibraryQuery } from '@pickflick/contracts';
+import {
+    LIBRARY_SEARCH_MAX_LENGTH,
+    libraryQuerySchema,
+    type TLibrary,
+    type TLibraryQuery,
+} from '@pickflick/contracts';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useEffect, useRef, useState, useTransition } from 'react';
 
+import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
+import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
-import { formatUtcDate } from '#lib/format';
+import TableSearch from '#components/ui/TableSearch/TableSearch';
+import { formatCount, formatMovieTitle } from '#lib/format';
+import { getOfflineMessage } from '#lib/offline';
+import { getNextTableSort } from '#lib/table-sort';
 
 import { buildLibraryPath } from '../../library-path';
-import LibraryFilters from '../LibraryFilters/LibraryFilters';
 import styles from './LibraryTable.module.scss';
 
 export default function LibraryTable({
@@ -21,94 +32,182 @@ export default function LibraryTable({
     library: TLibrary;
     query: TLibraryQuery;
 }) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [navigationMessage, setNavigationMessage] = useState('');
     const headingRef = useRef<HTMLHeadingElement>(null);
-    const [message, setMessage] = useState('');
+    const [savedMessage, setSavedMessage] = useState('');
     const shouldFocusHeadingRef = useRef(false);
     useEffect(() => {
         if (!shouldFocusHeadingRef.current) return;
-        headingRef.current?.focus();
+        headingRef.current?.focus({ preventScroll: true });
         shouldFocusHeadingRef.current = false;
-    }, [library, message]);
-    function handleSaved(message: string) {
+    }, [library, savedMessage]);
+    function handleSaved(nextMessage: string) {
         shouldFocusHeadingRef.current = true;
-        setMessage(message);
+        setSavedMessage(nextMessage);
+    }
+    function navigate(next: TLibraryQuery, { shouldReplace = false } = {}) {
+        const offline = getOfflineMessage();
+        if (offline) {
+            setNavigationMessage(offline);
+            return;
+        }
+        setNavigationMessage('');
+        startTransition(() => {
+            const path = buildLibraryPath(next);
+            if (shouldReplace) router.replace(path, { scroll: false });
+            else router.push(path, { scroll: false });
+        });
+    }
+    function sortable(sort: TLibraryQuery['sort']) {
+        return {
+            sortDirection: query.sort === sort ? query.direction : undefined,
+            isSortDisabled: isPending,
+            onSort: () =>
+                navigate({
+                    ...query,
+                    sort: 'default',
+                    direction: undefined,
+                    ...getNextTableSort(query, sort),
+                    page: 1,
+                }),
+        };
     }
     const isWatchlist = library.tab === 'watchlist';
     const title = isWatchlist ? 'Watchlist' : 'My Ratings';
-    const hasFilters = Boolean(query.q || (isWatchlist ? query.priority : query.score));
-    const emptyLibraryMessage = isWatchlist
-        ? 'Your Watchlist is empty. Save a film from Movie Details to see it here.'
-        : 'No rated films yet. Rate a film from Movie Details to see it here.';
-    const emptyMessage = hasFilters
-        ? 'No films match your search or filters. Clear them to see all your films.'
-        : emptyLibraryMessage;
-    const rows = library.items.map((item, index) => ({
+    const valueFilter = isWatchlist ? query.priority : query.score;
+    const hasFilters = Boolean(query.q || valueFilter);
+    const emptyMessage = getEmptyMessage(isWatchlist, hasFilters);
+    const skeletonVariant = isWatchlist ? 'watchlist' : 'ratings';
+    const countLabel = formatCount(library.total, isWatchlist ? 'queued film' : 'rated film');
+    const toRow = (
+        item: TLibrary['items'][number],
+        index: number,
+        date: string,
+        value: ReactNode,
+    ) => ({
         id: item.movieId,
         cells: {
             rank: (library.page - 1) * library.pageSize + index + 1,
             film: (
                 <Link href={`/movies/${item.movieId}`} className={styles.libraryTable__film}>
-                    <span className={styles.libraryTable__title}>
-                        {item.title ?? 'Untitled film'}
-                    </span>
+                    <span className={styles.libraryTable__title}>{formatMovieTitle(item)}</span>
                 </Link>
             ),
-            genres: item.genres.join(', ') || '—',
+            genre: item.genres.join(', ') || '—',
             year: item.releaseYear ?? '—',
-            date: formatUtcDate('addedAt' in item ? item.addedAt : item.updatedAt),
-            action:
-                'priority' in item ? (
-                    <WatchlistBookmark
-                        movieId={item.movieId}
-                        item={item}
-                        variant="table"
-                        onSaved={handleSaved}
-                    />
-                ) : (
-                    <PersonalRating movieId={item.movieId} rating={item} onSaved={handleSaved} />
-                ),
+            date: <LocalTime format="date" value={date} />,
+            value,
         },
-    }));
+    });
+    const rows =
+        library.tab === 'watchlist'
+            ? library.items.map((item, index) =>
+                  toRow(
+                      item,
+                      index,
+                      item.addedAt,
+                      <WatchlistBookmark
+                          movieId={item.movieId}
+                          item={item}
+                          variant="table"
+                          onSaved={handleSaved}
+                      />,
+                  ),
+              )
+            : library.items.map((item, index) =>
+                  toRow(
+                      item,
+                      index,
+                      item.updatedAt,
+                      <PersonalRating
+                          isInTable
+                          movieId={item.movieId}
+                          rating={item}
+                          onSaved={handleSaved}
+                      />,
+                  ),
+              );
     return (
-        <section aria-labelledby="library-heading" className={styles.libraryTable}>
-            <h2 id="library-heading" ref={headingRef} tabIndex={-1}>
+        <section
+            aria-labelledby="library-heading"
+            className={styles.libraryTable}
+            aria-busy={isPending}
+        >
+            <h2 className="visually-hidden" id="library-heading" ref={headingRef} tabIndex={-1}>
                 {title}
             </h2>
-            <LibraryFilters key={buildLibraryPath(query)} query={query} />
-            <p role="status">
-                {message && `${message} `}
-                {`${library.total} ${library.total === 1 ? 'film' : 'films'} ${isWatchlist ? 'queued' : 'rated'}`}
+            <TableSearch
+                value={query.q}
+                label={isWatchlist ? 'Search watchlist…' : 'Search rated films…'}
+                maxLength={LIBRARY_SEARCH_MAX_LENGTH}
+                onSearch={(search) => {
+                    if (search.trim() !== query.q)
+                        navigate({ ...query, q: search, page: 1 }, { shouldReplace: true });
+                }}
+            />
+            {/* The same rule as the empty copy: search text or this tab's own value filter. */}
+            {hasFilters ? (
+                <ButtonLink
+                    href={`/library?tab=${query.tab}`}
+                    variant="subtle"
+                    onNavigate={(event) => {
+                        event.preventDefault();
+                        navigate(libraryQuerySchema.parse({ tab: query.tab }));
+                    }}
+                >
+                    Clear filters
+                </ButtonLink>
+            ) : null}
+            <p className="visually-hidden" role="status">
+                {isPending ? 'Loading films…' : savedMessage || countLabel}
+            </p>
+            <p hidden={!navigationMessage} role="status">
+                {navigationMessage}
             </p>
             <Table
+                variant="leaderboard"
+                isLoading={isPending}
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}
                 columns={[
-                    { key: 'rank', header: '#', numeric: true },
-                    { key: 'film', header: 'Film' },
-                    { key: 'genres', header: 'Genre' },
-                    { key: 'year', header: 'Year' },
-                    { key: 'date', header: isWatchlist ? 'Added on' : 'Rated on' },
-                    { key: 'action', header: isWatchlist ? 'Priority' : 'Rating' },
+                    { key: 'rank', header: '#', isNumeric: true },
+                    { key: 'film', header: 'Film', ...sortable('title') },
+                    { key: 'genre', header: 'Genre', ...sortable('genre') },
+                    { key: 'year', header: 'Year', ...sortable('year') },
+                    {
+                        key: 'date',
+                        header: isWatchlist ? 'Added on' : 'Rated on',
+                        ...sortable('recent'),
+                    },
+                    {
+                        key: 'value',
+                        header: isWatchlist ? 'Priority' : 'Rating',
+                        isNumeric: !isWatchlist,
+                        ...sortable('value'),
+                    },
                 ]}
-                rows={rows}
+                rows={
+                    isPending ? buildFilmTableSkeletonRows(skeletonVariant, rows.length || 1) : rows
+                }
                 emptyMessage={emptyMessage}
             />
-            <nav aria-label={`${title} pages`} className={styles.libraryTable__pagination}>
-                <ButtonLink
-                    href={buildLibraryPath(query, library.page - 1)}
-                    disabled={library.page === 1}
-                >
-                    Previous
-                </ButtonLink>
-                <span>
-                    Page {library.page} of {library.pages}
-                </span>
-                <ButtonLink
-                    href={buildLibraryPath(query, library.page + 1)}
-                    disabled={library.page === library.pages}
-                >
-                    Next
-                </ButtonLink>
-            </nav>
+            <FilmTablePagination
+                label={`${title} pages`}
+                page={library.page}
+                pages={library.pages}
+                disabled={isPending}
+                getHref={(page) => buildLibraryPath(query, page)}
+                onNavigate={(page) => navigate({ ...query, page })}
+            />
         </section>
     );
+}
+
+function getEmptyMessage(isWatchlist: boolean, hasFilters: boolean) {
+    if (hasFilters)
+        return 'No films match your search or filters. Clear them to see all your films.';
+    if (isWatchlist)
+        return 'Your Watchlist is empty. Save a film from Movie Details to see it here.';
+    return 'No rated films yet. Rate a film from Movie Details to see it here.';
 }

@@ -14,8 +14,6 @@ import { SelectionController } from './selection/selection.controller.js';
 import { SelectionService } from './selection/selection.service.js';
 import { SessionsController } from './sessions.controller.js';
 import { SessionsService } from './sessions.service.js';
-import { WatchingController } from './watching/watching.controller.js';
-import { WatchingService } from './watching/watching.service.js';
 
 @Module({
     imports: [MoviesModule, NotificationsModule],
@@ -25,7 +23,6 @@ import { WatchingService } from './watching/watching.service.js';
         SessionRosterController,
         NominationsController,
         SelectionController,
-        WatchingController,
         RatingController,
     ],
     providers: [
@@ -34,7 +31,6 @@ import { WatchingService } from './watching/watching.service.js';
         SessionRosterService,
         NominationsService,
         SelectionService,
-        WatchingService,
         RatingService,
     ],
 })

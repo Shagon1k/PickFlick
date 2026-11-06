@@ -12,7 +12,7 @@ import type {
 export function getClubPermissions(
     role: TClubRole,
     lifecycle: TClubLifecycle,
-    access?: IClubAccess,
+    access: IClubAccess,
 ): TClubPermissions {
     const isAdmin = role === 'ADMIN';
     const isActive = lifecycle === 'ACTIVE';
@@ -20,13 +20,13 @@ export function getClubPermissions(
         viewClub: true,
         participate: isActive,
         leaveClub: !isAdmin,
-        manageSessions: isActive && role !== 'MEMBER' && (access?.newWorkAllowed ?? true),
-        createInvitations: isActive && role !== 'MEMBER' && (access?.newWorkAllowed ?? true),
+        manageSessions: isActive && role !== 'MEMBER' && access.newWorkAllowed,
+        createInvitations:
+            isActive && role !== 'MEMBER' && access.newWorkAllowed && !access.isAtCapacity,
         manageMembers: isActive && role !== 'MEMBER',
         manageRoles: isActive && isAdmin,
         manageSettings: isActive && isAdmin,
         manageLifecycle: isAdmin,
-        viewAudit: isAdmin,
     };
 }
 

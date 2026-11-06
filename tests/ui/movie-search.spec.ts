@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const MOVIE_ID = '10000000-0000-4000-8000-000000000037';
@@ -11,14 +13,7 @@ for (const width of [390, 768, 1024, 1440]) {
         { tag: '@smoke' },
         async ({ context, page }) => {
             await page.setViewportSize({ width, height: 900 });
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: `valid-search-${width}`,
-                    domain: '127.0.0.1',
-                    path: '/',
-                },
-            ]);
+            await signInMock(context, `valid-search-${width}`);
             await page.goto('/app', { waitUntil: 'load' });
             await settle(page);
             const trigger = page
@@ -45,10 +40,7 @@ for (const width of [390, 768, 1024, 1440]) {
             expect(
                 (await new AxeBuilder({ page }).include('#shell-search').analyze()).violations,
             ).toEqual([]);
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
-            await page.screenshot({ path: `test-results/search-${width}.png` });
+            await expectNoPageOverflow(page);
             await input.press('Escape');
             await expect(trigger).toBeFocused();
             await trigger.click();
@@ -74,14 +66,7 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-search-states',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-search-states');
     await page.goto('/app', { waitUntil: 'load' });
     await settle(page);
     const trigger = page
@@ -90,19 +75,44 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await trigger.click();
     const input = page.getByRole('combobox', { name: 'Search films' });
     await input.fill('empty');
-    await expect(page.getByText('No films found. Try another title.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('group', { name: 'Film search results' })
+            .getByRole('paragraph')
+            .filter({ hasText: 'No films found. Try another title.' }),
+    ).toBeVisible();
     await input.fill('outage');
     await expect(
-        page.getByText('The film provider is temporarily unavailable. Try again.'),
+        page
+            .getByRole('group', { name: 'Film search results' })
+            .getByRole('paragraph')
+            .filter({ hasText: 'The film provider is temporarily unavailable. Try again.' }),
     ).toBeVisible();
     await input.fill('limited');
-    await expect(page.getByText('Film search is busy. Please try again shortly.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('group', { name: 'Film search results' })
+            .getByRole('paragraph')
+            .filter({ hasText: 'Film search is busy. Please try again shortly.' }),
+    ).toBeVisible();
     await input.fill('disabled');
-    await expect(page.getByText('Film search is not configured yet.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('group', { name: 'Film search results' })
+            .getByRole('paragraph')
+            .filter({ hasText: 'Film search is not configured yet.' }),
+    ).toBeVisible();
     await input.fill('stale');
     await expect(
-        page.getByText('Showing cached results while the provider is unavailable.'),
+        page
+            .getByRole('group', { name: 'Film search results' })
+            .getByText('Cached', { exact: true }),
     ).toBeVisible();
+    await expect(
+        page
+            .getByRole('status')
+            .filter({ hasText: 'Showing cached results while the provider is unavailable.' }),
+    ).toHaveText('Showing cached results while the provider is unavailable.');
     await expect(page.getByRole('option')).toHaveCount(2);
     const slowRequest = page.waitForRequest(
         (request) => request.method() === 'POST' && (request.postData()?.includes('slow') ?? false),
@@ -111,7 +121,12 @@ test('search states, stale-response suppression, outside dismissal and mutual ex
     await slowRequest;
     await input.fill('empty');
     await expect(page.getByRole('option')).toHaveCount(0);
-    await expect(page.getByText('No films found. Try another title.')).toBeVisible();
+    await expect(
+        page
+            .getByRole('group', { name: 'Film search results' })
+            .getByRole('paragraph')
+            .filter({ hasText: 'No films found. Try another title.' }),
+    ).toBeVisible();
     await expect(page.getByText('Old film')).toHaveCount(0);
     await page.getByRole('heading', { level: 1 }).click();
     await expect(input).toBeHidden();
@@ -130,42 +145,31 @@ test('touch result navigation and anonymous Movie route', async ({ browser }) =>
         hasTouch: true,
         viewport: { width: 390, height: 844 },
     });
-    const page = await context.newPage();
-    const moviePath = `/movies/${MOVIE_ID}`;
-    await page.goto(moviePath);
-    await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(moviePath)}`);
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-search-touch',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
-    await page.goto('/app', { waitUntil: 'load' });
-    await settle(page);
-    await page
-        .getByRole('button', { name: 'Search films', exact: true })
-        .filter({ visible: true })
-        .tap();
-    await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
-    await page.getByRole('option').first().tap();
-    await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
-    await context.close();
+    try {
+        const page = await context.newPage();
+        const moviePath = `/movies/${MOVIE_ID}`;
+        await page.goto(moviePath);
+        await expect(page).toHaveURL(`/login?returnTo=${encodeURIComponent(moviePath)}`);
+        await signInMock(context, 'valid-search-touch');
+        await page.goto('/app', { waitUntil: 'load' });
+        await settle(page);
+        await page
+            .getByRole('button', { name: 'Search films', exact: true })
+            .filter({ visible: true })
+            .tap();
+        await page.getByRole('combobox', { name: 'Search films' }).fill('Film');
+        await page.getByRole('option').first().tap();
+        await expect(page).toHaveURL(`/movies/${MOVIE_ID}`);
+    } finally {
+        await context.close();
+    }
 });
 
 test('search renders available same-origin posters and preserves film rows when an image fails', async ({
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-search-posters',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-search-posters');
     await page.route('**/api/movies/*/poster', (route) =>
         route.fulfill({
             status: 200,

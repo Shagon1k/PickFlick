@@ -63,7 +63,11 @@ export function handleLibrary(
         const items = getLibraryRatings(token).filter(
             (item) => search(item.title) && (!query.score || item.score === Number(query.score)),
         );
-        if (query.sort === 'title') items.sort((a, b) => a.title.localeCompare(b.title));
+        if (query.sort === 'title')
+            items.sort((a, b) => {
+                const compared = a.title.localeCompare(b.title);
+                return query.direction === 'desc' ? -compared : compared;
+            });
         const body: TLibrary = { tab: 'my-ratings', ...paginate(items, query.page) };
         sendJson(response, 200, body);
     }

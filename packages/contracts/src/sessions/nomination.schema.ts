@@ -15,6 +15,7 @@ export const nominationMovieSchema = z.strictObject({
 });
 export type TNominationMovie = z.infer<typeof nominationMovieSchema>;
 export const nominationsSchema = z.strictObject({
+    memberCount: z.number().int().nonnegative(),
     acceptedCount: z.number().int().nonnegative(),
     nominatedCount: z.number().int().nonnegative(),
     canSubmit: z.boolean(),
@@ -28,5 +29,6 @@ export const nominationsSchema = z.strictObject({
         }),
     ),
     suggestions: z.array(nominationMovieSchema),
+    watchlist: z.array(nominationMovieSchema),
 });
 export type TNominations = z.infer<typeof nominationsSchema>;

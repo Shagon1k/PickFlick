@@ -2,9 +2,9 @@ import { NotFoundException } from '@nestjs/common';
 import { type ISessionRoster, isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { getInviteState } from '../../../common/invite-token.js';
-import { findMembership } from '../../clubs/access/club-access.js';
-import { canManage } from '../session-access.js';
+import { findMembership, loadClubAccess } from '../../clubs/access/club-access.js';
+import { getClubPermissions } from '../../clubs/access/club-permissions.js';
+import { canJoinSession, canRemoveParticipant, getOwnStatus } from '../session-access.js';
 
 export async function readRoster(
     tx: Prisma.TransactionClient,
@@ -15,31 +15,28 @@ export async function readRoster(
     if (!session) throw new NotFoundException();
     const membership = await findMembership(tx, userId, session.clubId);
     const isOpen = isOpenSessionPhase(session.phase);
-    const isActive = membership.club.lifecycle === 'ACTIVE';
+    const { access, memberCount } = await loadClubAccess(tx, membership.club);
     // One rule decides every roster control: invite, revoke, and remove.
-    const isManager = isOpen && (await canManage(tx, membership));
+    const isManager =
+        isOpen &&
+        getClubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
     const participants = await tx.sessionParticipant.findMany({
         where: { sessionId },
         orderBy: { createdAt: 'asc' },
-        include: {
-            membership: { include: { user: true } },
-            invitations: { orderBy: { createdAt: 'desc' }, take: 1 },
-        },
+        include: { membership: { include: { user: true } } },
     });
+    const ownStatus = getOwnStatus(
+        participants.filter((participant) => participant.membership.userId === userId),
+        membership.id,
+    );
     return {
         progressVersion: session.progressVersion,
+        memberCount,
         acceptedCount: participants.filter((participant) => participant.status === 'ACCEPTED')
             .length,
-        canInvite: isManager,
         canManage: isManager,
-        canJoin:
-            isOpen &&
-            isActive &&
-            !participants.some(
-                (participant) =>
-                    participant.membershipId === membership.id &&
-                    ['ACCEPTED', 'REMOVED'].includes(participant.status),
-            ),
+        canJoin: canJoinSession(session, membership, ownStatus),
+        isRemoved: ownStatus === 'REMOVED',
         canLeave:
             isOpen &&
             participants.some(
@@ -61,34 +58,8 @@ export async function readRoster(
                 canRemove:
                     isManager &&
                     participant.membershipId !== membership.id &&
+                    canRemoveParticipant(membership.role, participant.membership.role) &&
                     ['INVITED', 'ACCEPTED'].includes(participant.status),
-                invitation:
-                    isManager && participant.invitations[0]
-                        ? {
-                              id: participant.invitations[0].id,
-                              expiresAt: participant.invitations[0].expiresAt.toISOString(),
-                              state: getInviteState(participant.invitations[0]),
-                          }
-                        : null,
             })),
-        eligibleMembers: isManager
-            ? (
-                  await tx.membership.findMany({
-                      where: {
-                          clubId: session.clubId,
-                          status: 'ACTIVE',
-                          user: { status: 'ACTIVE' },
-                          sessionParticipants: {
-                              none: { sessionId, status: 'ACCEPTED' },
-                          },
-                      },
-                      orderBy: { joinedAt: 'asc' },
-                      include: { user: true },
-                  })
-              ).map((membership) => ({
-                  id: membership.id,
-                  displayName: membership.user.displayName,
-              }))
-            : [],
     };
 }

@@ -74,10 +74,9 @@
     }
 }
 
-.explanation {
+.empty {
     margin: var(--gap-sm) 0 0;
-    font-size: var(--fs-caption);
-    color: var(--muted);
+    color: var(--fg-secondary);
 }
 
 @media (width < 1024px) {

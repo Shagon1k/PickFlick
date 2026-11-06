@@ -1,64 +1,95 @@
 'use client';
 
-import { type IClubMember, type IClubSettings } from '@pickflick/contracts';
+import type { IClubMember, IClubSettings, TClubRole } from '@pickflick/contracts';
 import { useActionState, useState } from 'react';
 
+import {
+    type IClubActionState,
+    initialClubActionState,
+} from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { changeClubMemberRolesAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import Button from '#components/ui/Button/Button';
 import Modal from '#components/ui/Modal/Modal';
-import { formatUtcDate, getMonogram } from '#lib/format';
+import { getMonogram } from '#lib/format';
 
-import { initialClubActionState } from '../../action-state';
-import { changeClubMemberRoleAction } from '../../actions';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 
-function MemberRoleForm({
-    clubId,
-    member,
-    writable,
-}: {
-    clubId: string;
-    member: IClubMember;
-    writable: boolean;
-}) {
-    const action = changeClubMemberRoleAction.bind(null, clubId, member.id);
-    const [state, formAction, isPending] = useActionState(action, initialClubActionState);
-    if (member.role === 'ADMIN') {
-        return <span className={styles.lockedRole}>Admin</span>;
-    }
-    return (
-        <form action={formAction} className={styles.roleForm}>
-            <fieldset className={styles.roleChoice} disabled={!writable}>
-                <legend className="visually-hidden">Role for {member.displayName}</legend>
-                {(['MEMBER', 'MODERATOR'] as const).map((role) => (
-                    <label key={role}>
-                        <input
-                            defaultChecked={member.role === role}
-                            name="role"
-                            type="radio"
-                            value={role}
-                        />
-                        <span>{role === 'MEMBER' ? 'Member' : 'Moderator'}</span>
-                    </label>
-                ))}
-            </fieldset>
-            <Button
-                disabled={!writable}
-                loading={isPending}
-                size="small"
-                type="submit"
-                variant="secondary"
-            >
-                Save role
-            </Button>
-            <ActionStatus state={state} />
-        </form>
-    );
-}
-
+/** Members move between two groups as a draft; one Save sends only the changed roles. */
 export default function ManageModerators({ projection }: { projection: IClubSettings }) {
     const [isOpen, setIsOpen] = useState(false);
-    const canEdit = projection.permissions.manageRoles && projection.club.lifecycle === 'ACTIVE';
+    const [draft, setDraft] = useState<Record<string, TClubRole>>({});
+    const [state, formAction, isPending] = useActionState(
+        async (previous: IClubActionState, formData: FormData) => {
+            const result = await changeClubMemberRolesAction(
+                projection.club.id,
+                previous,
+                formData,
+            );
+            // Saved roles now come from the refreshed projection.
+            if (result.status === 'success') setDraft({});
+            return result;
+        },
+        initialClubActionState,
+    );
+    const roleOf = (member: IClubMember) => draft[member.id] ?? member.role;
+    const changed = projection.members.filter(
+        (member) => member.role !== 'ADMIN' && roleOf(member) !== member.role,
+    );
+    const team = projection.members.filter((member) => roleOf(member) !== 'MEMBER');
+    const members = projection.members.filter((member) => roleOf(member) === 'MEMBER');
+
+    function handleClose() {
+        setDraft({});
+        setIsOpen(false);
+    }
+
+    function renderGroup(title: string, group: IClubMember[]) {
+        return (
+            <div aria-label={title} role="group">
+                <h3 className={styles.kicker}>{title}</h3>
+                {group.length ? (
+                    <ul className={styles.memberList}>
+                        {group.map((member) => {
+                            const isMember = roleOf(member) === 'MEMBER';
+                            const roleAction = isMember ? 'Promote' : 'Remove';
+                            return (
+                                <li className={styles.member} key={member.id}>
+                                    <div className={styles.memberIdentity}>
+                                        <span aria-hidden="true">
+                                            {getMonogram(member.displayName)}
+                                        </span>
+                                        <strong>{member.displayName}</strong>
+                                    </div>
+                                    {member.role === 'ADMIN' ? (
+                                        <span className={styles.lockedRole}>Admin</span>
+                                    ) : (
+                                        <Button
+                                            aria-label={`${roleAction} ${member.displayName}`}
+                                            disabled={isPending}
+                                            onClick={() =>
+                                                setDraft({
+                                                    ...draft,
+                                                    [member.id]: isMember ? 'MODERATOR' : 'MEMBER',
+                                                })
+                                            }
+                                            size="small"
+                                            variant="secondary"
+                                        >
+                                            {roleAction}
+                                        </Button>
+                                    )}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                ) : (
+                    <p className={styles.cardLead}>Nobody yet.</p>
+                )}
+            </div>
+        );
+    }
+
     return (
         <>
             <Button onClick={() => setIsOpen(true)} size="small" variant="secondary">
@@ -66,36 +97,35 @@ export default function ManageModerators({ projection }: { projection: IClubSett
             </Button>
             <Modal
                 actions={
-                    <Button onClick={() => setIsOpen(false)} variant="secondary">
-                        Close
-                    </Button>
+                    <form action={formAction} className={styles.moderatorSave}>
+                        {changed.map((member) => (
+                            <input
+                                key={member.id}
+                                name={`role:${member.id}`}
+                                type="hidden"
+                                value={roleOf(member)}
+                            />
+                        ))}
+                        <Button
+                            disabled={!changed.length}
+                            fullWidth
+                            loading={isPending}
+                            success={state.status === 'success' ? 'Saved' : ''}
+                            type="submit"
+                        >
+                            Save changes
+                        </Button>
+                    </form>
                 }
-                onClose={() => setIsOpen(false)}
+                onClose={handleClose}
                 open={isOpen}
                 title="Manage Moderators"
             >
-                <p className={styles.explanation}>
-                    Moderators run Sessions with you. {projection.members.length} of{' '}
-                    {projection.entitlements.memberLimit} member places are in use.
-                </p>
-                <ul className={styles.memberList}>
-                    {projection.members.map((member) => (
-                        <li className={styles.member} key={member.id}>
-                            <div className={styles.memberIdentity}>
-                                <span aria-hidden="true">{getMonogram(member.displayName)}</span>
-                                <div>
-                                    <strong>{member.displayName}</strong>
-                                    <small>Joined {formatUtcDate(member.joinedAt)}</small>
-                                </div>
-                            </div>
-                            <MemberRoleForm
-                                clubId={projection.club.id}
-                                member={member}
-                                writable={canEdit}
-                            />
-                        </li>
-                    ))}
-                </ul>
+                <div className={styles.moderatorGroups}>
+                    {renderGroup('Moderators', team)}
+                    {renderGroup('Members', members)}
+                </div>
+                <ActionStatus state={state} shouldAnnounceSuccess={false} />
             </Modal>
         </>
     );

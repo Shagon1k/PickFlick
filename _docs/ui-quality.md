@@ -4,7 +4,7 @@ The UI scripts build the web app, start it on loopback against a mock API
 (`tests/ui/start-frontend-with-mock-api.ts`), and run Playwright in Chromium over
 the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
 states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
-live Session creation/edit/cancellation, member-only Session invitation responses and roster
+live Session creation/edit/cancellation, member-only Session joining and roster
 management, Nomination submissions and personal suggestions, immutable Selection ballots,
 policy-filtered Selection results and early-close confirmations, historical Session Rating submission,
 partial completion and permitted results, Completed facts/ratings/nomination disclosures, Hub
@@ -35,8 +35,8 @@ Actions.
 `pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects PR behavior checks with
 `test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in
 continuation and responses, member removal, landing accessibility, a pricing interaction, product shell navigation, global Movie search and read-only Movie Details at 390, 768, 1024 and 1440px, and overflow
-at 1024px, plus full-cycle creation/edit/cancellation, keyboard pre-selected Movie creation, Session invitation
-privacy and sign-in continuation, accepted-roster leave, operator invitation/removal focus, and personal-suggestion nomination with privacy and submission locking, plus Selection completeness, keyboard scoring and immutable submission. Screenshot comparisons use the `@visual` tag;
+at 1024px, plus full-cycle creation/edit/cancellation, keyboard pre-selected Movie creation, Session
+privacy for non-members, accepted-roster leave, operator removal focus, and personal-suggestion nomination with privacy and submission locking, plus Selection completeness, keyboard scoring and immutable submission. Screenshot comparisons use the `@visual` tag;
 `test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
 accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
 reduced motion, and other behavior assertions.
@@ -103,7 +103,6 @@ file paths to the existing Playwright commands. It combines all affected areas:
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Marketing routes, contact API                                                            | Public pages                                                                                 |
 | Club invitation routes (`/invite/club/[token]`)                                          | Club invitations                                                                             |
-| Session invitation routes (`/invite/session/[token]`)                                    | Session roster                                                                               |
 | Login routes                                                                             | Authentication                                                                               |
 | Club routes (except Session creation), Club/invitation API                               | Club onboarding, Hub, invitations, members, settings, Ratings and Achievements               |
 | Session routes/components/API, including `/clubs/[clubId]/sessions/new`                  | Session workflows, roster, Nomination, Selection, Watching, Rating, history and Hub          |
@@ -115,7 +114,7 @@ specs run directly; feature baseline updates select their area too. Shared compo
 layouts, UI fixtures, contracts, configuration, dependencies, the selector and CI changes run all
 smoke and visual checks. Unmapped frontend or UI test paths also run both full selections.
 Documentation/backend-only changes skip mock UI checks; the other CI jobs still run.
-The shared authentication adapter `src/api/session.server.ts` runs both full selections.
+The shared authentication adapter `src/api/auth-session.server.ts` runs both full selections.
 A selected area with no tests carrying that suite's tag succeeds without starting the app.
 The Git comparison trusts only the current checkout directory for that command because the CI
 container user differs from the checkout owner. It does not change stored Git configuration.
@@ -188,3 +187,69 @@ trust fixes it and selects only the expected Library tests.
 Playwright listing confirms 22 visual tests for Library changes, 28 for Session changes and 10 for
 public-page changes, versus 104 for shared changes. The inventory has 53 complete 390/1440 pairs.
 Main, Delivery and the UAT artifact still require verification after merge.
+
+## Phase 18 baseline review, 2026-11-01
+
+The owner's Phase 18 choices refine the canonical screens as recorded in [DESIGN.md](../DESIGN.md)
+and the [verification register](phase-18-human-verification-3.md). The pinned Linux image generated
+62 changed baselines and ten new captures, bringing the inventory to 118 PNGs at 390/1440.
+All 72 changed/new images were inspected for composition and changed regions. Full-size checks
+also covered the new mobile dialogs and wizard, including the nomination rows and score table.
+
+| Area                            | Reviewed result                                                                                                                                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared frame and public pages   | The mobile footer fits one row; Hub statistics appear on Free; optional screening time uses its venue value. Existing page content and navigation remain in their established compositions.     |
+| Invitations and Club management | Unavailable invitations carry a reason stamp. New invite-ticket and Moderator-dialog captures cover both widths, including the shared Copy stub, Recent links accordion and single Save action. |
+| Session results and Library     | Historical ratings use the compact list with review previews; Sessions combines running and Rating entries before history; Watchlist priority uses the compact segmented editor.                |
+| Past Session wizard             | Six captures cover film/date/place, selected attendees with ratings, and two nominations with recorded/unknown cells. Ten stars fit one row; the score matrix scrolls inside its own region.    |
+
+The capture update passes 110 visual tests in the pinned image. The subsequent full run passes
+400/402: one filter check needs to wait for each pressed-state change, and a new dialog capture
+includes the previous overlay/hover state. After synchronizing those actions and capturing the
+resting backdrop, all six affected responsive cases pass three repeats (18/18), without retries.
+The two updated Moderator PNGs were inspected again. No pixel tolerance or masking rule changed;
+existing internal-shell masks remain. Full CI contract and visual checks still gate the committed
+head. Local evidence does not establish hosted owner acceptance or a main/UAT deployment.
+
+## Owner alignment review, 2026-11-01
+
+The follow-up to `666ea16` refreshes 49 PNGs and adds two imported Completed captures, bringing
+the inventory to 120. All 51 changed/new images were inspected at the same scale against their
+previous captures and the canonical prototypes, with full-size checks of affected controls. The
+review covers the footer, SVG stars and rating labels, selected-film cards, imported rival cards,
+InfoTip typography, leaderboards and Nomination/Watching counts. The native Date/Time controls
+keep the shared field gap. Recorded owner choices and partial historical evidence remain intact.
+
+The pinned Linux image passes all 112 visual checks during the update and again without updating
+snapshots. Pixel tolerance and masks are unchanged. Eight additional actual production-screen
+before/after pairs use matching synthetic fixtures at 390×844, DPR 2; they accompany the owner
+report. Interaction, keyboard and animation evidence comes from behavior checks, not static PNGs.
+Final contract, static and hosted acceptance evidence belongs to the
+[current register](phase-18-human-verification-3.md#current-alignment-evidence).
+
+## Phase 18 verification follow-up, 2026-11-04
+
+The owner ended the temporary test deferral after the UI and visibility follow-ups. The refreshed
+set contains 77 existing PNGs; the inventory remains 120. All 77 before/after pairs were inspected
+against the accepted choices in [DESIGN.md](../DESIGN.md) and the Phase 18 register. Full-size checks
+also covered the mobile Selection controls, historical nomination rows and score matrix,
+notification header, rating picker and priority editor.
+
+The changes cover the left-aligned mobile brand and larger header controls, current Club
+visibility, always-visible Club averages, compact shared result rows, Selection layout, the
+historical Session wizard, short suggestion subsections, table typography/sorting and compact
+notification feedback. Library captures now wait for a film row rather than the removed visible
+film-count caption. Existing shell masks and the zero-pixel comparison threshold are unchanged.
+
+Behavior checks include table transitions with held navigation responses, matrix sorting with
+zero/missing/tied scores and a sign-in click held until hydration. The Login regression test fails
+on the preceding implementation because the button is enabled before its handler exists; the
+fix reuses the existing hydration hook. Final gate results belong to the
+[verification register](phase-18-human-verification-3.md#verification-resumed--2026-11-04).
+
+The hosted follow-up caught press-animation geometry in the Watchlist priority captures: scaling
+the popover anchor left Floating UI at a fractional intermediate position. The control now pulses
+its existing inner press surface; its anchor stays fixed. Captures also wait for the automatic
+Medium save to finish. Seven Watchlist contract checks and ten repeated strict Linux comparisons
+pass after the fix, without changing either baseline PNG or the screenshot tolerance. The
+[hosted follow-up](phase-18-human-verification-3.md#hosted-visual-follow-up) records the reproduction.

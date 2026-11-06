@@ -23,7 +23,15 @@ export const invitationPreviewSchema = z.discriminatedUnion('state', [
     }),
     z.object({ state: z.enum(['already-member', 'accepted']), clubId: z.uuid() }),
     z.object({
-        state: z.enum(['invalid', 'expired', 'revoked', 'over-limit', 'unavailable', 'declined']),
+        state: z.enum([
+            'invalid',
+            'used',
+            'expired',
+            'revoked',
+            'over-limit',
+            'unavailable',
+            'declined',
+        ]),
     }),
 ]);
 export type TInvitationPreview = z.infer<typeof invitationPreviewSchema>;
@@ -45,3 +53,6 @@ export interface IPendingClubInvitation {
     inviterName: string;
     expiresAt: string;
 }
+
+/** A Club invitation link admits one person and expires after this many hours. */
+export const CLUB_INVITATION_LIFETIME_HOURS = 12;

@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { IClubHub } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
+import { HUB_HISTORY_LIMIT, type IClubHub } from '@pickflick/contracts';
 
 import {
     addMember,
@@ -9,10 +8,10 @@ import {
     createUser,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
 import { buildCanonicalDetails } from '../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { buildDetailsCacheKey } from '../../movies/catalog-cache-key.js';
 
 describe('Club Hub projection', () => {
@@ -67,14 +66,12 @@ describe('Club Hub projection', () => {
             club: { id: first, name: 'First Club' },
             memberCount: 1,
             sessionCount: 1,
-            completedSessionCount: 0,
             activeSession: { topic: 'First Club private Session' },
         });
         expect(secondHub).toMatchObject({
             club: { id: second, name: 'Second Club' },
             memberCount: 2,
             sessionCount: 1,
-            completedSessionCount: 1,
             recentSessions: [{ topic: 'Second Club private Session' }],
         });
         expect(JSON.stringify(secondHub)).not.toContain('First Club private Session');
@@ -82,42 +79,24 @@ describe('Club Hub projection', () => {
 
     it('should retain open Rating Sessions beyond recent activity and prefer a blocking Session', async () => {
         const ratingId = randomUUID();
-        const settings = await snapshotSessionSettings(api.prisma, second);
-        await api.prisma.session.createMany({
-            data: [
-                {
-                    ...(await snapshotSessionSettings(api.prisma, first)),
-                    id: randomUUID(),
-                    clubId: first,
-                    type: 'FULL_CYCLE',
-                    phase: 'RATING',
-                },
-                {
-                    id: randomUUID(),
-                    clubId: second,
-                    ...settings,
-                    type: 'FULL_CYCLE',
-                    phase: 'RATING',
-                    updatedAt: new Date('2026-01-01T00:00:00Z'),
-                },
-                {
-                    id: ratingId,
-                    clubId: second,
-                    ...settings,
-                    type: 'FULL_CYCLE',
-                    phase: 'RATING',
-                    updatedAt: new Date('2026-01-02T00:00:00Z'),
-                },
-                ...Array.from({ length: 5 }, () => ({
-                    id: randomUUID(),
-                    clubId: second,
-                    ...settings,
-                    type: 'PAST' as const,
-                    phase: 'COMPLETED' as const,
-                    updatedAt: new Date('2026-02-01T00:00:00Z'),
-                })),
-            ],
+        await createSession(api.prisma, first, { type: 'FULL_CYCLE', phase: 'RATING' });
+        await createSession(api.prisma, second, {
+            type: 'FULL_CYCLE',
+            phase: 'RATING',
+            updatedAt: new Date('2026-01-01T00:00:00Z'),
         });
+        await createSession(api.prisma, second, {
+            id: ratingId,
+            type: 'FULL_CYCLE',
+            phase: 'RATING',
+            updatedAt: new Date('2026-01-02T00:00:00Z'),
+        });
+        for (let index = 0; index < 5; index += 1)
+            await createSession(api.prisma, second, {
+                type: 'PAST',
+                phase: 'COMPLETED',
+                updatedAt: new Date('2026-02-01T00:00:00Z'),
+            });
 
         const firstHub = (await (
             await api.request(`/clubs/${first}/hub`, { userId: admin })
@@ -239,10 +218,13 @@ describe('Club Hub projection', () => {
         expect(await response.text()).not.toContain('Second Club');
     });
 
-    it('should project Rating progress and policy-filtered historical averages from received responses', async () => {
+    it('should project Rating progress and, once completed, the Club average for every role', async () => {
         const users = await Promise.all(Array.from({ length: 3 }, () => createUser(api.prisma)));
         const clubId = randomUUID();
-        await api.prisma.club.create({ data: { id: clubId, name: 'History projection' } });
+        // Hidden individual ratings never hide the Club average.
+        await api.prisma.club.create({
+            data: { id: clubId, name: 'History projection', showRatingsAfter: false },
+        });
         try {
             const memberships = [];
             for (const [index, role] of (['ADMIN', 'MODERATOR', 'MEMBER'] as const).entries())
@@ -250,7 +232,6 @@ describe('Club Hub projection', () => {
             const session = await createSession(api.prisma, clubId, {
                 type: 'PRE_SELECTED',
                 phase: 'RATING',
-                showRatingResults: false,
             });
             for (const [index, membershipId] of memberships.entries()) {
                 const participant = await api.prisma.sessionParticipant.create({
@@ -281,48 +262,46 @@ describe('Club Hub projection', () => {
                 where: { id: session.id },
                 data: { phase: 'COMPLETED' },
             });
-            await api.prisma.club.update({
-                where: { id: clubId },
-                data: { showRatingResults: true },
-            });
-            for (const userId of users.slice(0, 2))
+            for (const userId of users)
                 expect((await read(userId)).historySessions).toMatchObject([
                     { id: session.id, ratingAverage: 7 },
                 ]);
-            expect((await read(users[2]!)).historySessions).toMatchObject([
-                { id: session.id, ratingAverage: null },
-            ]);
-            await api.prisma.membership.update({
-                where: { id: memberships[1] },
-                data: { role: 'MEMBER' },
-            });
-            expect((await read(users[1]!)).historySessions[0]?.ratingAverage).toBeNull();
-            const published = await createSession(api.prisma, clubId, {
-                type: 'PRE_SELECTED',
-                phase: 'RATING',
-                showRatingResults: true,
-            });
-            const participant = await api.prisma.sessionParticipant.create({
-                data: {
-                    sessionId: published.id,
-                    clubId,
-                    membershipId: memberships[0]!,
-                    status: 'ACCEPTED',
-                },
-            });
-            await api.prisma.sessionRating.create({
-                data: { sessionId: published.id, participantId: participant.id, score: 9 },
-            });
-            await api.prisma.session.update({
-                where: { id: published.id },
-                data: { phase: 'COMPLETED' },
-            });
-            expect(
-                (await read(users[2]!)).historySessions.find(({ id }) => id === published.id)
-                    ?.ratingAverage,
-            ).toBe(9);
         } finally {
             await removeUsers(api.prisma, users);
+        }
+    });
+
+    it('should keep the average of a recent Completed Session that newer cancellations push out of history', async () => {
+        const owner = await createUser(api.prisma);
+        const clubId = randomUUID();
+        await api.prisma.club.create({ data: { id: clubId, name: 'Recent average' } });
+        try {
+            const membershipId = await addMember(api.prisma, clubId, owner, 'ADMIN');
+            const completed = await createSession(api.prisma, clubId, {
+                type: 'PRE_SELECTED',
+                phase: 'RATING',
+            });
+            const participant = await api.prisma.sessionParticipant.create({
+                data: { sessionId: completed.id, clubId, membershipId, status: 'ACCEPTED' },
+            });
+            await api.prisma.sessionRating.create({
+                data: { sessionId: completed.id, participantId: participant.id, score: 8 },
+            });
+            await api.prisma.session.update({
+                where: { id: completed.id },
+                data: { phase: 'COMPLETED' },
+            });
+            for (let index = 0; index < HUB_HISTORY_LIMIT; index++)
+                await createSession(api.prisma, clubId, { type: 'PAST', phase: 'CANCELLED' });
+
+            const hub = (await (
+                await api.request(`/clubs/${clubId}/hub`, { userId: owner })
+            ).json()) as IClubHub;
+
+            expect(hub.historySessions.map(({ id }) => id)).not.toContain(completed.id);
+            expect(hub.recentSessions).toMatchObject([{ id: completed.id, ratingAverage: 8 }]);
+        } finally {
+            await removeUsers(api.prisma, [owner]);
         }
     });
 });

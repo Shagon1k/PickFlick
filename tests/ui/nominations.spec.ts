@@ -1,22 +1,94 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const PATH = '/sessions/30000000-0000-4000-8000-000000000042';
-async function authenticate(context: BrowserContext, scenario = '', token?: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token ?? `valid-nomination-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+
+test(
+    'Nomination progress includes a Club member who has not joined yet',
+    { tag: '@smoke' },
+    async ({ context, page }) => {
+        await signInMock(context, 'valid-nomination-waiting-member');
+        await page.goto(PATH, { waitUntil: 'load' });
+        await expect(
+            page
+                .getByRole('status')
+                .filter({ hasText: /^Nomination in progress — 2 of 3 members have nominated\.$/u }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('heading', { name: 'Movie Nomination', exact: true }),
+        ).toBeVisible();
+        await expect(
+            page
+                .getByRole('region', { name: 'Session details', exact: true })
+                .getByText('2/3', { exact: true }),
+        ).toBeVisible();
+    },
+);
+
+async function authenticate(context: BrowserContext, scenario = '') {
+    await signInMock(context, `valid-nomination-${scenario}-${crypto.randomUUID()}`);
 }
+
+for (const [scenario, joinCount, removedCount] of [
+    ['readonly', 0, 0],
+    ['removed', 0, 1],
+    ['unjoined', 1, 0],
+] as const) {
+    test(
+        `Nomination ${scenario} state keeps the nomination list without a misleading composer`,
+        { tag: '@smoke' },
+        async ({ context, page }) => {
+            await authenticate(context, scenario);
+            await page.setViewportSize({ width: 1440, height: 900 });
+            await page.goto(PATH, { waitUntil: 'load' });
+            await settle(page);
+            await expect(
+                page.getByRole('heading', { name: 'Find & Nominate a Movie' }),
+            ).toHaveCount(0);
+            await expect(page.getByRole('combobox', { name: 'Select a Movie' })).toHaveCount(0);
+            await expect(page.getByText('Join the Session to nominate a film.')).toHaveCount(0);
+            await expect(
+                page.getByRole('button', { name: 'Join Session', exact: true }),
+            ).toHaveCount(joinCount);
+            await expect(page.getByText('Removed', { exact: false })).toHaveCount(removedCount);
+            const nominations = page.getByRole('region', {
+                name: 'Current Nominations',
+                exact: true,
+            });
+            await expect(
+                nominations.getByRole('link', { name: 'Current private film (2020)' }),
+            ).toBeVisible();
+            const width = await nominations.evaluate(
+                (element) => element.getBoundingClientRect().width,
+            );
+            const available = await page
+                .getByRole('region', { name: 'Movie nomination', exact: true })
+                .evaluate((element) => element.getBoundingClientRect().width);
+            expect(width).toBeGreaterThanOrEqual(available - 1);
+        },
+    );
+}
+
+test('Read-only Nomination keeps hidden nominations private without a composer', async ({
+    context,
+    page,
+}) => {
+    await authenticate(context, 'readonly-hidden');
+    await page.goto(PATH);
+    await expect(
+        page
+            .getByRole('region', { name: 'Current Nominations', exact: true })
+            .getByText('Nominations are hidden.', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Find & Nominate a Movie' })).toHaveCount(0);
+    await expect(page.getByText('Current private film', { exact: false })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Join Session', exact: true })).toHaveCount(0);
+});
 
 test(
     'Personal suggestion uses the submission flow and locks the confirmed Movie',
@@ -25,20 +97,36 @@ test(
         await authenticate(context, 'hidden-anonymous');
         await page.goto(PATH);
         await expect(
-            page.getByText('Nominations are hidden until you submit your own Movie.'),
+            page
+                .getByRole('region', { name: 'Current Nominations', exact: true })
+                .getByText('Nominations stay hidden until you nominate.'),
         ).toBeVisible();
         await expect(page.getByText('Current private film')).toHaveCount(0);
         await page.getByRole('button', { name: 'Past losing nomination (2020)' }).focus();
         await page.keyboard.press('Enter');
-        await expect(page.getByText('Selected:', { exact: false })).toHaveCount(1);
-        await page.getByRole('button', { name: 'Nominate This' }).focus();
+        await expect(page.getByRole('textbox', { name: 'Select a Movie' })).toHaveValue(
+            'Past losing nomination',
+        );
+        await page.getByRole('button', { name: 'Nominate selected film' }).focus();
         await page.keyboard.press('Enter');
-        await expect(page.getByText('Your nomination is confirmed.')).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Nominate This' })).toHaveCount(0);
-        await expect(page.getByText('2 of 3 participants have nominated.')).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Find & Nominate a Movie' })).toBeFocused();
-        await page.getByRole('button', { name: 'Refresh nominations' }).click();
-        await expect(page.getByText('Nominations refreshed.')).toBeVisible();
+        const confirmation = page
+            .getByRole('status')
+            .filter({ hasText: 'Your nomination is confirmed.' });
+        await expect(confirmation).toHaveText('Your nomination is confirmed.');
+        expect(
+            await confirmation.evaluate((element) => element.getBoundingClientRect().height),
+        ).toBeLessThanOrEqual(1);
+        await expect(
+            page.getByRole('region', { name: 'Your nomination', exact: true }).getByRole('link', {
+                name: 'Past losing nomination (2020)',
+                exact: true,
+            }),
+        ).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Nominate selected film' })).toHaveCount(0);
+        await expect(
+            page.getByRole('status').filter({ hasText: '2 of 3 members have nominated.' }),
+        ).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Your nomination' })).toBeFocused();
         await expect(page.getByText('by Jordan Member')).toHaveCount(0);
     },
 );
@@ -54,17 +142,20 @@ test('Search selection and failure/offline states retain the selected Movie', as
     await expect(page.getByRole('option').first()).toBeVisible();
     await search.press('ArrowDown');
     await search.press('Enter');
-    await page.getByRole('button', { name: 'Nominate This' }).click();
+    await page.getByRole('button', { name: 'Nominate selected film' }).click();
     await expect(
-        page.getByText('We could not save this action. Your selection is still here; try again.'),
+        page.getByRole('status').filter({
+            hasText: 'We could not save this action. Your selection is still here; try again.',
+        }),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Remove selected Movie' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Change film' })).toBeVisible();
     await context.setOffline(true);
-    await page.getByRole('button', { name: 'Nominate This' }).click();
+    await page.getByRole('button', { name: 'Nominate selected film' }).click();
     await expect(
-        page.getByText(
-            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
-        ),
+        page.getByRole('status').filter({
+            hasText:
+                'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
+        }),
     ).toBeVisible();
 });
 
@@ -76,11 +167,15 @@ test('Operator early close traps and returns focus and requires confirmation', a
     await page.goto(PATH);
     const close = page.getByRole('button', { name: 'Session settings', exact: true });
     await close.click();
+    await settle(page);
     await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Confirm close' })).toBeDisabled();
     await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await settle(page);
     await expect(close).toBeFocused();
     await close.click();
+    await settle(page);
     await page.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
     await page.getByLabel('Type CLOSE to confirm').fill('CLOSE');
     await page.getByRole('button', { name: 'Confirm close' }).click();
@@ -109,20 +204,17 @@ for (const viewport of canonicalViewports) {
         const listBounds = await page
             .getByRole('heading', { name: 'Current Nominations' })
             .boundingBox();
-        expect(
-            Boolean(
-                formBounds &&
-                listBounds &&
-                (viewport.width >= 1024
-                    ? Math.abs(formBounds.y - listBounds.y) < 2
-                    : listBounds.y > formBounds.y),
-            ),
-        ).toBe(true);
+        expect(formBounds).not.toBeNull();
+        expect(listBounds).not.toBeNull();
+        // Wide screens place the two cards side by side; narrower ones stack the list below.
+        const offset = listBounds!.y - formBounds!.y;
+        const isSideBySide = viewport.width >= 1024;
+        expect(Math.abs(offset) < 2, `list heading is ${offset}px below the form`).toBe(
+            isSideBySide,
+        );
+        expect(offset > 0, `list heading is ${offset}px below the form`).toBe(!isSideBySide);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        expect(
-            await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-        ).toBe(true);
-        await page.screenshot({ path: test.info().outputPath('nomination.png'), fullPage: true });
+        await expectNoPageOverflow(page);
     });
 }
 
@@ -133,16 +225,24 @@ test(
         const actor = await browser.newContext();
         const viewer = await browser.newContext();
         const token = `valid-nomination-operator-live-${crypto.randomUUID()}`;
-        await authenticate(actor, '', token);
-        await authenticate(viewer, '', token);
+        await signInMock(actor, token);
+        await signInMock(viewer, token);
         const actorPage = await actor.newPage();
         const viewerPage = await viewer.newPage();
         try {
             await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
-            await expect(viewerPage.getByText('1 of 3 participants have nominated.')).toBeVisible();
+            await expect(
+                viewerPage
+                    .getByRole('status')
+                    .filter({ hasText: '1 of 3 members have nominated.' }),
+            ).toBeVisible();
             await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
-            await actorPage.getByRole('button', { name: 'Nominate This' }).click();
-            await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible();
+            await actorPage.getByRole('button', { name: 'Nominate selected film' }).click();
+            await expect(
+                viewerPage
+                    .getByRole('status')
+                    .filter({ hasText: '2 of 3 members have nominated.' }),
+            ).toBeVisible();
             await viewer.setOffline(true);
             await actorPage.getByRole('button', { name: 'Session settings', exact: true }).click();
             await actorPage
@@ -164,27 +264,6 @@ test(
     },
 );
 
-test('Progress polling shows another participant nomination', async ({ browser }) => {
-    const actor = await browser.newContext();
-    const viewer = await browser.newContext();
-    const token = `valid-nomination-live-${crypto.randomUUID()}`;
-    await authenticate(actor, '', token);
-    await authenticate(viewer, '', token);
-    const actorPage = await actor.newPage();
-    const viewerPage = await viewer.newPage();
-    try {
-        await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
-        await actorPage.getByRole('button', { name: 'Past losing nomination (2020)' }).click();
-        await actorPage.getByRole('button', { name: 'Nominate This' }).click();
-        await expect(viewerPage.getByText('2 of 3 participants have nominated.')).toBeVisible({
-            timeout: 20000,
-        });
-    } finally {
-        await actor.close();
-        await viewer.close();
-    }
-});
-
 for (const projection of ['detail', 'roster']) {
     test(
         `Live progress recovers after a failed authoritative ${projection} refresh`,
@@ -193,26 +272,32 @@ for (const projection of ['detail', 'roster']) {
             const actor = await browser.newContext();
             const viewer = await browser.newContext();
             const token = `valid-nomination-refresh-${projection}-${crypto.randomUUID()}`;
-            await authenticate(actor, '', token);
-            await authenticate(viewer, '', token);
+            await signInMock(actor, token);
+            await signInMock(viewer, token);
             const actorPage = await actor.newPage();
             const viewerPage = await viewer.newPage();
             try {
                 await Promise.all([actorPage.goto(PATH), viewerPage.goto(PATH)]);
                 await expect(
-                    viewerPage.getByText('1 of 3 participants have nominated.'),
+                    viewerPage
+                        .getByRole('status')
+                        .filter({ hasText: '1 of 3 members have nominated.' }),
                 ).toBeVisible();
                 await actorPage
                     .getByRole('button', { name: 'Past losing nomination (2020)' })
                     .click();
-                await actorPage.getByRole('button', { name: 'Nominate This' }).click();
+                await actorPage.getByRole('button', { name: 'Nominate selected film' }).click();
                 await expect(
                     viewerPage.getByRole('heading', { name: 'Session unavailable' }),
                 ).toBeVisible();
                 // Recovery waits for the failure window and one or two progress polls.
                 await expect(
-                    viewerPage.getByText('2 of 3 participants have nominated.'),
-                ).toBeVisible({ timeout: 20000 });
+                    viewerPage
+                        .getByRole('status')
+                        .filter({ hasText: '2 of 3 members have nominated.' }),
+                ).toBeVisible({
+                    timeout: 20000,
+                });
                 await expect(
                     viewerPage.getByRole('heading', { name: 'Session unavailable' }),
                 ).toHaveCount(0);
@@ -225,12 +310,16 @@ for (const projection of ['detail', 'roster']) {
 }
 
 test(
-    'A departure between roster and detail reads recovers at the unchanged detail version',
+    'A departure between detail and roster reads recovers at the unchanged phase version',
     { tag: '@smoke' },
     async ({ context, page }) => {
         await authenticate(context, 'split-roster');
         await page.goto(PATH);
-        await expect(page.getByText('1 of 2 participants have nominated.')).toBeVisible();
+        await expect(
+            page
+                .getByRole('status')
+                .filter({ hasText: /^Nomination in progress — 1 of 3 members have nominated\.$/u }),
+        ).toBeVisible();
         await expect(page.getByText('Jordan', { exact: true })).toHaveCount(0);
     },
 );
@@ -246,9 +335,6 @@ for (const viewport of screenshotViewports) {
             await settle(page);
             await expect(page).toHaveScreenshot(`nominations-${viewport.name}.png`, {
                 fullPage: true,
-                animations: 'disabled',
-                caret: 'hide',
-                scale: 'css',
             });
         },
     );
@@ -261,13 +347,17 @@ test('the Session header shares the existing member-only Session link', async ({
     await authenticate(context, 'operator-copy');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto(PATH);
-    await page.getByRole('button', { name: 'Invite', exact: true }).click();
+    const invite = page.getByRole('button', { name: 'Invite', exact: true });
+    await invite.click();
     await expect
         .poll(() => page.evaluate(() => navigator.clipboard.readText()))
         .toBe(`http://127.0.0.1:41730${PATH}`);
-    await expect(
-        page
-            .getByRole('status')
-            .filter({ hasText: 'Session link copied. Share it with your Club.' }),
-    ).toBeVisible();
+    await expect(invite).toHaveAttribute('data-state', 'success');
+    await expect(invite).toHaveAccessibleName('Invite');
+    const confirmation = page.getByRole('status').filter({ hasText: /^Copied$/u });
+    await expect(confirmation).toHaveText('Copied');
+    expect(
+        await confirmation.evaluate((element) => element.getBoundingClientRect().height),
+    ).toBeLessThanOrEqual(1);
+    await expect(invite).not.toHaveAttribute('data-state', 'success');
 });

@@ -2,8 +2,32 @@ import Link from 'next/link';
 
 import { getMovieDetails } from '#api/movies.server';
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from '../../page.module.scss';
+
+type TRelatedResult = Awaited<ReturnType<typeof getMovieDetails>>['result'];
+
+function describeRelated(result: TRelatedResult) {
+    if (result.state === 'unavailable')
+        return {
+            posterUrl: null,
+            posterTitle: 'Related film',
+            name: 'Related film unavailable',
+            label: 'Open details to try again',
+        };
+    const title = formatMovieTitle(result.data);
+    return {
+        posterUrl: result.data.posterUrl,
+        posterTitle: title,
+        name: title,
+        label:
+            result.state === 'stale'
+                ? 'Cached details'
+                : String(result.data.releaseYear ?? 'Year unavailable'),
+    };
+}
 
 export default async function RelatedMovies({ ids }: { ids: string[] }) {
     const movies = await Promise.all(
@@ -12,34 +36,24 @@ export default async function RelatedMovies({ ids }: { ids: string[] }) {
     return (
         <div className={styles.relatedGrid}>
             {movies.map(({ id, result }) => {
-                let label = 'Open details to try again';
-                if (result.state !== 'unavailable')
-                    label =
-                        result.state === 'stale'
-                            ? 'Cached details'
-                            : String(result.data.releaseYear ?? 'Year unavailable');
+                const card = describeRelated(result);
                 return (
                     <Link
                         className={styles.relatedCard}
+                        data-color-reveal-trigger
+                        data-color-reveal-surface
                         href={`/movies/${id}`}
                         key={id}
                         prefetch={false}
                     >
+                        <ColorReveal variant="surface" />
                         <MoviePoster
                             className={styles.relatedPoster}
-                            url={result.state === 'unavailable' ? null : result.data.posterUrl}
-                            title={
-                                result.state === 'unavailable'
-                                    ? 'Related film'
-                                    : (result.data.title ?? 'Untitled film')
-                            }
+                            url={card.posterUrl}
+                            title={card.posterTitle}
                         />
-                        <strong>
-                            {result.state === 'unavailable'
-                                ? 'Related film unavailable'
-                                : (result.data.title ?? 'Untitled film')}
-                        </strong>
-                        <span>{label}</span>
+                        <strong>{card.name}</strong>
+                        <span>{card.label}</span>
                     </Link>
                 );
             })}

@@ -352,7 +352,7 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - 10 stars, hover fills all stars up to hovered one
 - Click locks selection, label shows "N/10"
 - On mobile: horizontal scroll
-- Pop animation (`@keyframes pipPop`) on click
+- Shared press pulse starts on pointer-down; selection still commits on click.
 
 ### Pills & Chips
 - `.pill` — rounded tag (phase: Nomination, Selection, Rating)
@@ -379,6 +379,9 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - `.sprocket` — larger version for Session Details
 
 ### Modals
+
+- Edit Session uses the shared Modal frame. Its live-status paragraph stays mounted for announcements
+  but has zero height/margin when empty; the form must not add a blank footer under Cancel/Save.
 - Full-screen dark overlay
 - Centered card with title, content, action buttons
 - Gear popover → Next Phase / Change details / Kick / Cancel session
@@ -391,7 +394,9 @@ Buttons are a shared component. Every standalone page copies this exact class co
 ### Header
 - Sticky topbar, backdrop blur
 - Desktop: logo left, nav center, search + bell + avatar right
-- Mobile: logo centered, search icon right-aligned with 16px gutter
+- Mobile/compact header below 1024px: panda and wordmark in one row at the left, search/actions at the right; 16px gutters on phones and a 63px total header height
+- All header wordmarks use the home page's shared 19px display-serif type, including mobile product and Session headers
+- Product Search, Notifications, Account and Search Close share 48px targets, 42px rings and 20px action glyphs; account photos use the existing 40px Avatar size
 - Avatar popover: film-strip with Settings → Privacy → Pricing → Contact Us → Sign out; App Admin adds `Admin Panel` as the first row
 
 ### Footer (Mobile)
@@ -405,9 +410,61 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - Search icon in header (desktop: next to bell, mobile: right edge)
 - Panel slides down, covers header
 - Centered input, search by film title
+- Header and form search share one results component: 2px gap, fixed 320px panel (clamped on short
+  viewports), right-aligned 32px count header and compact 64px rows with year and available genres.
+  Loading skeleton includes the count slot; empty/error states keep panel height with centered copy.
+  Loading announcements, attribution, combobox keyboard behavior and reduced motion remain.
+- Below 1024px the input fills the header's content width beside Close; Close exactly replaces
+  Search's center, 48px target and 42px ring, retaining the same phone/tablet outer gutters
 - 20-film database, real-time results
 
 ---
+
+### Loading skeletons
+
+- Build all skeleton paint from the shared UI `Skeleton`: text/title, avatar, poster, control and
+  block variants, with shared shimmer and reduced-motion handling. Content compositions own only
+  layout. Keep one accessible loading status; decorative blocks are hidden from assistive technology.
+  Already-authorized text may be measured invisibly to preserve its exact wrapping and font metrics;
+  the shared paint covers that box. Loading compositions are inert, including reused UI controls.
+- Hub's six tabs use content-shaped fallbacks: seven-stat Overview with member pills/cards,
+  Session/History rows, Ratings table, Members list, achievement filters/shelf and Settings forms.
+  Members omits a top-action placeholder because that action is absent from the real layout.
+  Achievement filter placeholders match the live counter/label line heights, 24px vertical padding,
+  8px inner gap and four-to-two-column transition below 576px; 100px is a minimum, not their height.
+  Leave 32px (`--gap-lg`) between the filters and achievement shelf, matching the live layout.
+  The shelf itself keeps three columns from 768px and two below, 80/64px medals, real card padding,
+  a three-line description slot and 5px progress. Overview/Members/statistic placeholders retain
+  actual gaps and padding; statistic cards remain horizontal on phones, with Library's 104px minimum.
+  The mounted Club switcher and Call Sheet remain above the tab boundary.
+- My Library uses Ratings/Watchlist tables or the achievement shelf according to the target query
+  tab. Its tab-keyed content boundary and independent statistics boundary show the appropriate
+  fallback while server content streams; initial loading includes the eight-stat summary.
+  Center 24px numeric/filter strips and 14px text strips in their original line boxes; do not paint
+  the whole counter/title line height. Achievement description strips have an 8px row gap.
+  The statistics summary has no standalone calculation tooltip or placeholder footer row.
+  Tables reuse Table's actual five/six-column leaderboard layout and local scrolling; no poster column
+  is invented. Pagination keeps the two arrow targets and centered page label. Hub fallbacks use
+  the frame's existing authorized snapshot for known conditional rows and actions. Manage Club has
+  its two session summaries and distinct Info, Visibility/range, Members and Danger card structures.
+- Movie/Session loading reuses MovieMedia and TicketPoster: preserve the phone ticket and compact
+  credits/synopsis/trailer order, tablet poster/credits pairing and Session's desktop credit proportion.
+  Search result dimensions, count slot, five rows and original shimmer remain unchanged.
+- Session Details uses phase-shaped compositions of the same primitive: Nomination search/cards,
+  Selection scoring rows, Watching media, Rating media plus form/results, Completed/Logged summary
+  and results, and Cancelled facts. Before the authorized Session response arrives, use only a
+  neutral heading placeholder. Once the phase is known, a nested server Suspense boundary displays
+  its composition while participants and film details load; do not infer phase from client storage.
+  Reuse the real Nomination, Selection, Your rating, Facts and Results markup in loading modes.
+  Respect submitted/eligible/hidden states already present in Session data, actual scale bounds,
+  48px result avatars, header slots and the reel/Session Details spacing. Visual/automated parity
+  remains pending during the owner fix round.
+- Replace bare content-loading paragraphs in Log a Past Session, related films and initial
+  notifications with content-shaped skeletons. The past-session loader uses the actual scene,
+  step/field/action geometry; field loading overlays the native input/textarea without copying
+  its dimensions. Related and notification placeholders reuse the real card/row classes. Keep
+  loading announcements assistive-readable and decorative controls inert. Purposeful invitation
+  checking and action-progress messages remain separate states.
 
 ## Page-Specific Rules
 
@@ -423,19 +480,131 @@ Buttons are a shared component. Every standalone page copies this exact class co
 - Shared components must be structurally and visually identical across all five states: header, `Back to Hub`, status banner, hero shell, action group, account/gear film-strip menus, genre chips, film information, section transition, Session Details rows, metric treatment, buttons, and responsive thresholds.
 - Phase-specific differences are limited to content and workflow: nomination search, selection ranking, watching/live-chat state, rating form, and completed results.
 - Status banner: transparent monochrome surface, neutral border, left info icon, and monospace text. Only the message changes by phase.
+- Phase status: shared compact capsule at the poster's top-right on desktop and phone layouts;
+  retain an inline fallback if film media is unavailable. Completed header space instead shows
+  readonly Club / historical Session You / Global cells using the Movie Details ticket rail.
+  Use 28px height, 11px body text and centered 14×14px shared SVG icons, with identical icon boxes
+  for Completed, Rating, Watching and Logged. Logged retains its InfoTip. This owner-selected
+  component supersedes the separate uppercase phase stamp and Watching live dot.
+- Rail icons are 20px. Center the icon, number and label vertically in desktop rows; retain the
+  phone ticket's stacked icon/value composition. Movie Details Personal Rating uses the same
+  value/label alignment, but Completed Session values are historical and never editable there.
+- Rating and Completed place the same results panels after Session Details; unavailable Rating
+  rows use a dash/In progress without inventing scores. Keep the active Your rating card before
+  Session Details, adapting the existing 720px outlined design, gold top accent, neutral stars and
+  compact comment input. Saved scores omit N/10 and retain historical Session semantics.
 - Header: no center navigation; use the canonical compact secondary `Back to Hub` action. Gear matches the secondary Invite treatment; Leave uses the secondary-danger treatment.
 - Film-strip menus use the same flat black stock, ivory perforations, graphite hover, thin gold active cue, and `clip-path` reveal as the account menu in `app.html`. Never distort their contents with `scaleY`.
 - Film hero: poster (grayscale, hover → color + zoom when an image exists), trailer, credits, and synopsis share one grid and one flat surface treatment.
 - Genre chips use a transparent fill with restrained ivory text/border.
 - Session Details uses one row system and one metric system. Values may change (`9.2`, `3/5`, `4/5`, `—`); geometry and typography do not.
+- The read-only Selection score matrix uses the common ruled Table frame, a 24px/600 body-font
+  section heading and a separate quiet scale label. Scores use the display font; participant and
+  film headers support the shared ascending/descending/reset sort cycle with aria-sort and 44px
+  keyboard/touch controls. Keep missing cells last in either direction, zero numeric and equal
+  values stable. Sorting reorders rows only; phones scroll inside the labelled table region.
+  Film titles wrap at word boundaries and keep their longest word intact, expanding the locally
+  scrolling table when needed rather than splitting a title such as Superman across letters.
+- Failed invitation/notification reads use a shared warning Alert and a separated retry button
+  inside padded overlay content. An invitation error replaces its checking label; show Retry only
+  on failure and keep its standard pending/disabled state. Session polling warnings use the page's
+  content width/gutters and automatic recovery. Library and Club Ratings recovery actions retain
+  a normal gap from their Alert; feature CSS must not reset shared Button appearance.
+- Individual-rating switches hide peer scores/comments, while the caller's own rating and Club
+  average remain visible. Apply this to Rating/Completed/Logged summaries, History/activity,
+  Club statistics and the Ratings leaderboard. An average needs no own submission; no received
+  ratings means `—`. Settings names the switches Show individual ratings and explains the average.
+- Completed results retain the two outer panel outlines and use separate rounded cards per row.
+  Both headings match Open Ratings: 24px, 600 body sans. Panel padding/header slots match; rows
+  share a 104px minimum and lists a 300px maximum, with stretched desktop panel heights.
+  Loading modes share the same minimum; Hub Session/History rows and their skeletons use
+  matching 12px vertical padding.
+  Ratings show user photos/initials and Rivals show actual posters. A live Selection average is a
+  framed avg. button with chevron and visible hover/focus/open states; imported totals stay plain.
+  Individual Ratings list scores use `1.0`–`9.0` and `10`; loading text measures the same labels.
+  Ratings use 48px avatars. Read-only totals align right; show per-film score counts only when
+  they differ, while retaining equal counts for assistive technology.
+  Nomination and live/Logged Rivals share `NominationMovieCard` and `NominationMovieList`.
+  Posters center vertically at 48×72px; title, 12px author credit and genres stay in one top-aligned
+  block with 4px gaps. An independent right-hand slot holds total or a 52px-minimum avg. button
+  at every width, without stretching title/author spacing or adding a phone footer. Both score
+  numerals share History's 600-weight display font: 28px normally and 22px below 576px through
+  one font token, including Ratings and loading states. The native full-card Movie link excludes the avg.
+  button, preserves keyboard focus and omits title underlining. A naturally sized inner grid
+  gives every card in a list the tallest card's height; its outer scroller keeps the 300px maximum.
+  Keep the 104px minimum, 12px padding/radius, Nomination's three-genre limit and Rivals' full genre
+  list. The Logged viewed-film badge reads Watched and does not imply a computed winner.
+- Nomination's Find & Nominate and Current Nominations reuse those 24px/600 headings and 20px
+  panel padding. Find & Nominate uses content height with a 280px minimum; Current Nominations
+  matches the left panel's height with local scrolling and cannot expand the paired desktop row;
+  compact layouts stack with natural heights. Each nomination is a whole Movie link. Both current
+  nominations and suggestion cards use the common grayscale/ColorReveal treatment.
+- Inside Find & Nominate, Try again and Watchlist have smaller 16px h3 headings with explanatory
+  InfoTips and separate horizontal strips. Below 768px they stack inside that same section.
+  Watchlist is private to the viewer and
+  sorted High/Medium/Low. Suggestion selection never submits a nomination automatically.
+- Selection uses a visible 24px/600 Your scores heading (Nominated films for viewers without their
+  own ballot or submission permission). Its cards share Nomination's 12px padding/radius, 48×72px
+  posters, restrained genre chips and whole-card soft ColorReveal. Poster and film text form one
+  Movie link; text starts at the poster's top edge even when genres/author are missing. The year
+  aligns at the right of its title row in compact layouts and below the title from 1024px; a
+  permitted author gets a separate line. The native Movie link stretches across the whole card,
+  with score buttons stacked above it; empty rail space and gaps pass pointer hits through to the
+  Movie link. Use card feedback without title underlining
+  and a whole-card keyboard focus outline; do not nest controls inside the link or navigate
+  through a row click handler. On phones film information remains horizontal above
+  the locally scrolling rail. Compact rails use safe center/end alignment so wide scales retain
+  access to the first value and preserve 44px targets. Compact N/M progress sits at the right of
+  the section heading above the cards; full progress/readiness remains assistive-readable. The
+  finality InfoTip sits beside Your scores. Submit scores stands alone below the list, 250px wide
+  and clamped to the available width. Saved ballots keep
+  their rows and rails, replace the instruction with Submitted · Waiting for other participants,
+  and retain full contrast for chosen numbers; read-only values have no interactive hover.
+- The own Session Rating stays first and reads You, with the same neutral card palette as peers.
+  Do not show a Final/lock tag or a special gold row fill; submission remains final on the server.
+- Reviews expose their popover with a small chevron. Below 576px, both Review and Selection
+  details use opaque popovers with 20px viewport side gaps; desktop positioning stays contextual.
+  Card gray backgrounds respond only to mouse hover, not retained focus after dismissal.
 - The separator before Session Details uses one restrained monochrome reel-break composition. Phase mascots may differ, but share the same optical area, mask, and placement.
+
+### Past Session wizard
+
+- Unrecorded nominators and historical Selection scores display `—`; an explicit zero remains
+  a separate score. The dash clears the corresponding optional value.
+- Cap nominations at the selected Who came? attendee count, including the screened film if
+  nominated. Show N/M in the picker label and disable additions at the limit. Zero attendees
+  permits no nominations. Preserve entries if attendance shrinks; show an error and reject saving
+  until extra nominations are removed or more attendees are selected. Logging only the screened
+  Movie without attendees or nominations remains allowed.
+- Nomination rows show the film title once above an author selector and a 44px remove icon.
+  Keep the author label for assistive technology; omit the repeated visible Nominator for title.
+  Shared Select arrows sit inside the field; matrix score selects use the shared chevron with
+  a consistent inner gutter rather than the browser arrow at the border.
+- The live-status paragraph below Back/Next and Log Session stays mounted but has zero height
+  and margin when empty. Keep the scene card's normal padding without a blank feedback footer.
 
 ### Movie Details
 - Poster + trailer + credits + synopsis
 - Your Rating (stars, popover) + Global rating + Watchlist. Unsaved bookmark uses a subtle smoky-ivory fill and neutral outline; gold is reserved for the saved state
+- Rating and priority popovers share a compact 336px maximum width, opaque surface and 8px outer
+  padding. Priority choices sit directly on the surface, without a second group frame. The star
+  focus indicator is a centered 28px square around its 24px SVG; hit targets retain their height.
 - "See also" links row + "You may also like" scroll carousel
 
 ### My Library
+- Search/sort/page/filter navigation replaces only table rows with the shared skeleton cells,
+  preserving the current count, search focus and mounted horizontal scroll container. Empty
+  results use one placeholder row while loading. Headers and pagination remain visible with their
+  normal pending guards; placeholders are inert/assistive-hidden and the table is marked busy.
+  Club Ratings uses the same behavior. Clear filters/pagination links retain native new-tab use.
+- Table empty/no-match messages use centered 14px secondary body text across all table variants.
+  Exclude the full-width empty cell from special first-column rank/participant styling.
+- Match Club Ratings' Film-link and pagination typography. Personal Rating cells align right and
+  use its 20px display numerals inside 44×44px shared outlined buttons, opening the existing stars.
+  Priority uses a fixed 112×44px rounded rectangle with one 14px/500 label style and trailing
+  chevron for every level. Keep visible focus, the open-state accent and pending guard.
+  Omit visible films-rated/queued counts and their skeleton row. Loading controls mirror the
+  44px rating square and shared fixed-width priority rectangle; totals stay assistive-only.
 - Stats row: Films rated, Rated this year, Avg rating, Total watch time, Favorite genre, Top director, Top actor, On watchlist
 - Tabs: My Ratings, Watchlist, Achievements
 - Mascot panda behind stats
@@ -461,11 +630,66 @@ Buttons are a shared component. Every standalone page copies this exact class co
 | Tab content | `fadeIn` — opacity 0→1, 0.25s |
 | Film-strip menus | Directional `clip-path` reveal + slight translate, 0.34s cubic-bezier; content remains undistorted |
 | Ticket bubble | Stub slide 78px, 0.3s ease |
-| Score pips / stars / toggles | `pipPop` — scale 0.85→1.05→1, 0.3s ease |
+| Action controls | One scale pulse on pointer-down or activation key, 350ms; 5% default, 8% shared buttons, 10% Achievements filters, 12% small controls; hover changes colors only, without a wave |
 | Landing reveal | `revealSection` — translateY + opacity, 0.6s ease |
-| Poster hover | Grayscale removal + scale(1.02), 0.3s ease |
-| Call Sheet hover/focus | Document lines gain contrast first, then the still returns from grayscale to its original colour; no glow or container movement, 0.3–0.4s ease |
+| Image color reveal | Color diffuses from pointer entry or touch origin through a broad soft edge, 350ms everywhere, without a light ring; Movie/Session Details posters and trailer previews use the same timing; exit contracts color toward the exit point |
+| Card/row color reveal | Session Ratings, Selection scoring cards, Nomination Rivals, Hub Sessions/History, Related Movie cards and the whole Call Sheet share one soft mask across background, frame/rules, images and score accents; Club Ratings/My Ratings/Watchlist tables use ordinary hover |
+| Call Sheet hover/focus | Document lines gain contrast; film stills and mascots, including the empty sheet, use the shared color reveal with existing muted exposure; no container movement |
 | Notifications badge | `pulse` — opacity pulse, 2s infinite |
+
+Owner-selected press feedback supersedes the prototype's earlier `pipPop` and button press
+transforms. Production uses `--motion-action: 350ms` and
+`--ease-action: cubic-bezier(0.22, 0.8, 0.3, 1)`. A pulse runs to completion after a quick release;
+repeated presses restart it. Individual scale preserves existing translations and rotations.
+Duration, easing, peak timing (`--action-peak-offset`) and all strengths are configured together in
+production `tokens.scss`. Tab labels pulse inside fixed tab frames so feedback cannot add scrollbars.
+Hidden checkbox inputs animate their visible mark; Play animates its ring rather than its card.
+Saved/Copied feedback swaps the label without a separate success palette. Enabled checkboxes and
+Switch tracks change background/border on hover; disabled controls do not. Loading, selected and
+success feedback remain separate. Disabled/read-only/busy/inert controls do
+not pulse. Reduced motion suppresses and cancels pulses. Menus and panels keep their existing
+transitions. Production verification of the new press response is still pending.
+
+Owner-selected feedback uses the shared `ColorReveal` component. Ratings, Selection scoring cards, Nomination Rivals,
+Hub Sessions/History, Related Movie cards and the entire
+Call Sheet are single surfaces. The same mask projects into each image, background, frame/rule
+and score accent in surface coordinates. Main text retains its contrast. Independent row hover
+fills and the average-score button's fast hover fill are removed. Average-score buttons instead
+highlight their border and chevron in gold over 150ms on fine-pointer hover, with matching
+keyboard-focus/open accents and a stable background. Live content and controls appear
+once; only images and score accents use hidden visual copies. Members opts out of the radial reveal and
+uses its ordinary 150ms avatar filter transition.
+Overview's Members summary uses real member avatars with the shared initials/error fallback inside
+its existing 28px frames. These photos remain grayscale on hover and do not use ColorReveal.
+Club Ratings, My Ratings and Watchlist tables also retain ordinary hover feedback, with no reveal
+layers. History rows have straight separators and no corner radius. Phone History retains a
+three-column poster/text/score layout: the score or Cancelled stays at the right, while metadata
+wraps inside the flexible text column. Attendee count has its own line below date/location at
+every width. Open Ratings and History rows add 20px horizontal padding from 1024px; compact
+layouts retain their existing spacing. Related Movie titles/years are
+centered, with 12px side padding and 12px bottom padding below the year.
+
+The soft diffusion takes 350ms everywhere, including Movie/Session Details posters,
+phone tickets and trailer previews. Dismissal fades use that same token. There is no light ring,
+brightness overlay or whole-image flash. Its origin stays
+fixed during the reveal. Standalone images clamp entry outside the image to its nearest edge.
+Pointer exit contracts the colored area toward the exit point, so the farthest pixels lose
+color first and the nearest retain color longest, with the same broad soft edge.
+Trailer previews retain their dim exposure; Play, captions and the live video stay outside the effect.
+Interrupted transitions preserve
+their current mask, so a new entry or exit does not jump to full color or grayscale. Completed
+transitions discard their intermediate masks. Keyboard focus starts at the center. Touch does not block the original action or scrolling;
+color fades after 1800ms or pointer cancellation. Reduced motion restores color immediately without
+a wave. Image copies share the same source; only the base is accessible.
+Duration and feather are configured in production `tokens.scss`. Feather is 0.4 of the maximum
+distance from the origin, so its softness scales with the surface rather than keeping a narrow pixel edge.
+`COLOR_REVEAL_CONFIG.enabled` in `components/ui/ColorReveal/color-reveal.config.ts` is the global
+switch. Disabled uses ordinary 150ms color/opacity hover feedback, without radial masks;
+reduced motion still takes precedence. The default is enabled. A persisted per-user Appearance
+control is Proposed under #65 and does not change the action-control press pulse.
+Earlier local DOM checks cover both switch states, the prior 430/650ms timing, the three table opt-outs, straight
+History separators and centered Related Movie text at 390px. Broader visual and automated verification
+remain deferred during the owner's fix round. The current diffusion and 350ms timing are source-reviewed only.
 
 ### Interaction contract
 
@@ -476,13 +700,23 @@ This section defines intended production behavior. The HTML prototypes are visua
 | Tabs | Activate the selected label, move the thin active line, and fade the corresponding panel over `0.25s` | `Tab` reaches the tablist; arrow keys move between tabs; `Enter` / `Space` activates; focus remains on the selected tab | One panel is active at a time; selection must be exposed through `aria-selected` |
 | Film-strip menu | Click/tap opens a directional `clip-path` + slight translate reveal over `0.34s`; icons and labels never scale or distort | Trigger uses `aria-expanded`; opening focuses the first actionable row; closing returns focus to the trigger | Close on outside click, `Escape`, route selection, or opening a mutually exclusive popover |
 | Header search | Search control replaces/overlays the header search area and focuses the input; results update while typing | `Escape` closes; arrow keys move through results; `Enter` opens the active result; closing returns focus to the search trigger | Clear transient query/result state when the panel fully closes unless the user navigated to a result |
-| Notification popover | Bell toggles the shared notification list without moving surrounding chrome | Use the same popover focus/dismissal contract as film-strip menus | Only one header popover may be open at a time |
+| Notification popover | Bell toggles the shared notification list without moving surrounding chrome; inline 22px unread badge beside the title, compact Mark all as read action | Keep the film-strip focus/dismissal contract and full count/caught-up live status; compact action has a 28px visual height and 44px effective target | Only one header popover may be open; badge hides at zero and caps visually at 99+; preserve read/save/focus behavior |
 | Modal / confirmation | Overlay fades in; the modal stays stationary and becomes the sole interaction context | Move focus to the title or first control; trap focus; `Escape` closes non-blocking dialogs; closing returns focus to the opener | Destructive actions require a separate final `.btn-danger`; Admin suspend/delete/transfer requires exact-name confirmation |
 | Accordion | Header toggles the adjacent answer/body without introducing a nested card or decorative glow | Header is a real button; `Enter` / `Space` toggles; focus remains on the header | Preserve each item’s `aria-expanded`; Privacy may keep multiple items open unless the flow explicitly requires one-at-a-time behavior |
-| Rating control | Pointer hover previews all values up to the target; click locks the value and plays `pipPop` | Arrow keys adjust the value; `Home` / `End` jump to limits; the current value is announced | Submitted state replaces the form in place and must not create a new heavy card or layout jump |
-| Toggle / checkbox | State changes immediately with a compact `pipPop`; warm color is not required for ordinary settings | `Space` toggles; expose the state with native input semantics or the corresponding ARIA role | Disabled controls remain legibly distinct and cannot receive interaction |
+| Rating control | Pointer hover previews values without scaling; pointer-down starts a 12% pulse, and click locks the value | Arrow keys adjust the value; `Home` / `End` jump to limits; Enter/Space activation pulses; the current value is announced | Submitted state replaces the form in place and must not create a new heavy card or layout jump |
+| Toggle / checkbox | Pointer-down starts a compact pulse; state changes on native activation; warm color is not required for ordinary settings | `Space` toggles and starts the pulse on key-down; expose native input semantics or the corresponding ARIA role | Disabled controls remain legibly distinct and cannot receive interaction |
 | Screening Call Sheet | Switching club updates the complete sheet as one state. Hover/focus first raises line contrast, then restores the still’s original color | The Call Sheet or linked picture must be reachable by keyboard if it performs navigation | `Create new club` hides the sheet rather than retaining the previous club’s data |
 | Form submit / success | Submit action shows loading without changing its dimensions; success appears inside the existing submit zone | Announce pending/error/success changes through an appropriate live region; move focus only when an error summary requires it | Preserve form geometry to avoid layout shift; keep user input on recoverable errors |
+| Film picker continuity | Selecting a Nomination film keeps the same field geometry; show only its single-line title, Change and an inline Nominate arrow | Focus Change after selection; Change focuses the restored search field; retain the full title for assistive technology | Reserve action space before selection; disable the arrow until selection; both actions use the same subtle icon button and icon-only press feedback |
+| Submitted nomination | Replace Find & Nominate with Your nomination and Submitted · Waiting for selection above the film; omit by-you credit and the form minimum height | Keep the film link and success focus on the section heading | Current Nominations remains the shared list; no extra action is introduced |
+| Past Session steps | Next/Back changes the current step | Focus the newly mounted heading/legend; invalid fields retain their validation focus path | Keep the draft and explicit final Log Session action |
+| Review touch target | The visible text/chevron remains unchanged | Transparent hit slop extends the 24px review line to 44px without overlapping neighbouring controls | The existing viewport-bounded popover and Escape return remain |
+| Horizontal table overflow | A subtle edge fade indicates remaining columns and disappears at that edge | Keep the labelled focusable native scroll region; fades never capture pointers | Recompute on scroll, content resize and viewport resize |
+| Native scrollbars | Global thin/neutral styling applies from the initial CSS; browser/OS controls visibility and autohide | Preserve native wheel/touch/keyboard and focus behavior; forced-colors keeps system styling | No activity controller, timers or hydration-dependent style switch; current browsers only |
+| Invitation URL / retry | Focusing a read-only invitation URL selects it completely; notification retry shows shared button loading | Preserve native copying, focus and button geometry | Retry becomes available again after refresh; editing Session values clears stale submit feedback |
+
+Club form links explicitly carry an originating `returnTo` view. Back accepts only the existing
+canonical internal return paths; missing or invalid destinations retain the previous safe fallback.
 
 ### Motion timing and restraint
 

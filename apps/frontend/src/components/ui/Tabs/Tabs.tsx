@@ -1,6 +1,7 @@
 'use client';
 
 import { Tabs as MantineTabs } from '@mantine/core';
+import clsx from 'clsx';
 import { type ReactNode, useState } from 'react';
 
 import styles from './Tabs.module.scss';
@@ -16,9 +17,10 @@ export interface ITabsProps {
     items: ITabItem[];
     label: string;
     initialId?: string;
+    variant?: 'default' | 'neutral';
 }
 
-export default function Tabs({ initialId, items, label }: ITabsProps) {
+export default function Tabs({ initialId, items, label, variant = 'default' }: ITabsProps) {
     const enabledIds = items.filter((item) => !item.disabled).map((item) => item.id);
     const firstEnabledId = enabledIds[0] ?? null;
     const [selectedId, setSelectedId] = useState(
@@ -31,7 +33,7 @@ export default function Tabs({ initialId, items, label }: ITabsProps) {
         <MantineTabs
             activateTabWithKeyboard={false}
             classNames={{
-                root: styles.tabs,
+                root: clsx(styles.tabs, variant === 'neutral' && styles['m-neutral']),
                 list: styles.tabs__list,
                 tab: styles.tabs__tab,
                 panel: styles.tabs__panel,
@@ -44,7 +46,9 @@ export default function Tabs({ initialId, items, label }: ITabsProps) {
             <MantineTabs.List aria-label={label}>
                 {items.map((item) => (
                     <MantineTabs.Tab disabled={item.disabled} key={item.id} value={item.id}>
-                        {item.label}
+                        <span className={styles.tabs__label} data-press-surface>
+                            {item.label}
+                        </span>
                     </MantineTabs.Tab>
                 ))}
             </MantineTabs.List>

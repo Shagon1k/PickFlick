@@ -1,0 +1,178 @@
+.sessions {
+    display: grid;
+    gap: var(--gap-md);
+    min-width: 0;
+}
+
+.heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--gap-md);
+}
+
+.title {
+    width: 160px;
+    height: calc(var(--fs-app-section) * var(--lh-title));
+    border-radius: var(--radius);
+}
+
+.headingActions {
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+}
+
+.count {
+    width: 64px;
+}
+
+.action {
+    width: 112px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: var(--gap-md);
+    align-items: center;
+    padding-block: var(--gap-sm);
+}
+
+.row + .row {
+    border-top: 1px solid var(--border);
+}
+
+.poster {
+    width: 56px;
+    height: 80px;
+    border-radius: 6px;
+}
+
+.copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.name {
+    width: 60%;
+    height: 1lh;
+    font-size: var(--fs-body);
+    font-weight: 700;
+}
+
+.copy[data-known] .name {
+    width: 100%;
+    height: auto;
+    min-height: 1lh;
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    min-height: 1lh;
+    font: var(--fs-meta)/normal var(--font-mono);
+}
+
+.score {
+    width: 48px;
+    height: calc(var(--session-result-score-size) * var(--lh-ui));
+    border-radius: var(--radius);
+}
+
+.score[data-known] {
+    width: auto;
+    height: auto;
+    font: var(--session-result-score-font);
+}
+
+.closedStatus {
+    font: var(--fs-meta)/var(--lh-body) var(--font-mono);
+}
+
+.row[data-rating] {
+    grid-template-areas: 'poster copy copy' 'poster participants progress';
+    grid-template-columns: 64px auto minmax(0, 1fr);
+    row-gap: var(--gap-xs);
+}
+
+.row[data-rating] .poster {
+    grid-area: poster;
+}
+
+.row[data-rating] .copy {
+    grid-area: copy;
+}
+
+.participants {
+    display: flex;
+    grid-area: participants;
+    align-items: center;
+    min-height: var(--hit);
+}
+
+.participants > div {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-pill);
+}
+
+.participants > div + div {
+    margin-left: -6px;
+}
+
+.progress {
+    grid-area: progress;
+    align-self: end;
+    width: 100%;
+    max-width: 240px;
+    padding-bottom: 4px;
+    margin-left: auto;
+}
+
+.progress > div {
+    height: 32px;
+    border-radius: 4px;
+}
+
+@media (width >= 1024px) {
+    .row {
+        padding-inline: var(--gap-md);
+    }
+
+    .row[data-rating] {
+        grid-template-areas: 'poster copy progress' 'poster participants progress';
+        grid-template-columns: 64px minmax(0, 1fr) minmax(240px, 30%);
+    }
+
+    .progress {
+        align-self: center;
+        max-width: 320px;
+        padding-bottom: 0;
+    }
+}
+
+@media (width < 576px) {
+    .row {
+        grid-template-columns: 56px minmax(0, 1fr) auto;
+        column-gap: var(--gap-sm);
+    }
+
+    .row[data-rating] {
+        grid-template-columns: 40px auto minmax(0, 1fr);
+        column-gap: var(--gap-xs);
+    }
+
+    .row[data-rating] .poster {
+        width: 40px;
+        height: 60px;
+    }
+
+    .row[data-rating] .copy,
+    .participants {
+        margin-left: var(--gap-sm);
+    }
+}

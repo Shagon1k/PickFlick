@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -28,8 +28,8 @@ uses it (`_components/`) and moves to `src/components/` only when a second route
   `src/components/<group>/<Name>/<Name>.tsx`, such as `shells/PublicShell`; lint enforces the
   folder names, and a new group joins the rule's `ignoreWords`.
 - Pages wrap themselves in `shells/PublicShell` (marketing) or `shells/ProductFrame` (signed in).
-  `AdminShell`, `ControlShell`, `ProductShell`, `SessionShell`, and `SetupShell` are layouts for
-  later phases; only the `/shell-preview` gallery renders them.
+  My Library uses `shells/ControlShell`. `AdminShell`, `ProductShell`, `SessionShell`, and
+  `SetupShell` are layouts for later phases; only the `/shell-preview` gallery renders them.
 - `src/api/<area>.server.ts` calls the backend from the server and starts with
   `import 'server-only'`. Components and actions use these functions, never `fetch` directly.
 - Build API paths with `apiPath` so each ID stays one segment. A server action maps a failed

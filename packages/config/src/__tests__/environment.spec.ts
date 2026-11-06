@@ -6,6 +6,10 @@ import {
     parseDatabaseEnvironment,
     parseRuntimeEnvironment,
 } from '../environment.js';
+import {
+    emailWorkerEnvironmentSchema,
+    notificationSignalEnvironmentSchema,
+} from '../environment.schema.js';
 
 const local = {
     APP_ENV: 'local',
@@ -40,6 +44,14 @@ const production = {
     AUTH_BASE_URL: 'https://pick-flick.app',
 };
 
+const localLive = {
+    ...local,
+    RESEND_DELIVERY_MODE: 'live',
+    RESEND_API_KEY: 'synthetic-local-sending-key',
+    LOCAL_EMAIL_RECIPIENTS: ' CONTACT@example.invalid , Second@EXAMPLE.INVALID ',
+    LOCAL_EMAIL_SEND_AFTER: '2026-11-01T12:00:00.000Z',
+};
+
 function failuresOf(source: Record<string, string>): string[] {
     try {
         parseRuntimeEnvironment(source);
@@ -68,7 +80,7 @@ describe('parseRuntimeEnvironment', () => {
             appEnvironment: 'local',
             backendPort: 3001,
             storage: { forcePathStyle: true, bucket: 'pickflick-local' },
-            resend: { deliveryEnabled: false },
+            resend: { deliveryEnabled: false, localDelivery: null },
             auth: {
                 baseUrl: 'http://127.0.0.1:3000',
                 secureCookies: false,
@@ -79,7 +91,7 @@ describe('parseRuntimeEnvironment', () => {
 
     it('should accept production with live delivery and secure cookies', () => {
         expect(parseRuntimeEnvironment(production)).toMatchObject({
-            resend: { deliveryEnabled: true },
+            resend: { deliveryEnabled: true, localDelivery: null },
             auth: { secureCookies: true },
         });
     });
@@ -109,6 +121,7 @@ describe('parseRuntimeEnvironment', () => {
                 ).toMatchObject({
                     from: 'PickFlick UAT <uat@pick-flick.app>',
                     deliveryEnabled: isEnabled,
+                    localDelivery: null,
                 });
             },
         );
@@ -128,12 +141,105 @@ describe('parseRuntimeEnvironment', () => {
         });
     });
 
-    it('should require a webhook signing secret only for live delivery', () => {
-        expect(failuresOf({ ...production, RESEND_WEBHOOK_SECRET: '' })).toContain(
-            'RESEND_WEBHOOK_SECRET is required in live mode',
-        );
+    it.each(['uat', 'production'])(
+        'should require a webhook secret for live %s delivery while keeping it optional locally',
+        (appEnvironment) => {
+            expect(
+                failuresOf({
+                    ...production,
+                    APP_ENV: appEnvironment,
+                    RESEND_WEBHOOK_SECRET: '',
+                }),
+            ).toContain('RESEND_WEBHOOK_SECRET is required in live mode');
+            expect(parseRuntimeEnvironment(localLive).resend.webhookSecret).toBe('');
+        },
+    );
+
+    it('should normalize multiple approved local recipients and the cutoff for runtime and worker delivery', () => {
+        const localDelivery = {
+            recipients: ['contact@example.invalid', 'second@example.invalid'],
+            sendAfter: new Date(localLive.LOCAL_EMAIL_SEND_AFTER),
+        };
+
+        expect(parseRuntimeEnvironment(localLive).resend).toMatchObject({
+            deliveryEnabled: true,
+            localDelivery,
+        });
+        expect(emailWorkerEnvironmentSchema.parse(localLive)).toMatchObject({
+            deliveryEnabled: true,
+            localDelivery,
+        });
         expect(parseRuntimeEnvironment(local).resend.webhookSecret).toBe('');
     });
+
+    it.each([
+        [{ LOCAL_EMAIL_RECIPIENTS: '' }, 'LOCAL_EMAIL_RECIPIENTS'],
+        [{ LOCAL_EMAIL_RECIPIENTS: 'not-an-email' }, 'LOCAL_EMAIL_RECIPIENTS'],
+        [{ LOCAL_EMAIL_RECIPIENTS: 'contact@example.invalid,' }, 'LOCAL_EMAIL_RECIPIENTS'],
+        [{ LOCAL_EMAIL_SEND_AFTER: '' }, 'LOCAL_EMAIL_SEND_AFTER'],
+        [{ LOCAL_EMAIL_SEND_AFTER: 'not-a-date' }, 'LOCAL_EMAIL_SEND_AFTER'],
+        [{ LOCAL_EMAIL_SEND_AFTER: '2026-11-01T12:00:00' }, 'LOCAL_EMAIL_SEND_AFTER'],
+        [{ CONTACT_DELIVERY_TO: 'unapproved@example.invalid' }, 'CONTACT_DELIVERY_TO'],
+    ])(
+        'should reject invalid local live scope case %# in runtime and worker',
+        (changes, variable) => {
+            const source = { ...localLive, ...changes };
+
+            expect(failuresOf(source).join(' ')).toContain(variable);
+            expect(emailWorkerEnvironmentSchema.safeParse(source).error?.issues).toEqual(
+                expect.arrayContaining([expect.objectContaining({ path: [variable] })]),
+            );
+        },
+    );
+
+    it('should keep live email disabled in test even with complete local delivery scope', () => {
+        const source = { ...localLive, APP_ENV: 'test' };
+
+        expect(failuresOf(source)).toContain(
+            'RESEND_DELIVERY_MODE must be disabled in test or local without explicit live delivery',
+        );
+        expect(emailWorkerEnvironmentSchema.safeParse(source).error?.issues).toEqual(
+            expect.arrayContaining([expect.objectContaining({ path: ['RESEND_DELIVERY_MODE'] })]),
+        );
+    });
+
+    it.each(['test', 'uat', 'production'])(
+        'should reject local recipient or cutoff restrictions in %s',
+        (appEnvironment) => {
+            for (const [variable, scope] of [
+                [
+                    'LOCAL_EMAIL_RECIPIENTS',
+                    {
+                        LOCAL_EMAIL_RECIPIENTS: 'contact@example.invalid',
+                        LOCAL_EMAIL_SEND_AFTER: '',
+                    },
+                ],
+                [
+                    'LOCAL_EMAIL_SEND_AFTER',
+                    {
+                        LOCAL_EMAIL_RECIPIENTS: '',
+                        LOCAL_EMAIL_SEND_AFTER: localLive.LOCAL_EMAIL_SEND_AFTER,
+                    },
+                ],
+            ] as const) {
+                const source = { ...production, APP_ENV: appEnvironment, ...scope };
+
+                const failures = failuresOf(source);
+                expect(failures).toContain(
+                    `${variable} local delivery restrictions may be configured only in local`,
+                );
+                // Only the variable that was set is named.
+                expect(
+                    failures.filter((failure) =>
+                        failure.includes('may be configured only in local'),
+                    ),
+                ).toHaveLength(1);
+                expect(emailWorkerEnvironmentSchema.safeParse(source).error?.issues).toEqual(
+                    expect.arrayContaining([expect.objectContaining({ path: [variable] })]),
+                );
+            }
+        },
+    );
 
     it('should name every missing variable without echoing values', () => {
         const failures = failuresOf({ APP_ENV: 'local', AUTH_SECRET: 'short-secret-value' });
@@ -183,7 +289,7 @@ describe('parseRuntimeEnvironment', () => {
     it.each([
         [
             { ...local, RESEND_DELIVERY_MODE: 'live' },
-            'RESEND_DELIVERY_MODE must be disabled in local or test',
+            'LOCAL_EMAIL_RECIPIENTS must list the approved test accounts for local live delivery',
         ],
         [
             { ...production, RESEND_DELIVERY_MODE: 'preview' },
@@ -285,5 +391,48 @@ describe('parseDatabaseEnvironment', () => {
         expect(failuresOf({ ...local, CATALOG_LOCALE: 'ru-RU' }).join(' ')).toContain(
             'CATALOG_LOCALE',
         );
+    });
+});
+
+describe('email worker environment', () => {
+    const worker = {
+        APP_ENV: 'local',
+        DATABASE_URL: local.DATABASE_URL,
+        AUTH_BASE_URL: local.AUTH_BASE_URL,
+        RESEND_DELIVERY_MODE: 'disabled',
+        RESEND_API_KEY: 'local-disabled',
+        RESEND_FROM: local.RESEND_FROM,
+        CONTACT_DELIVERY_TO: local.CONTACT_DELIVERY_TO,
+    };
+
+    it('should start from its seven variables without runtime secrets', () => {
+        expect(emailWorkerEnvironmentSchema.parse(worker)).toEqual({
+            databaseUrl: local.DATABASE_URL,
+            baseUrl: local.AUTH_BASE_URL,
+            from: local.RESEND_FROM,
+            apiKey: 'local-disabled',
+            deliveryEnabled: false,
+            alertTo: local.CONTACT_DELIVERY_TO,
+            localDelivery: null,
+        });
+    });
+
+    it('should apply the shared email rules', () => {
+        expect(
+            emailWorkerEnvironmentSchema.safeParse({ ...worker, RESEND_DELIVERY_MODE: 'live' })
+                .success,
+        ).toBe(false);
+    });
+});
+
+describe('notification signal environment', () => {
+    it('should read only the environment name and Redis URL', () => {
+        expect(
+            notificationSignalEnvironmentSchema.parse({
+                APP_ENV: 'uat',
+                REDIS_URL: 'redis://pickflick-uat-redis:6379',
+                STORAGE_SECRET_KEY: 'ignored',
+            }),
+        ).toEqual({ appEnvironment: 'uat', redisUrl: 'redis://pickflick-uat-redis:6379' });
     });
 });

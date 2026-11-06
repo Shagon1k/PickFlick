@@ -1,7 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
-import { settle } from './settle';
+import { expectNoPageOverflow } from './layout';
+import { captureSocialSignIn, signInMock } from './mock-session';
+import { holdRoute, settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 async function openLogin(
@@ -29,26 +31,14 @@ test('Login is accessible with Google while dormant Apple Sign In stays hidden',
 });
 
 test('Login redirects an authenticated User to the app', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, 'valid');
 
     await page.goto('/login');
     await expect(page).toHaveURL(/\/app$/);
 });
 
 test('Login remains available for a forged session cookie', async ({ context, page }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'forged',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, 'forged');
 
     await openLogin(page);
     await expect(
@@ -62,13 +52,7 @@ test('Login has no horizontal overflow at canonical and bridge widths', async ({
         { height: 900, name: 'bridge-640', width: 640 },
     ]) {
         await openLogin(page, viewport);
-        const dimensions = await page.evaluate(() => ({
-            body: globalThis.document.body.scrollWidth,
-            client: globalThis.document.documentElement.clientWidth,
-            document: globalThis.document.documentElement.scrollWidth,
-        }));
-        expect(dimensions.document, viewport.name).toBeLessThanOrEqual(dimensions.client);
-        expect(dimensions.body, viewport.name).toBeLessThanOrEqual(dimensions.client);
+        await expectNoPageOverflow(page, viewport.name);
     }
 });
 
@@ -79,10 +63,7 @@ for (const viewport of screenshotViewports) {
         async ({ page }) => {
             await openLogin(page, viewport);
             await expect(page).toHaveScreenshot(`login-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );
@@ -91,14 +72,9 @@ for (const viewport of screenshotViewports) {
 test('Google sign-in sends only an allowlisted return target and stores no token material', async ({
     page,
 }) => {
-    let requestBody: Record<string, unknown> | undefined;
-    await page.route('**/api/auth/sign-in/social', async (route) => {
-        requestBody = route.request().postDataJSON() as Record<string, unknown>;
-        await route.fulfill({
-            contentType: 'application/json',
-            body: JSON.stringify({ redirect: true, url: '/login?oauth_started=1' }),
-            status: 200,
-        });
+    const readSignIn = await captureSocialSignIn(page, {
+        redirect: true,
+        url: '/login?oauth_started=1',
     });
 
     await openLogin(
@@ -108,8 +84,8 @@ test('Google sign-in sends only an allowlisted return target and stores no token
     );
     await page.getByRole('button', { name: 'Continue with Google' }).click();
     await expect(page).toHaveURL(/oauth_started=1/);
-    expect(requestBody).toMatchObject({ callbackURL: '/app', provider: 'google' });
-    expect(JSON.stringify(requestBody)).not.toMatch(/token|secret/i);
+    expect(readSignIn()).toMatchObject({ callbackURL: '/app', provider: 'google' });
+    expect(JSON.stringify(readSignIn())).not.toMatch(/token|secret/i);
 
     const storage = await page.evaluate(() => ({
         local: Object.keys(globalThis.localStorage),
@@ -142,13 +118,7 @@ test('Login can recheck the current account after a session service failure', as
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'session-api-unavailable',
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, 'session-api-unavailable');
     await openLogin(page);
     await expect(
         page.getByRole('alert').filter({ hasText: 'We could not check your session' }),
@@ -164,14 +134,9 @@ test('Login can recheck the current account after a session service failure', as
 test('Login preserves a supported invitation and never reflects raw provider errors', async ({
     page,
 }) => {
-    let requestBody: Record<string, unknown> | undefined;
-    await page.route('**/api/auth/sign-in/social', async (route) => {
-        requestBody = route.request().postDataJSON() as Record<string, unknown>;
-        await route.fulfill({
-            contentType: 'application/json',
-            body: JSON.stringify({ redirect: true, url: '/login?oauth_started=1' }),
-            status: 200,
-        });
+    const readSignIn = await captureSocialSignIn(page, {
+        redirect: true,
+        url: '/login?oauth_started=1',
     });
 
     await openLogin(
@@ -184,8 +149,31 @@ test('Login preserves a supported invitation and never reflects raw provider err
     );
     await expect(page.getByText('provider-secret-detail')).toHaveCount(0);
     await page.getByRole('button', { name: 'Continue with Google' }).click();
-    expect(requestBody).toMatchObject({
+    expect(readSignIn()).toMatchObject({
         callbackURL: '/invite/club/invite_token-123',
         provider: 'google',
     });
 });
+
+test(
+    'Login waits for hydration before accepting a sign-in click',
+    { tag: '@smoke' },
+    async ({ page }) => {
+        // Withholding the scripts keeps the page unhydrated until the test releases them.
+        const releaseScripts = await holdRoute(page, '**/_next/static/chunks/*.js');
+        const readSignIn = await captureSocialSignIn(page);
+        try {
+            await page.goto('/login?returnTo=%2Flibrary', { waitUntil: 'commit' });
+            const google = page.getByRole('button', { name: 'Continue with Google', exact: true });
+            await expect(google).toBeDisabled();
+            releaseScripts();
+            await expect(google).toBeEnabled();
+            await google.click();
+            await expect
+                .poll(readSignIn)
+                .toMatchObject({ provider: 'google', callbackURL: '/library' });
+        } finally {
+            releaseScripts();
+        }
+    },
+);

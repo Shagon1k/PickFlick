@@ -1,13 +1,45 @@
+/* Three thin bars mark the steps; the current and done ones are lit. */
+.steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gap-xs);
+    padding: 0;
+    margin: 0 0 var(--gap-md);
+    list-style: none;
+}
+
+.steps li {
+    height: 4px;
+    background: var(--border);
+    border-radius: var(--radius-pill);
+    transition: background var(--motion-local) ease;
+}
+
+.steps li[data-done] {
+    background: var(--gold);
+}
+
+.step {
+    display: grid;
+}
+
+.stepTitle {
+    padding: 0;
+    margin: 0 0 var(--gap-md);
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+}
+
+.when {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--gap-sm);
+}
+
 .attendees {
     min-width: 0;
     padding: 0;
-    margin: var(--gap-md) 0;
+    margin: 0 0 var(--gap-md);
     border: 0;
-}
-
-.attendees p {
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
 }
 
 .members {
@@ -16,21 +48,45 @@
     gap: var(--gap-xs);
 }
 
+/* An attendee chip: monogram (a check once chosen) and name, lit when selected. */
 .members label {
+    position: relative;
     display: flex;
     gap: var(--gap-xs);
     align-items: center;
     max-width: 100%;
     min-height: var(--hit);
-    padding: var(--gap-xs) var(--gap-sm);
+    padding: 4px var(--gap-sm) 4px 4px;
     font-size: var(--fs-body-sm);
     overflow-wrap: anywhere;
+    cursor: pointer;
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
+}
+
+.members input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
 }
 
 .members label:has(input:checked) {
-    border-color: var(--fg);
+    background: var(--gold-soft);
+    border-color: var(--gold-border);
+}
+
+.members label:hover:has(input:not(:disabled)) {
+    background: var(--surface-lit);
+    border-color: var(--fg-secondary);
+}
+
+.members label:hover:has(input:checked:not(:disabled)) {
+    background: var(--gold-glow);
+    border-color: var(--gold);
 }
 
 .members label:has(input:focus-visible) {
@@ -38,24 +94,72 @@
     outline-offset: 2px;
 }
 
-.rating {
-    min-width: 0;
-    margin-top: var(--gap-md);
+.monogram {
+    --action-scale: var(--action-scale-small);
+
+    display: grid;
+    flex: 0 0 32px;
+    place-items: center;
+    height: 32px;
+    font: var(--fs-caption)/1 var(--font-mono);
+    color: var(--fg-secondary);
+    background: var(--surface-lit);
+    border-radius: 50%;
 }
 
+.members label:has(input:checked) .monogram {
+    color: var(--gold-light);
+}
+
+.monogram svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ratings {
+    display: grid;
+    padding: 0;
+    margin: var(--gap-md) 0 0;
+    list-style: none;
+}
+
+.ratings li {
+    display: grid;
+    gap: var(--gap-xs);
+    min-width: 0;
+    padding-block: var(--gap-sm);
+    border-top: 1px solid var(--border);
+}
+
+.ratings li > span {
+    font-size: var(--fs-body-sm);
+    font-weight: 600;
+}
+
+/* One action fills the row; Back and Next share it equally. */
 .submit {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: var(--gap-sm);
     padding-top: var(--gap-md);
     border-top: 1px solid var(--border);
 }
 
-.submit p {
+.status {
     min-height: var(--gap-md);
-    margin-bottom: 0;
+    margin: var(--gap-sm) 0 0;
     color: var(--fg-secondary);
     overflow-wrap: anywhere;
 }
 
-.result {
-    display: grid;
-    gap: var(--gap-md);
+.status:empty {
+    min-height: 0;
+    margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .steps li {
+        transition: none;
+    }
 }

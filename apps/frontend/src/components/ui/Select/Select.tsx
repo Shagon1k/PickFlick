@@ -6,9 +6,7 @@ import { useRef, useState } from 'react';
 
 import fieldStyles from '#components/ui/Field/Field.module.scss';
 import { getFieldState, type IFieldProps } from '#components/ui/Field/field.types';
-import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
-import FieldLabel from '#components/ui/Field/FieldLabel';
-import FieldMessage from '#components/ui/Field/FieldMessage';
+import { FIELD_CLASS_NAMES, getFieldProps } from '#components/ui/Field/field-props';
 import type { TOmitStyling } from '#components/ui/types';
 
 import styles from './Select.module.scss';
@@ -18,18 +16,22 @@ const DROPDOWN_FADE_MS = 150;
 export interface ISelectProps
     extends
         IFieldProps,
-        TOmitStyling<IMantineSelectProps, keyof IFieldProps | 'description' | 'hiddenInputProps'> {}
+        TOmitStyling<IMantineSelectProps, keyof IFieldProps | 'description' | 'hiddenInputProps'> {
+    shouldReserveMessage?: boolean;
+}
 
 export default function Select({
     disabled,
     error,
     hint,
+    isLabelHidden,
     label,
     labelHint,
     onChange,
     readOnly,
     required,
     success,
+    shouldReserveMessage,
     value,
     ...props
 }: ISelectProps) {
@@ -47,19 +49,26 @@ export default function Select({
         <MantineSelect
             {...props}
             allowDeselect={false}
+            {...getFieldProps({
+                error,
+                hint,
+                isLabelHidden,
+                label,
+                labelHint,
+                success,
+                shouldReserveMessage,
+            })}
             classNames={{
-                root: fieldStyles.field,
-                label: fieldStyles.field__label,
+                ...FIELD_CLASS_NAMES,
                 input: clsx(fieldStyles.control, fieldStyles['m-select']),
-                description: fieldStyles.field__description,
                 dropdown: styles.select__dropdown,
                 option: styles.select__option,
                 section: styles.select__section,
                 wrapper: styles.select__wrapper,
             }}
             comboboxProps={{ transitionProps: { duration: DROPDOWN_FADE_MS } }}
+            // A failed browser constraint marks the field invalid before any server error.
             data-state={isInvalid ? 'error' : getFieldState(error, success)}
-            description={<FieldMessage error={error} hint={hint} success={success} />}
             disabled={disabled}
             error={isInvalid}
             hiddenInputProps={
@@ -78,14 +87,6 @@ export default function Select({
                       }
                     : undefined
             }
-            inputContainer={(input) => (
-                <>
-                    {input}
-                    <FieldAnnouncements error={error} success={success} />
-                </>
-            )}
-            inputWrapperOrder={['label', 'input', 'description']}
-            label={<FieldLabel hint={labelHint} label={label} />}
             onChange={(nextValue, option) => {
                 setHasConstraintFailed(false);
                 onChange?.(nextValue, option);
@@ -93,9 +94,7 @@ export default function Select({
             readOnly={readOnly}
             ref={inputRef}
             required={isConstrained}
-            unstyled
             value={value}
-            withAsterisk={false}
             withCheckIcon={false}
         />
     );

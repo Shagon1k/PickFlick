@@ -8,6 +8,7 @@ import {
 } from '@pickflick/contracts';
 import { z } from 'zod';
 
+import { getPoiskkinoGenres } from './genre-names.js';
 import { MovieHttp } from './movie-http.js';
 import {
     createEmptyMetadata,
@@ -22,6 +23,14 @@ const ISO_DATE_LENGTH = 10;
 
 const text = z.string().max(20000).nullish();
 const number = z.number().nonnegative().nullish();
+// One malformed field drops to unknown instead of failing every film on the search page.
+const imdbId = z
+    .string()
+    .regex(/^tt\d{7,12}$/u)
+    .nullish()
+    .catch(null);
+const releaseYear = z.number().int().min(1800).max(3000).nullish().catch(null);
+const minutes = z.number().int().positive().nullish().catch(null);
 // Yandex's mirror serves the same paths as its canonical, already allowlisted image host.
 const imageUrl = z.preprocess(
     (value) =>
@@ -43,12 +52,15 @@ const wire = z.object({
     enName: text,
     name: text,
     alternativeName: text,
-    externalId: z
-        .object({ imdb: z.string().nullish(), tmdb: z.number().int().positive().nullish() })
-        .nullish(),
-    year: number,
+    externalId: z.object({ imdb: imdbId, tmdb: z.number().int().positive().nullish() }).nullish(),
+    year: releaseYear,
     ageRating: number,
-    movieLength: number,
+    movieLength: minutes,
+    genres: z
+        .array(z.object({ name: text }))
+        .max(100)
+        .nullish()
+        .catch(null),
     poster: image,
     backdrop: image,
     rating: z.object({ kp: number, imdb: number, tmdb: number }).nullish(),
@@ -235,6 +247,7 @@ export class PoiskkinoClient {
                 posterUrl: movie.poster?.url ?? null,
                 backdropUrl: movie.backdrop?.url ?? null,
                 ratings,
+                genres: movie.genres ? getPoiskkinoGenres(movie.genres) : null,
                 // Trailer labels have no guaranteed English locale.
                 trailers:
                     withDetails && movie.videos?.trailers

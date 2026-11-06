@@ -3,7 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useState, useTransition } from 'react';
 
-import { getSessionProgressAction } from '../../progress-actions';
+import Alert from '#components/ui/Alert/Alert';
+
+import styles from '../../page.module.scss';
+import { getSessionProgressAction } from './progress-actions';
 
 const POLL_MS = 5000;
 
@@ -62,6 +65,10 @@ export default function SessionProgress({
         };
     }, [sessionId]);
     return isUnavailable ? (
-        <p role="status">Could not check for updates. Retrying shortly.</p>
+        <div className={styles.progressFeedback}>
+            <Alert tone="warning">
+                Live updates are temporarily unavailable. Retrying automatically.
+            </Alert>
+        </div>
     ) : null;
 }

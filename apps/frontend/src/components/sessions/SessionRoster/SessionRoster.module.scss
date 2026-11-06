@@ -42,3 +42,33 @@
     font-size: var(--fs-caption);
     color: var(--fg-secondary);
 }
+
+/* A rail cell, styled like the action cells but quiet, for a viewer an operator removed. */
+.removed {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    margin: 0;
+    font-size: var(--fs-caption);
+    color: var(--danger-text);
+}
+
+.removed svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+}
+
+@media (width >= 576px) {
+    .removed {
+        flex-direction: row;
+        gap: 8px;
+        min-height: var(--hit);
+        padding: 0 16px;
+        font-size: var(--fs-meta);
+    }
+}

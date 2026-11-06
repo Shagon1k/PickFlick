@@ -1,20 +1,26 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { isOpenSessionPhase } from '@pickflick/contracts';
+import {
+    isOpenSessionPhase,
+    type TClubLifecycle,
+    type TClubRole,
+    type TSessionPhase,
+} from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, loadClubAccess } from '../clubs/access/club-access.js';
+import {
+    loadClubAccess,
+    recordAudit,
+    type TAuditEvent,
+    type TMembership,
+} from '../clubs/access/club-access.js';
 import { getClubPermissions } from '../clubs/access/club-permissions.js';
-import { getClubEntitlements } from '../clubs/access/club-tiers.js';
 
-export async function canManage(
-    transaction: Prisma.TransactionClient,
-    membership: Awaited<ReturnType<typeof findMembership>>,
-) {
+export async function canManage(transaction: Prisma.TransactionClient, membership: TMembership) {
     const { access } = await loadClubAccess(transaction, membership.club);
     return getClubPermissions(membership.role, membership.club.lifecycle, access).manageSessions;
 }
 
-export function assertOpen(phase: string) {
+export function assertOpen(phase: TSessionPhase) {
     if (!isOpenSessionPhase(phase)) throw new ConflictException({ reason: 'SESSION_CLOSED' });
 }
 /**
@@ -23,20 +29,79 @@ export function assertOpen(phase: string) {
  */
 export async function assertManager(
     transaction: Prisma.TransactionClient,
-    membership: Awaited<ReturnType<typeof findMembership>>,
+    membership: TMembership,
 ) {
     if (membership.role === 'MEMBER') throw new ForbiddenException();
     if (!(await canManage(transaction, membership)))
         throw new ConflictException({ reason: 'CLUB_READ_ONLY' });
 }
 
-export function canViewSelectionBreakdown(
-    session: Pick<Prisma.SessionGetPayload<object>, 'clubId' | 'showVoteResults'>,
-    membership: Pick<Awaited<ReturnType<typeof findMembership>>, 'role'>,
+/**
+ * A member's standing in a Session from all their participant rows. Leaving the Club and rejoining
+ * creates a new Membership, but an earlier removal or accepted participation still applies.
+ */
+export function getOwnStatus(
+    rows: readonly { membershipId: string; status: string }[],
+    membershipId: string,
+): string | undefined {
+    const standing =
+        rows.find(({ status }) => status === 'REMOVED') ??
+        rows.find(({ status }) => status === 'ACCEPTED');
+    return (standing ?? rows.find((row) => row.membershipId === membershipId))?.status;
+}
+
+/** Session removal follows the Club hierarchy: nobody removes the Admin; Moderators remove Members. */
+export function canRemoveParticipant(actorRole: TClubRole, targetRole: TClubRole): boolean {
+    return targetRole !== 'ADMIN' && (actorRole === 'ADMIN' || targetRole === 'MEMBER');
+}
+
+/** An operator removes someone else, within the Club hierarchy; their own exit is Leave. */
+export function assertRemovable(
+    actor: { id: string; role: TClubRole },
+    target: { id: string; role: TClubRole },
+) {
+    if (target.id === actor.id) throw new ConflictException({ reason: 'USE_LEAVE' });
+    if (!canRemoveParticipant(actor.role, target.role)) throw new ForbiddenException();
+}
+
+type TDatedSession = { phase: TSessionPhase; scheduledAt: Date | null };
+
+/**
+ * A Rating Session screened before the member joined the Club is history to them: they can read
+ * it, but never join or rate it.
+ */
+export function predatesMembership(session: TDatedSession, joinedAt: Date) {
+    return session.phase === 'RATING' && !!session.scheduledAt && session.scheduledAt < joinedAt;
+}
+
+/** Joining needs an open Session in an active Club; accepted members are in, removed ones stay out. */
+export function canJoinSession(
+    session: TDatedSession,
+    membership: { joinedAt: Date; club: { lifecycle: TClubLifecycle } },
+    ownStatus: string | undefined,
 ) {
     return (
-        membership.role !== 'MEMBER' ||
-        (getClubEntitlements(session.clubId).voteResultVisibility === 'ADMIN_CONFIGURABLE' &&
-            session.showVoteResults)
+        isOpenSessionPhase(session.phase) &&
+        membership.club.lifecycle === 'ACTIVE' &&
+        !predatesMembership(session, membership.joinedAt) &&
+        ownStatus !== 'ACCEPTED' &&
+        ownStatus !== 'REMOVED'
     );
+}
+
+/** A Session action the member took on their own behalf: they are both actor and subject. */
+export async function recordSessionAction(
+    transaction: Prisma.TransactionClient,
+    sessionId: string,
+    membership: TMembership,
+    action: TAuditEvent['action'],
+) {
+    await recordAudit(transaction, {
+        clubId: membership.club.id,
+        sessionId,
+        actorUserId: membership.userId,
+        subjectUserId: membership.userId,
+        subjectMembershipId: membership.id,
+        action,
+    });
 }

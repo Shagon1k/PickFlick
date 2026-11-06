@@ -69,7 +69,7 @@ EXPOSE 3001
 CMD ["sh", "-c", "export SOURCE_REVISION=\"$(cat .source-revision)\" && exec node dist/main.js"]
 
 FROM backend AS worker
-LABEL org.opencontainers.image.title="PickFlick deadline worker"
+LABEL org.opencontainers.image.title="PickFlick workers"
 CMD ["node", "dist/deadline-worker.js"]
 
 FROM ${RUNTIME_IMAGE} AS release

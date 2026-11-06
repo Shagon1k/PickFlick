@@ -4,6 +4,8 @@ import { useTransition } from 'react';
 
 import Button from '#components/ui/Button/Button';
 
+import styles from './page.module.scss';
+
 export default function ErrorRecoveryPreviewPage() {
     const [isPending, startTransition] = useTransition();
 
@@ -18,10 +20,10 @@ export default function ErrorRecoveryPreviewPage() {
     }
 
     return (
-        <main className="scaffold-panel">
-            <p className="scaffold-panel__eyebrow">Internal quality route</p>
+        <main className={styles.panel}>
+            <p className={styles.eyebrow}>Internal quality route</p>
             <h1>Error recovery preview</h1>
-            <div className="scaffold-panel__body">
+            <div className={styles.body}>
                 <p>
                     Trigger a controlled provider-style failure to inspect the production
                     application boundary.

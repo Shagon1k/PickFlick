@@ -66,16 +66,14 @@ describe('buildPersonalAchievements', () => {
         expect(buildPersonalAchievements(facts)).toEqual({ metrics, evidence });
     });
 
-    it('should deny hidden averages and ignore another user and unproven timestamps', () => {
+    it('should use Club averages and ignore unrelated or unproven evidence', () => {
         const facts = buildFacts();
-        facts.sessions[0]!.club.memberships[0]!.role = 'MEMBER';
-        facts.sessions[0]!.showRatingResults = false;
         facts.sessions[0]!.progressEvents = [];
         facts.sessions[0]!.scheduledAt = new Date('2026-10-01');
         const { metrics } = buildPersonalAchievements(facts);
-        expect(metrics['hot-take']!).toBe(0);
-        expect(metrics['early-bird']!).toBe(0);
-        expect(metrics['night-owl']!).toBe(0);
+        expect(metrics['hot-take']).toBe(1);
+        expect(metrics['early-bird']).toBe(0);
+        expect(metrics['night-owl']).toBe(0);
         const { metrics: other } = buildPersonalAchievements({
             ...facts,
             userId: 'other',
@@ -83,10 +81,19 @@ describe('buildPersonalAchievements', () => {
             libraryMovieIds: [],
             acceptedInviteIds: [],
         });
-        expect(other['first-vote']!).toBe(0);
-        expect(other['taste-maker']!).toBe(0);
-        expect(other['critic']!).toBe(0);
+        expect(other['first-vote']).toBe(0);
+        expect(other['taste-maker']).toBe(0);
+        expect(other['critic']).toBe(0);
     });
+
+    it.each(['LEFT', 'REMOVED'] as const)(
+        'should not derive Hot Take from a Club after its Membership becomes %s',
+        (status) => {
+            const facts = buildFacts();
+            facts.sessions[0]!.club.memberships[0]!.status = status;
+            expect(buildPersonalAchievements(facts).metrics['hot-take']).toBe(0);
+        },
+    );
 
     it('should break attendance streaks on unknown attendance and avoid imported wins', () => {
         const facts = buildFacts();
@@ -95,8 +102,8 @@ describe('buildPersonalAchievements', () => {
             buildScreening({ id: 'unknown', participants: [] }),
             buildScreening({ id: 'last' }),
         );
-        expect(buildPersonalAchievements(facts).metrics['reliable-viewer']!).toBe(1);
-        expect(buildPersonalAchievements(facts).metrics['taste-maker']!).toBe(0);
+        expect(buildPersonalAchievements(facts).metrics['reliable-viewer']).toBe(1);
+        expect(buildPersonalAchievements(facts).metrics['taste-maker']).toBe(0);
     });
 
     it.each(['2026-10-01T23:00:00.000Z', '2026-10-01T23:00:00.001Z'])(
@@ -122,6 +129,7 @@ describe('buildPersonalAchievements', () => {
         const facts = buildFacts();
         const original = facts.sessions[0]!.club.memberships[0]!;
         const club = {
+            ...buildScreening().club,
             memberships: [
                 { ...original, leftAt: new Date('2026-10-04'), status: 'LEFT' as const },
                 { ...original, id: 'rejoined', joinedAt: new Date('2026-10-05') },

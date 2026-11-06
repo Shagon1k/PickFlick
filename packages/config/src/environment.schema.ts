@@ -2,8 +2,7 @@ import { createPrivateKey } from 'node:crypto';
 
 import { z } from 'zod';
 
-import { validateEmailEnvironment } from './email-environment.js';
-import { redisUrl } from './notification-environment.schema.js';
+import { getLocalEmailDelivery, validateEmailEnvironment } from './email-environment.js';
 
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
 
@@ -77,6 +76,14 @@ function isEcP256PrivateKey(pem: string): boolean {
     }
 }
 
+const redisUrl = z
+    .string()
+    .trim()
+    .refine((value) => {
+        const url = URL.parse(value);
+        return url && ['redis:', 'rediss:'].includes(url.protocol) && Boolean(url.hostname);
+    }, 'must be a redis(s) URL with a host');
+
 export const databaseEnvironmentSchema = z
     .object({ APP_ENV: z.enum(APP_ENVIRONMENTS), DATABASE_URL: databaseUrl })
     .transform((env) => ({ appEnvironment: env.APP_ENV, databaseUrl: env.DATABASE_URL }));
@@ -105,6 +112,8 @@ const rawRuntimeEnvironmentSchema = z.object({
     RESEND_API_KEY: required,
     RESEND_FROM: mailbox,
     RESEND_WEBHOOK_SECRET: z.string().trim().default(''),
+    LOCAL_EMAIL_RECIPIENTS: z.string().trim().default(''),
+    LOCAL_EMAIL_SEND_AFTER: z.string().trim().default(''),
     CONTACT_DELIVERY_TO: email,
     AUTH_BASE_URL: origin,
     AUTH_SECRET: required.min(32, 'must contain at least 32 characters'),
@@ -175,6 +184,14 @@ const RUNTIME_ENVIRONMENT_RULES: {
             Boolean(env.APPLE_SIGN_IN_ENABLED) && !env[variable],
     })),
     {
+        variable: 'RESEND_WEBHOOK_SECRET',
+        message: 'is required in live mode',
+        broken: (env) =>
+            env.RESEND_DELIVERY_MODE === 'live' &&
+            env.APP_ENV !== 'local' &&
+            !env.RESEND_WEBHOOK_SECRET,
+    },
+    {
         variable: 'APPLE_PRIVATE_KEY',
         // The API signs Apple's client secret at startup, so a bad key must fail validation first.
         message: 'must be a valid EC P-256 PKCS#8 PEM private key',
@@ -188,13 +205,6 @@ const RUNTIME_ENVIRONMENT_RULES: {
 export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     .superRefine((env, context) => {
         validateEmailEnvironment(env, context);
-        if (env.RESEND_DELIVERY_MODE === 'live' && !env.RESEND_WEBHOOK_SECRET) {
-            context.addIssue({
-                code: 'custom',
-                path: ['RESEND_WEBHOOK_SECRET'],
-                message: 'is required in live mode',
-            });
-        }
         for (const rule of RUNTIME_ENVIRONMENT_RULES) {
             if (rule.broken(env)) {
                 context.addIssue({ code: 'custom', path: [rule.variable], message: rule.message });
@@ -220,8 +230,8 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
             apiKey: env.RESEND_API_KEY,
             webhookSecret: env.RESEND_WEBHOOK_SECRET,
             from: env.RESEND_FROM,
-            deliveryMode: env.RESEND_DELIVERY_MODE,
             deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
+            localDelivery: getLocalEmailDelivery(env),
         },
         contact: { deliveryTo: env.CONTACT_DELIVERY_TO },
         catalog: {
@@ -275,6 +285,8 @@ export const emailWorkerEnvironmentSchema = rawRuntimeEnvironmentSchema
         RESEND_API_KEY: true,
         RESEND_DELIVERY_MODE: true,
         CONTACT_DELIVERY_TO: true,
+        LOCAL_EMAIL_RECIPIENTS: true,
+        LOCAL_EMAIL_SEND_AFTER: true,
     })
     .superRefine((env, context) => validateEmailEnvironment(env, context))
     .transform((env) => ({
@@ -284,5 +296,12 @@ export const emailWorkerEnvironmentSchema = rawRuntimeEnvironmentSchema
         apiKey: env.RESEND_API_KEY,
         deliveryEnabled: env.RESEND_DELIVERY_MODE === 'live',
         alertTo: env.CONTACT_DELIVERY_TO,
+        localDelivery: getLocalEmailDelivery(env),
     }));
 export type TEmailWorkerEnvironment = z.infer<typeof emailWorkerEnvironmentSchema>;
+
+/** The deadline worker publishes inbox refresh signals with only these two values. */
+export const notificationSignalEnvironmentSchema = z
+    .object({ APP_ENV: z.enum(APP_ENVIRONMENTS), REDIS_URL: redisUrl })
+    .transform((env) => ({ appEnvironment: env.APP_ENV, redisUrl: env.REDIS_URL }));
+export type TNotificationSignalEnvironment = z.infer<typeof notificationSignalEnvironmentSchema>;

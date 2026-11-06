@@ -2,15 +2,17 @@
 
 import { useForm } from '@mantine/form';
 import { SESSION_RATING_COMMENT_MAX_LENGTH, submitRatingSchema } from '@pickflick/contracts';
-import { useState, useTransition } from 'react';
 
+import { submitRatingAction } from '#components/sessions/rating-actions';
 import Button from '#components/ui/Button/Button';
+import InfoTip from '#components/ui/InfoTip/InfoTip';
 import RatingControl from '#components/ui/ScaleControl/RatingControl';
+import StatusLine from '#components/ui/StatusLine/StatusLine';
 import Textarea from '#components/ui/Textarea/Textarea';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
-import { submitRatingAction } from '../../rating-actions';
+import styles from './RatingForm.module.scss';
 
 export default function RatingForm({
     sessionId,
@@ -19,8 +21,7 @@ export default function RatingForm({
     sessionId: string;
     onSaved: () => void;
 }) {
-    const [message, setMessage] = useState('');
-    const [isPending, startTransition] = useTransition();
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const form = useForm<{ score: number | undefined; comment: string }>({
         initialValues: { score: undefined, comment: '' },
         validate: (values) => {
@@ -36,20 +37,18 @@ export default function RatingForm({
     function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
         form.onSubmit(
             (values) => {
-                const offline = getOfflineMessage();
-                if (offline) {
-                    setMessage(offline);
-                    return;
-                }
-                setMessage('Saving your rating…');
-                startTransition(async () => {
-                    const result = await submitRatingAction(sessionId, values).catch(() => ({
-                        ok: false,
-                        message:
-                            'We could not reach PickFlick. Your input is still here; try again.',
-                    }));
-                    setMessage(result.ok ? 'Rating submitted.' : result.message);
-                    if (result.ok) onSaved();
+                run(() => submitRatingAction(sessionId, values), {
+                    pendingMessage: 'Saving your rating…',
+                    unreachableMessage:
+                        'We could not reach PickFlick. Your input is still here; try again.',
+                    onResult: (result) => {
+                        if (!result.ok) {
+                            setMessage(result.message);
+                            return;
+                        }
+                        announceSuccess('Rating submitted.');
+                        onSaved();
+                    },
                 });
             },
             (_errors, _values, event) => {
@@ -67,10 +66,12 @@ export default function RatingForm({
     }
     return (
         <>
-            <form onSubmit={handleSubmit} noValidate>
+            <form className={styles.form} onSubmit={handleSubmit} noValidate>
                 <RatingControl
+                    isCompact
                     name="session-rating"
-                    label="Rate this screening"
+                    label="Your rating"
+                    tone="neutral"
                     value={form.values.score}
                     onChange={(score) => {
                         form.setFieldValue('score', score);
@@ -81,19 +82,28 @@ export default function RatingForm({
                 />
                 <Textarea
                     id="session-rating-comment"
+                    isLabelHidden
                     label="Comment"
-                    labelHint="optional"
+                    size="compact"
+                    variant="transparent"
+                    placeholder="Add a comment — optional"
                     maxLength={SESSION_RATING_COMMENT_MAX_LENGTH}
-                    showCount
                     disabled={isPending}
                     {...form.getInputProps('comment')}
                 />
-                <p>Submit once. Your Session Rating cannot be changed.</p>
-                <Button type="submit" loading={isPending}>
-                    Submit Rating
-                </Button>
+                <div className={styles.submitRow}>
+                    <div className={styles.submitButton}>
+                        <Button type="submit" size="large" fullWidth loading={isPending}>
+                            Submit Rating
+                        </Button>
+                    </div>
+                    <InfoTip label="About Session Ratings">
+                        You rate once and cannot change it later. Your Personal Rating of the film
+                        stays editable in your Library.
+                    </InfoTip>
+                </div>
             </form>
-            <p role="status">{message}</p>
+            <StatusLine className={styles.status} isSuccess={isSuccess} message={message} />
         </>
     );
 }

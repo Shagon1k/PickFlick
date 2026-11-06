@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { NOTIFICATION_EVENTS } from '../packages/contracts/dist/index.js';
-import { renderNotificationEmail } from '../apps/backend/dist/modules/notifications/email/email-template.js';
+import { renderNotificationEmail } from '../apps/backend/dist/modules/notifications/email-delivery/email-template.js';
 
 const directory = await mkdtemp(join(tmpdir(), 'pickflick-email-preview-'));
 const revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();

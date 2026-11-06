@@ -32,6 +32,11 @@
     display: none;
 }
 
+/* A closed Session can leave a viewer no actions at all; the rail then disappears. */
+.rail:not(:has(> :not(:empty))) {
+    display: none;
+}
+
 /* An unavailable cell reads quieter than the live ones but stays legible. */
 .railCell button:disabled {
     color: var(--fg-secondary);
@@ -53,11 +58,15 @@
 }
 
 .railItem svg {
-    width: 18px;
-    height: 18px;
+    width: var(--film-rail-icon-size);
+    height: var(--film-rail-icon-size);
 }
 
 @media (width >= 576px) {
+    .rail {
+        --film-rail-score-size: var(--fs-card-title);
+    }
+
     .railItem {
         flex-direction: row;
         gap: 7px;
@@ -65,11 +74,6 @@
         padding: 0 16px;
         margin: 0;
         font-size: var(--fs-meta);
-    }
-
-    .railItem svg {
-        width: 16px;
-        height: 16px;
     }
 }
 
@@ -168,12 +172,6 @@
         border-top: 1px dashed color-mix(in sRGB, var(--ivory) 28%, transparent);
     }
 
-    .infoMark,
-    .ticket[data-film] .corner {
-        background: color-mix(in sRGB, var(--bg-deep) 72%, transparent);
-        border: 1px solid color-mix(in sRGB, var(--ivory) 18%, transparent);
-    }
-
     .infoMark {
         position: absolute;
         top: 12px;
@@ -185,18 +183,16 @@
         height: 32px;
         font: italic 600 15px/1 var(--font-display);
         color: var(--fg);
+        background: color-mix(in sRGB, var(--bg-deep) 72%, transparent);
+        border: 1px solid color-mix(in sRGB, var(--ivory) 18%, transparent);
         border-radius: 50%;
     }
 
     .ticket[data-film] .corner {
+        position: absolute;
+        top: 12px;
+        right: 12px;
         z-index: 1;
-        grid-area: poster;
-        place-self: start end;
-        min-height: 0;
-        padding: 9px 10px 9px 12px;
-        margin: 12px;
-        color: var(--fg);
-        border-radius: var(--radius-pill);
     }
 
     .ticket[data-film] .copy {
@@ -245,5 +241,24 @@
     .ticket[data-film] .stub::after {
         right: calc(var(--notch) * -1);
         clip-path: inset(0 50% 0 0);
+    }
+
+    /* Use the rail's empty-state rule so the outline cannot retain a missing stub's cutouts. */
+    .ticket[data-film]:not(:has(.rail > :not(:empty))) {
+        grid-template-areas: 'poster';
+
+        &::after {
+            mask: none;
+        }
+
+        .poster {
+            margin-bottom: 1px;
+            border-radius: calc(var(--radius-lg) - 1px);
+            mask: none;
+        }
+
+        .poster::before {
+            display: none;
+        }
     }
 }

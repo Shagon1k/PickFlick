@@ -1,8 +1,13 @@
 .evidence {
     min-width: 0;
     padding: 0;
-    margin: var(--gap-lg) 0;
+    margin: 0 0 var(--gap-md);
     border: 0;
+}
+
+.title {
+    margin-bottom: var(--gap-md);
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
 }
 
 .evidence p,
@@ -12,17 +17,33 @@
 }
 
 .movies {
+    display: grid;
+    gap: var(--gap-md);
     padding: 0;
     list-style: none;
 }
 
 .movies li {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--gap-sm);
     align-items: center;
-    justify-content: space-between;
     overflow-wrap: anywhere;
+}
+
+.movies li > span {
+    grid-column: 1 / -1;
+}
+
+.movies li > div {
+    grid-row: 2;
+    grid-column: 1;
+    min-width: 0;
+}
+
+.movies li > button {
+    grid-row: 2;
+    grid-column: 2;
 }
 
 .matrix {
@@ -40,24 +61,47 @@
 .matrix caption,
 .matrix th,
 .matrix td {
-    padding: var(--gap-sm);
     text-align: left;
+}
+
+.matrix caption {
+    padding: var(--gap-sm);
 }
 
 .matrix th,
 .matrix td {
-    min-width: 140px;
+    min-width: 112px;
+    padding: var(--gap-xs);
     font-size: var(--fs-body-sm);
+    overflow-wrap: anywhere;
     border-bottom: 1px solid var(--border);
 }
 
 .matrix select {
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
     min-height: var(--hit);
-    padding: var(--gap-xs);
+    padding: var(--gap-xs) calc(var(--gap-sm) * 2 + 16px) var(--gap-xs) var(--gap-sm);
     font: inherit;
+    font-size: var(--fs-meta);
     color: var(--fg);
+    appearance: none;
     background: var(--surface);
     border: 1px solid var(--border-lit);
     border-radius: var(--radius);
+}
+
+.score {
+    position: relative;
+    display: block;
+}
+
+.score svg {
+    position: absolute;
+    top: 50%;
+    right: var(--gap-sm);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    transform: translateY(-50%);
 }

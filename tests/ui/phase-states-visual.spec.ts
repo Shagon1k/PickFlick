@@ -1,5 +1,6 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { screenshotViewports } from './viewports';
 
@@ -11,10 +12,16 @@ const MOVIE_PATH = '/movies/10000000-0000-4000-8000-000000000037';
 
 const STATES = [
     {
+        name: 'completed-imported',
+        path: RATING_PATH,
+        token: 'valid-rating-history-imported-completed',
+        ready: 'Nomination Rivals',
+    },
+    {
         name: 'selection-outcome-visible',
         path: SELECTION_PATH,
         token: 'valid-selection-outcome-visible',
-        ready: 'Tonight’s pick',
+        ready: 'Nomination Rivals',
     },
     {
         name: 'watching-operator',
@@ -43,14 +50,14 @@ const STATES = [
     {
         name: 'club-ratings-populated',
         path: `${CLUB_PATH}/ratings`,
-        token: 'valid-hub-ratings-pro-visual',
+        token: 'valid-hub-ratings-visual',
         ready: 'Synthetic film 28',
     },
     {
         name: 'library-ratings',
         path: '/library',
         token: 'valid-library-visual',
-        ready: '28 films rated',
+        ready: 'The Grand Budapest Hotel',
     },
     {
         name: 'achievements-library',
@@ -61,14 +68,7 @@ const STATES = [
 ];
 
 async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `${token}-phase-visual-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, `${token}-phase-visual-${crypto.randomUUID()}`);
 }
 
 for (const viewport of screenshotViewports) {
@@ -118,6 +118,10 @@ for (const viewport of screenshotViewports) {
             await page.getByRole('button', { name: 'Add to watchlist', exact: true }).click();
             const dialog = page.getByRole('dialog');
             await expect(dialog).toHaveCSS('opacity', '1');
+            const medium = dialog.getByRole('button', { name: 'Medium', exact: true });
+            await expect(medium).toHaveAttribute('aria-pressed', 'true');
+            await expect(medium).toBeEnabled();
+            await page.mouse.move(0, 0);
             await settle(page);
             await expect(page).toHaveScreenshot(`watchlist-priority-${viewport.name}.png`);
             await dialog.getByRole('button', { name: 'High', exact: true }).click();

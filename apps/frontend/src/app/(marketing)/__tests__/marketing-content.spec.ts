@@ -17,14 +17,18 @@ describe('public plan contract', () => {
             free: 'Unlimited',
             pro: 'Unlimited',
         });
-        expect(freePlanFeatures.map(({ label }) => label)).toContain('1 blocking Session per Club');
-        expect(proPlanFeatures.map(({ label }) => label)).toContain('1 blocking Session per Club');
+        const freeLabels = freePlanFeatures.map(({ label }) => label);
+        const proLabels = proPlanFeatures.map(({ label }) => label);
+        for (const labels of [freeLabels, proLabels]) {
+            expect(labels).toContain('1 blocking Session per Club');
+            expect(labels).toContain('Configurable Session visibility');
+        }
     });
 
     it('should mark Free restrictions as limits rather than included features', () => {
         expect(
             freePlanFeatures.filter(({ tone }) => tone === 'limited').map(({ label }) => label),
-        ).toEqual(['Vote results hidden from ordinary members', '90-day inactivity grace']);
+        ).toEqual(['90-day inactivity grace']);
     });
 
     it('should publish only the monthly Pro offer', () => {
@@ -38,8 +42,8 @@ describe('public plan contract', () => {
         const publicPricingCopy = JSON.stringify({ comparisonRows, pricingFaqs, proPlanFeatures });
 
         expect(publicPricingCopy).not.toMatch(/AI analytics|AI movie recommendations/i);
-        expect(pricingFaqs.at(-1)?.answer).toMatch(
-            /checkout will open in the Paddle billing phase/i,
-        );
+        expect(pricingFaqs.at(-1)?.answer).toMatch(/checkout is coming soon/i);
+        // Delivery phases and vendor names are internal and stay out of public copy.
+        expect(publicPricingCopy).not.toMatch(/Paddle|phase/i);
     });
 });

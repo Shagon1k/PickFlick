@@ -1,7 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
-import { settle } from './settle';
+import { formatViolations } from './axe';
+import { openAt, settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const pages = [
@@ -11,25 +12,6 @@ const pages = [
     { name: 'privacy', route: '/legal/privacy' },
     { name: 'terms', route: '/legal/terms' },
 ] as const;
-async function openPage(page: Page, route: string, viewport: { height: number; width: number }) {
-    await page.setViewportSize(viewport);
-    await page.goto(route, { waitUntil: 'load' });
-    await settle(page);
-}
-
-function formatViolations(violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations']) {
-    return violations
-        .map(
-            (violation) =>
-                `${violation.id}: ${violation.help}\n${violation.nodes
-                    .map(
-                        (node) => `  ${node.target.join(' ')}: ${node.failureSummary ?? node.html}`,
-                    )
-                    .join('\n')}`,
-        )
-        .join('\n');
-}
-
 /** The landing hero fades in; axe must not judge it half-transparent. */
 async function waitForLandingHero(page: Page, name: string) {
     if (name !== 'landing') {
@@ -58,7 +40,7 @@ for (const publicPage of pages) {
         publicPage.name === 'landing' ? { tag: '@smoke' } : {},
         async ({ page }) => {
             for (const viewport of [canonicalViewports[0], canonicalViewports[3]]) {
-                await openPage(page, publicPage.route, viewport);
+                await openAt(page, publicPage.route, viewport);
                 await waitForLandingHero(page, publicPage.name);
                 const results = await new AxeBuilder({ page }).analyze();
                 expect(
@@ -73,7 +55,7 @@ for (const publicPage of pages) {
         page,
     }) => {
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
-            await openPage(page, publicPage.route, viewport);
+            await openAt(page, publicPage.route, viewport);
             const dimensions = await page.evaluate(() => ({
                 body: globalThis.document.body.scrollWidth,
                 client: globalThis.document.documentElement.clientWidth,
@@ -95,14 +77,11 @@ for (const publicPage of pages) {
             `${publicPage.name} matches the ${viewport.name} source-comparison capture`,
             { tag: '@visual' },
             async ({ page }) => {
-                await openPage(page, publicPage.route, viewport);
+                await openAt(page, publicPage.route, viewport);
                 await revealLandingSections(page, publicPage.name);
 
                 await expect(page).toHaveScreenshot(`${publicPage.name}-${viewport.name}.png`, {
-                    animations: 'disabled',
-                    caret: 'hide',
                     fullPage: true,
-                    scale: 'css',
                 });
             },
         );
@@ -112,7 +91,7 @@ for (const publicPage of pages) {
 test('landing calls to action and public navigation use canonical destinations', async ({
     page,
 }) => {
-    await openPage(page, '/', canonicalViewports[3]);
+    await openAt(page, '/', canonicalViewports[3]);
 
     await expect(page.getByRole('link', { name: 'Start your first Club' })).toHaveAttribute(
         'href',
@@ -153,7 +132,7 @@ test('public header keeps only the app entry below tablet without a bottom menu'
     page,
 }) => {
     for (const viewport of [canonicalViewports[0], { height: 900, width: 767 }]) {
-        await openPage(page, '/', viewport);
+        await openAt(page, '/', viewport);
         const publicNavigation = page.getByRole('navigation', {
             exact: true,
             name: 'Public navigation',
@@ -175,7 +154,7 @@ test('public header keeps only the app entry below tablet without a bottom menu'
         expect(appEntry?.width).toBeLessThan(viewport.width / 2);
     }
 
-    await openPage(page, '/', canonicalViewports[1]);
+    await openAt(page, '/', canonicalViewports[1]);
     const publicNavigation = page.getByRole('navigation', {
         exact: true,
         name: 'Public navigation',
@@ -190,7 +169,7 @@ test('legal entries expose distinct provisional documents and public contact', a
         { heading: 'Privacy Notice', route: '/legal/privacy' },
         { heading: 'Terms of Service', route: '/legal/terms' },
     ]) {
-        await openPage(page, legalPage.route, canonicalViewports[3]);
+        await openAt(page, legalPage.route, canonicalViewports[3]);
 
         await expect(
             page.getByRole('heading', { level: 1, name: legalPage.heading }),
@@ -229,7 +208,7 @@ test('landing content remains visible when JavaScript is unavailable', async ({ 
 test('landing reveals scene sections on scroll and removes reveal motion when requested', async ({
     page,
 }) => {
-    await openPage(page, '/', canonicalViewports[3]);
+    await openAt(page, '/', canonicalViewports[3]);
     const promise = page.getByRole('region', { name: 'PickFlick promise' });
 
     await expect(page.locator('main > div[data-reveal="enabled"]')).toHaveCount(1);
@@ -242,7 +221,7 @@ test('landing reveals scene sections on scroll and removes reveal motion when re
         .toBe('1');
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await openPage(page, '/', canonicalViewports[3]);
+    await openAt(page, '/', canonicalViewports[3]);
     const reducedMotionStyles = await promise.evaluate((element) => {
         const style = globalThis.getComputedStyle(element);
         return {
@@ -258,18 +237,18 @@ test('landing reveals scene sections on scroll and removes reveal motion when re
 test('landing preserves heading scale and the S feature composition through the responsive bridge', async ({
     page,
 }) => {
-    await openPage(page, '/', { height: 900, width: 575 });
+    await openAt(page, '/', { height: 900, width: 575 });
     const headingAt575 = await page
         .getByRole('heading', { level: 1 })
         .evaluate((element) => Number.parseFloat(globalThis.getComputedStyle(element).fontSize));
 
-    await openPage(page, '/', { height: 900, width: 576 });
+    await openAt(page, '/', { height: 900, width: 576 });
     const headingAt576 = await page
         .getByRole('heading', { level: 1 })
         .evaluate((element) => Number.parseFloat(globalThis.getComputedStyle(element).fontSize));
     expect(Math.abs(headingAt576 - headingAt575)).toBeLessThan(1);
 
-    await openPage(page, '/', gapViewports[0]);
+    await openAt(page, '/', gapViewports[0]);
     expect(
         await page
             .locator('#features > div > div:last-child')
@@ -279,7 +258,7 @@ test('landing preserves heading scale and the S feature composition through the 
             ),
     ).toBe(1);
 
-    await openPage(page, '/', canonicalViewports[1]);
+    await openAt(page, '/', canonicalViewports[1]);
     expect(
         await page
             .locator('#features > div > div:last-child')
@@ -291,7 +270,7 @@ test('landing preserves heading scale and the S feature composition through the 
 });
 
 test('pricing publishes corrected limits and keeps checkout unavailable', async ({ page }) => {
-    await openPage(page, '/pricing', canonicalViewports[3]);
+    await openAt(page, '/pricing', canonicalViewports[3]);
 
     const publicNavigation = page.getByRole('navigation', {
         exact: true,
@@ -302,9 +281,9 @@ test('pricing publishes corrected limits and keeps checkout unavailable', async 
         'page',
     );
 
-    const upgrade = page.getByRole('button', { name: 'Upgrade unavailable' });
+    const upgrade = page.getByRole('button', { name: 'Upgrade to Pro', exact: true });
     await expect(upgrade).toBeDisabled();
-    await expect(page.getByText('Pro checkout opens in the Paddle billing phase.')).toBeVisible();
+    await expect(page.getByText('Pro checkout is coming soon.', { exact: true })).toBeVisible();
     await expect(page.getByRole('row', { name: /Blocking Sessions per Club 1 1/ })).toBeVisible();
     await expect(page.getByRole('rowheader', { name: 'Blocking Sessions per Club' })).toBeVisible();
     await expect(page.getByRole('row', { name: /Price €0 €5 \/ month/ })).toBeVisible();
@@ -312,7 +291,7 @@ test('pricing publishes corrected limits and keeps checkout unavailable', async 
 });
 
 test('pricing comparison scroll stays local on mobile', async ({ page }) => {
-    await openPage(page, '/pricing', canonicalViewports[0]);
+    await openAt(page, '/pricing', canonicalViewports[0]);
     const scrollRegion = page.getByRole('region', { name: 'Plan comparison scroll region' });
     const dimensions = await scrollRegion.evaluate((element) => ({
         client: element.clientWidth,
@@ -325,7 +304,7 @@ test('pricing comparison scroll stays local on mobile', async ({ page }) => {
 });
 
 test('pricing FAQ expands, collapses, and preserves focus', { tag: '@smoke' }, async ({ page }) => {
-    await openPage(page, '/pricing', canonicalViewports[0]);
+    await openAt(page, '/pricing', canonicalViewports[0]);
     const firstQuestion = page.getByRole('button', { name: 'Can I switch plans anytime?' });
     const secondQuestion = page.getByRole('button', { name: 'What happens when I downgrade?' });
 
@@ -347,7 +326,7 @@ test('pricing FAQ expands, collapses, and preserves focus', { tag: '@smoke' }, a
 
 test('pricing FAQ removes decorative motion when reduced motion is requested', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await openPage(page, '/pricing', canonicalViewports[0]);
+    await openAt(page, '/pricing', canonicalViewports[0]);
     await page.getByRole('button', { name: 'What happens when I downgrade?' }).click();
     const answer = page.getByRole('region', { name: 'What happens when I downgrade?' });
 
@@ -359,7 +338,7 @@ test('pricing FAQ removes decorative motion when reduced motion is requested', a
 test('contact validates fields, focuses the first error, and reports its message limit', async ({
     page,
 }) => {
-    await openPage(page, '/contact', canonicalViewports[0]);
+    await openAt(page, '/contact', canonicalViewports[0]);
     await page.getByRole('button', { name: 'Send message' }).click();
 
     const message = page.getByRole('textbox', { name: 'Message — required' });
@@ -373,7 +352,7 @@ test('contact validates fields, focuses the first error, and reports its message
 });
 
 test('contact accepts a submission through one stable feedback region', async ({ page }) => {
-    await openPage(page, '/contact', canonicalViewports[3]);
+    await openAt(page, '/contact', canonicalViewports[3]);
 
     await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
         'href',
@@ -395,7 +374,7 @@ test('contact accepts a submission through one stable feedback region', async ({
 });
 
 test('contact prevents edits while a submission is in flight', async ({ page }) => {
-    await openPage(page, '/contact', canonicalViewports[0]);
+    await openAt(page, '/contact', canonicalViewports[0]);
 
     const message = page.getByRole('textbox', { name: 'Message — required' });
     const name = page.getByRole('textbox', { name: 'Your name' });
@@ -416,7 +395,7 @@ test('contact prevents edits while a submission is in flight', async ({ page }) 
 test('contact preserves input across rate-limit, service, and offline recovery', async ({
     page,
 }) => {
-    await openPage(page, '/contact', canonicalViewports[0]);
+    await openAt(page, '/contact', canonicalViewports[0]);
     const message = page.getByRole('textbox', { name: 'Message — required' });
     await message.fill('Rate limited message');
     await page.getByRole('button', { name: 'Send message' }).click();

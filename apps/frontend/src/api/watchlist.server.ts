@@ -9,13 +9,11 @@ export async function getWatchlistItem(movieId: string) {
     return response.item;
 }
 
-export function saveWatchlistItem(movieId: string, input: TSaveWatchlist) {
-    return requestApi<TWatchlistItem>(apiPath`/movies/${movieId}/watchlist`, {
+export const saveWatchlistItem = (movieId: string, input: TSaveWatchlist) =>
+    requestApi<TWatchlistItem>(apiPath`/movies/${movieId}/watchlist`, {
         method: 'PUT',
         json: input,
     });
-}
 
-export function removeWatchlistItem(movieId: string) {
-    return requestApi<void>(apiPath`/movies/${movieId}/watchlist`, { method: 'DELETE' });
-}
+export const removeWatchlistItem = (movieId: string) =>
+    requestApi<void>(apiPath`/movies/${movieId}/watchlist`, { method: 'DELETE' });

@@ -7,9 +7,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import * as tiers from '../../access/club-tiers.js';
 
 describe('Club ratings API', () => {
@@ -31,7 +31,7 @@ describe('Club ratings API', () => {
             memberships.push(await addMember(api.prisma, clubId, users[index]!, role));
         }
         await api.prisma.user.update({ where: { id: users[3] }, data: { appRole: 'APP_ADMIN' } });
-        for (const [index, title] of ['Repeated film', 'Highest film', 'Hidden film'].entries()) {
+        for (const [index, title] of ['Repeated film', 'Highest film', 'Lowest film'].entries()) {
             await api.prisma.movie.create({ data: { id: movieIds[index]!, title } });
         }
         const original = tiers.getClubEntitlements;
@@ -42,7 +42,7 @@ describe('Club ratings API', () => {
         await addScreening(0, [10, 2]);
         await addScreening(0, [9]);
         await addScreening(1, [9]);
-        await addScreening(2, [1], false);
+        await addScreening(2, [1]);
         await addScreening(0, []);
         const live = await createSession(api.prisma, clubId, {
             type: 'PRE_SELECTED',
@@ -62,13 +62,12 @@ describe('Club ratings API', () => {
         });
     });
 
-    async function addScreening(movieIndex: number, scores: number[], canShowRatingResults = true) {
+    async function addScreening(movieIndex: number, scores: number[]) {
         const session = await createSession(api.prisma, clubId, {
             type: 'PAST',
             phase: 'COMPLETED',
             movieId: movieIds[movieIndex]!,
             scheduledAt: new Date('2026-01-01Z'),
-            showRatingResults: canShowRatingResults,
         });
         for (const [index, score] of scores.entries()) {
             const participant = await api.prisma.sessionParticipant.create({
@@ -127,7 +126,7 @@ describe('Club ratings API', () => {
         });
     });
 
-    it('should filter hidden results before averages and ordering, and recheck role and saved settings', async () => {
+    it('should preserve Club aggregates when individual ratings are hidden for every role', async () => {
         const read = async (index: number) =>
             clubRatingsSchema.parse(
                 await (
@@ -136,43 +135,42 @@ describe('Club ratings API', () => {
                     })
                 ).json(),
             );
-        expect((await read(1)).total).toBe(3);
-        expect((await read(2)).items.map(({ title }) => title)).toEqual([
-            'Highest film',
-            'Repeated film',
-        ]);
-        const hub = (await (
-            await api.request(`/clubs/${clubId}/hub`, { userId: users[2]! })
+        const baseline = await read(0);
+        expect(baseline.total).toBe(3);
+        const baselineHub = (await (
+            await api.request(`/clubs/${clubId}/hub`, { userId: users[0]! })
         ).json()) as IClubHub;
-        expect(hub.statistics.averageRating).toBe(7.5);
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: true } });
-        expect((await read(2)).total).toBe(2);
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: false } });
+        for (const index of [0, 1, 2]) {
+            expect((await read(index)).items).toEqual(baseline.items);
+            const hub = (await (
+                await api.request(`/clubs/${clubId}/hub`, { userId: users[index]! })
+            ).json()) as IClubHub;
+            expect(hub.statistics.averageRating).toBe(baselineHub.statistics.averageRating);
+        }
         await api.prisma.membership.update({
             where: { id: memberships[1] },
             data: { role: 'MEMBER' },
         });
-        expect((await read(1)).total).toBe(2);
+        expect((await read(1)).items).toEqual(baseline.items);
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
+        for (const index of [0, 1, 2]) expect((await read(index)).total).toBe(3);
     });
 
-    it('should project only basic analytics for every Free role while preserving history', async () => {
+    it('should give Free Clubs the ratings leaderboard and every statistic', async () => {
+        const readStatistics = async (userId: string) =>
+            ((await (await api.request(`/clubs/${clubId}/hub`, { userId })).json()) as IClubHub)
+                .statistics;
+        const viewers = users.slice(0, 3);
+        const pro = await Promise.all(viewers.map(readStatistics));
+        expect(pro[0]!.averageRating).not.toBeNull();
         isPro = false;
-        for (const userId of users.slice(0, 3)) {
+        for (const [index, userId] of viewers.entries()) {
             const result = clubRatingsSchema.parse(
                 await (await api.request(`/clubs/${clubId}/ratings`, { userId })).json(),
             );
-            expect(result).toMatchObject({ analytics: 'BASIC', items: [], total: 0 });
-            const hub = (await (
-                await api.request(`/clubs/${clubId}/hub`, { userId })
-            ).json()) as IClubHub;
-            expect(hub.statistics).toEqual({
-                sessionsWatched: 5,
-                sessionsThisYear: new Date().getUTCFullYear() === 2026 ? 5 : 0,
-                averageRating: null,
-                totalWatchHours: null,
-                topGenre: null,
-                topDirector: null,
-                topActor: null,
-            });
+            expect(result.total).toBeGreaterThan(0);
+            expect(await readStatistics(userId)).toEqual(pro[index]);
         }
         isPro = true;
         expect(
@@ -183,7 +181,7 @@ describe('Club ratings API', () => {
     });
 
     it('should reject anonymous, foreign App Admin, departed and malformed requests without Club disclosure', async () => {
-        expect((await api.request(`/clubs/${clubId}/ratings`)).status).toBe(401);
+        await api.expectStatus(401, `/clubs/${clubId}/ratings`);
         const denied = await api.request(`/clubs/${clubId}/ratings`, { userId: users[3]! });
         expect(denied.status).toBe(404);
         expect(await denied.text()).not.toContain('Analytics fixture');
@@ -194,21 +192,14 @@ describe('Club ratings API', () => {
             'page=1&page=2',
             'userId=other',
         ]) {
-            expect(
-                (await api.request(`/clubs/${clubId}/ratings?${query}`, { userId: users[0]! }))
-                    .status,
-            ).toBe(400);
+            await api.expectStatus(400, `/clubs/${clubId}/ratings?${query}`, { userId: users[0]! });
         }
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
-        expect((await api.request(`/clubs/${clubId}/ratings`, { userId: users[2]! })).status).toBe(
-            200,
-        );
+        await api.expectStatus(200, `/clubs/${clubId}/ratings`, { userId: users[2]! });
         await api.prisma.membership.update({
             where: { id: memberships[2] },
             data: { status: 'LEFT', leftAt: new Date() },
         });
-        expect((await api.request(`/clubs/${clubId}/ratings`, { userId: users[2]! })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/clubs/${clubId}/ratings`, { userId: users[2]! });
     });
 });

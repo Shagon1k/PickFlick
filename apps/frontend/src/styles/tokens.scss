@@ -93,10 +93,22 @@
     --gap-2xl: 96px;
     --container: 1120px;
     --gutter: 24px;
+    --header-action-size: 48px;
+    --header-action-icon-size: 20px;
+    --header-avatar-size: 40px;
     --radius: 12px;
     --radius-lg: 18px;
     --radius-pill: 999px;
     --hit: 44px;
+    --film-rail-icon-size: 20px;
+    --film-rail-score-size: var(--fs-body);
+    --session-result-row-min: 104px;
+    --session-result-score-size: 28px;
+    --session-result-score-font: 600 var(--session-result-score-size) / var(--lh-ui)
+        var(--font-display);
+    --movie-search-row-height: 64px;
+    --watchlist-priority-control-width: 112px;
+    --session-result-list-max: 300px;
 
     /* Border, elevation, imagery, and motion */
     --shadow-overlay: 0 18px 48px rgb(0 0 0 / 42%);
@@ -112,8 +124,6 @@
     --surface-glass: rgb(22 22 22 / 72%);
     --surface-glass-lit: rgb(30 30 30 / 72%);
     --surface-glass-strong: rgb(22 22 22 / 90%);
-    --image-noir-rest: grayscale(0.72) brightness(0.84);
-    --image-noir-active: grayscale(0) brightness(1);
     --projector-wash: rgb(200 155 85 / 10%);
     --projector-wash-faint: rgb(200 155 85 / 2.8%);
     --spotlight-gold: radial-gradient(
@@ -123,11 +133,26 @@
         transparent 72%
     );
     --motion-press: 50ms;
+    --motion-action: 350ms;
+    --motion-color-reveal: 350ms;
+    --color-reveal-feather: 0.4;
+    --action-peak-offset: 0.35;
+    --action-scale: 1.05;
+    --action-scale-button: 1.08;
+    --action-scale-toggle: 1.1;
+    --action-scale-small: 1.12;
     --motion-local: 150ms;
     --motion-panel: 250ms;
     --motion-emphasis: 300ms;
     --motion-menu: 340ms;
     --motion-editorial: 600ms;
     --ease-standard: ease;
+    --ease-action: cubic-bezier(0.22, 0.8, 0.3, 1);
     --ease-menu: cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+@media (width < 576px) {
+    :root {
+        --session-result-score-size: 22px;
+    }
 }

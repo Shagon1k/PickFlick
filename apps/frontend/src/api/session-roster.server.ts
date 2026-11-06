@@ -6,21 +6,18 @@ import {
     type ISessionRoster,
     type TInvitationDecision,
     type TInvitationPreview,
-    type TRespondInvitation,
-    type TSessionInvitationPreview,
+    type TSessionParticipationResult,
 } from '@pickflick/contracts';
 
 import { apiPath, requestApi } from '#lib/api.server';
 
 export const getSessionRoster = (id: string): Promise<ISessionRoster> =>
     requestApi(apiPath`/sessions/${id}/roster`);
-export const joinSession = (id: string): Promise<TSessionInvitationPreview> =>
+export const joinSession = (id: string): Promise<TSessionParticipationResult> =>
     requestApi(apiPath`/sessions/${id}/participation`, {
         method: 'POST',
         json: { decision: 'accept' },
     });
-export const revokeSessionInvitation = (id: string, inviteId: string): Promise<void> =>
-    requestApi(apiPath`/sessions/${id}/invitations/${inviteId}/revoke`, { method: 'POST' });
 export const leaveSession = (id: string): Promise<void> =>
     requestApi(apiPath`/sessions/${id}/leave`, { method: 'POST', json: { confirmation: 'LEAVE' } });
 export const removeSessionParticipant = (id: string, participantId: string): Promise<void> =>
@@ -28,12 +25,6 @@ export const removeSessionParticipant = (id: string, participantId: string): Pro
         method: 'POST',
         json: { confirmation: 'REMOVE' },
     });
-export const previewSessionInvitation = (token: string): Promise<TSessionInvitationPreview> =>
-    requestApi('/session-invitations/preview', { method: 'POST', json: { token } });
-export const respondSessionInvitation = (
-    input: TRespondInvitation,
-): Promise<TSessionInvitationPreview> =>
-    requestApi('/session-invitations/respond', { method: 'POST', json: input });
 export const listPendingClubInvitations = (): Promise<IPendingClubInvitation[]> =>
     requestApi('/club-invitations/pending');
 export const listPendingSessionInvitations = (): Promise<IPendingSessionInvitation[]> =>
@@ -46,5 +37,5 @@ export const respondPendingClubInvitation = (
 export const respondPendingSessionInvitation = (
     id: string,
     input: TInvitationDecision,
-): Promise<TSessionInvitationPreview> =>
+): Promise<TSessionParticipationResult> =>
     requestApi(apiPath`/sessions/${id}/participation`, { method: 'POST', json: input });

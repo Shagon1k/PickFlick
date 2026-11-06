@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { formatUtcDateTime } from '#lib/format';
+import { formatInstant } from '#lib/format';
+import { useViewerTimeZone } from '#lib/use-is-hydrated';
 
 const MINUTE_MS = 60_000;
 const MINUTES_PER_HOUR = 60;
@@ -17,12 +18,13 @@ export default function NominationDeadline({
     renderedAt: number;
 }) {
     const [now, setNow] = useState(renderedAt);
+    const timeZone = useViewerTimeZone();
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), MINUTE_MS);
         return () => clearInterval(timer);
     }, []);
     return (
-        <time dateTime={deadlineAt} title={formatUtcDateTime(deadlineAt)}>
+        <time dateTime={deadlineAt} title={formatInstant(deadlineAt, 'dateTime', timeZone)}>
             {formatRemaining(new Date(deadlineAt).getTime() - now)}
         </time>
     );

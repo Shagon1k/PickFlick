@@ -14,7 +14,7 @@ export interface IConfirmDialogProps {
     inputId: string;
     confirmLabel: string;
     cancelLabel?: string;
-    pending: boolean;
+    isPending: boolean;
     tone?: 'neutral' | 'danger';
     /** Live feedback from the last attempt, rendered inside the dialog. */
     status?: ReactNode;
@@ -34,14 +34,14 @@ export default function ConfirmDialog({
     onConfirm,
     onExitTransitionEnd,
     open,
-    pending,
+    isPending,
     status,
     title,
     tone = 'danger',
     word,
 }: IConfirmDialogProps) {
     const [confirmation, setConfirmation] = useState('');
-    const canConfirm = confirmation === word && !pending;
+    const canConfirm = confirmation === word && !isPending;
     const [wasOpen, setWasOpen] = useState(open);
     if (wasOpen !== open) {
         setWasOpen(open);
@@ -51,12 +51,12 @@ export default function ConfirmDialog({
         <Modal
             actions={
                 <>
-                    <Button disabled={pending} onClick={onClose} variant="secondary">
+                    <Button disabled={isPending} onClick={onClose} variant="secondary">
                         {cancelLabel}
                     </Button>
                     <Button
                         disabled={confirmation !== word}
-                        loading={pending}
+                        loading={isPending}
                         onClick={() => onConfirm(confirmation)}
                         variant={tone === 'danger' ? 'danger' : 'primary'}
                     >
@@ -64,7 +64,7 @@ export default function ConfirmDialog({
                     </Button>
                 </>
             }
-            dismissible={!pending}
+            isDismissible={!isPending}
             onClose={onClose}
             onExitTransitionEnd={onExitTransitionEnd}
             open={open}
@@ -74,7 +74,7 @@ export default function ConfirmDialog({
             {children}
             <TextInput
                 autoComplete="off"
-                disabled={pending}
+                disabled={isPending}
                 id={inputId}
                 label={`Type ${word} to confirm`}
                 onChange={(event) => setConfirmation(event.currentTarget.value)}

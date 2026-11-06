@@ -1,0 +1,95 @@
+.skeleton {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 14px;
+    background: linear-gradient(
+        90deg,
+        var(--surface) 25%,
+        var(--surface-lit) 50%,
+        var(--surface) 75%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--radius);
+    animation: skeleton 1.4s ease-in-out infinite;
+}
+
+.measured {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: top;
+    border-radius: var(--radius);
+}
+
+.measured__content {
+    visibility: hidden;
+}
+
+.measured__paint {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.m-title {
+    height: 24px;
+}
+
+.m-control {
+    height: var(--hit);
+}
+
+.m-half {
+    width: 60%;
+}
+
+.m-short {
+    width: 35%;
+}
+
+.m-avatar {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-pill);
+}
+
+.m-fill {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.m-search {
+    background-image: linear-gradient(
+        100deg,
+        var(--surface-lit) 25%,
+        var(--border-lit) 50%,
+        var(--surface-lit) 75%
+    );
+    border-radius: 4px;
+    animation: search-skeleton 1.4s linear infinite;
+}
+
+@keyframes skeleton {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes search-skeleton {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}

@@ -11,12 +11,26 @@
 }
 
 .stage {
+    display: grid;
     flex: 1;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     text-align: center;
 
     /* The browser keeps vertical panning; horizontal swipes switch Clubs. */
     touch-action: pan-y;
+}
+
+/* Both slots contribute to one stable height; only the selected one is visible. */
+.heading,
+.create {
+    grid-area: 1 / 1;
+    align-self: center;
+    min-width: 0;
+}
+
+.stage > [aria-hidden='true'] {
+    visibility: hidden;
 }
 
 .heading h1 {
@@ -48,57 +62,39 @@
 }
 
 .arrow {
+    --action-scale: var(--action-scale-small);
+
     display: grid;
-    flex: 0 0 var(--hit);
+    flex: 0 0 48px;
     place-items: center;
-    width: var(--hit);
-    height: var(--hit);
+    width: 48px;
+    height: 48px;
     padding: 0;
-    color: var(--fg-secondary);
+    color: var(--fg);
     cursor: pointer;
     background: transparent;
     border: 0;
-    border-radius: 50%;
-}
-
-.arrow > span {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    opacity: 0.42;
-    transition:
-        opacity var(--motion-local),
-        color var(--motion-local),
-        border-color var(--motion-local),
-        transform var(--motion-press);
+    border-radius: var(--radius);
+    transition: background-color var(--motion-local);
 }
 
 .arrow svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
+    width: 32px;
+    height: 32px;
 }
 
-.switcher:hover .arrow > span,
-.switcher:focus-within .arrow > span {
-    opacity: 0.9;
+.arrow[data-direction='next'] svg {
+    transform: rotate(180deg);
 }
 
-.arrow:hover > span,
-.arrow:focus-visible > span {
-    color: var(--fg);
-    border-color: var(--border-lit);
-    opacity: 1;
+.arrow:hover:not(:disabled),
+.arrow:focus-visible {
+    background: var(--accent-soft);
 }
 
-.arrow:active > span {
-    transform: scale(0.95);
+.arrow:disabled {
+    cursor: progress;
+    opacity: 0.42;
 }
 
 .dots {
@@ -135,7 +131,6 @@
     display: grid;
     gap: var(--gap-sm);
     justify-items: center;
-    padding-block: var(--gap-md);
     color: var(--fg-secondary);
     text-decoration: none;
 }
@@ -171,6 +166,11 @@
 }
 
 @media (width < 768px) {
+    .arrow svg {
+        width: 28px;
+        height: 28px;
+    }
+
     .row {
         gap: 0;
     }
@@ -185,7 +185,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .arrow > span,
+    .arrow,
     .dot,
     .createCircle {
         transition: none;

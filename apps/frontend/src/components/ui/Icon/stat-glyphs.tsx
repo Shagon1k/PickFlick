@@ -1,3 +1,7 @@
+import type { ReactNode } from 'react';
+
+import type { TIconName } from './Icon';
+
 export const statGlyphs = {
     'film-reel': (
         <g transform="scale(0.046875)" fill="currentColor">
@@ -87,4 +91,4 @@ export const statGlyphs = {
             </g>
         </g>
     ),
-};
+} satisfies Partial<Record<TIconName, ReactNode>>;

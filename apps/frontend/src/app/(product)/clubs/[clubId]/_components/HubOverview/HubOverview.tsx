@@ -1,47 +1,51 @@
-import type { IClubHub } from '@pickflick/contracts';
+import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
+import { formatHubSessionTitle } from '#components/sessions/club-session-text';
+import Avatar from '#components/ui/Avatar/Avatar';
+import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { getMonogram } from '#lib/format';
+import { formatAverage, formatHours } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
-import HubSessionCards from '../HubSessionCards/HubSessionCards';
 
 export default function HubOverview({ hub }: { hub: IClubHub }) {
     const stats = hub.statistics;
+    const clubPath = `/clubs/${hub.club.id}`;
+    const returnTo = encodeURIComponent(clubPath);
     const tiles: {
         label: string;
         value: string | number | null;
         icon: TIconName;
-        small?: boolean;
+        isSmall?: boolean;
     }[] = [
         { label: 'Sessions watched', value: stats.sessionsWatched, icon: 'film-reel' },
         { label: 'Sessions this year', value: stats.sessionsThisYear, icon: 'clapperboard' },
-        { label: 'Avg club rating', value: formatNumber(stats.averageRating), icon: 'star-circle' },
+        {
+            label: 'Avg club rating',
+            value: stats.averageRating === null ? null : formatAverage(stats.averageRating),
+            icon: 'star-circle',
+        },
         {
             label: 'Total watch time, h',
-            value: formatNumber(stats.totalWatchHours),
+            value: stats.totalWatchHours === null ? null : formatHours(stats.totalWatchHours),
             icon: 'stopwatch',
         },
         { label: 'Most watched genre', value: stats.topGenre, icon: 'genre' },
-        { label: 'Top director', value: stats.topDirector, icon: 'director', small: true },
-        { label: 'Top actor', value: stats.topActor, icon: 'actor', small: true },
+        { label: 'Top director', value: stats.topDirector, icon: 'director', isSmall: true },
+        { label: 'Top actor', value: stats.topActor, icon: 'actor', isSmall: true },
     ];
-    const visibleTiles = hub.club.tier === 'FREE' ? tiles.slice(0, 2) : tiles;
     return (
         <div className={styles.overview}>
-            <section
-                aria-label="Club statistics"
-                className={styles.statistics}
-                data-basic={hub.club.tier === 'FREE' || undefined}
-            >
-                {visibleTiles.map((tile) => (
+            <section aria-label="Club statistics" className={styles.statistics}>
+                {tiles.map((tile) => (
                     <div className={styles.stat} key={tile.label}>
                         <Icon name={tile.icon} />
                         <div>
-                            <strong data-small={tile.small || undefined}>
+                            <strong data-small={tile.isSmall || undefined}>
                                 {tile.value ?? '—'}
                             </strong>
                             <span>{tile.label}</span>
@@ -49,14 +53,6 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     </div>
                 ))}
             </section>
-            {hub.club.tier === 'FREE' ? (
-                <p>Extended Club analytics and the ratings leaderboard are available with Pro.</p>
-            ) : (
-                <p>
-                    Ratings use completed results you can view. Metadata summaries need film details
-                    for every completed screening.
-                </p>
-            )}
             <div className={styles.cards}>
                 <section className={styles.card}>
                     <div className={styles.cardHeading}>
@@ -68,61 +64,85 @@ export default function HubOverview({ hub }: { hub: IClubHub }) {
                     <ul className={styles.memberPills}>
                         {hub.members.map((member) => (
                             <li key={member.id} data-admin={member.role === 'ADMIN' || undefined}>
-                                <span aria-hidden="true">{getMonogram(member.displayName)}</span>
+                                <span className={styles.memberAvatar}>
+                                    <Avatar
+                                        name={member.displayName}
+                                        src={member.avatarUrl}
+                                        size="small"
+                                        withColorReveal={false}
+                                    />
+                                </span>
                                 {member.displayName}
                                 {member.role === 'ADMIN' ? ' (admin)' : ''}
                             </li>
                         ))}
                     </ul>
                 </section>
-                <ActiveSessionCard hub={hub} />
+                <ActiveSessionCard
+                    hub={hub}
+                    actions={
+                        !hub.activeSession && hub.permissions.manageSessions ? (
+                            <div className={styles.emptySessionActions}>
+                                <ButtonLink
+                                    fullWidth
+                                    href={`${clubPath}/sessions/new?returnTo=${returnTo}`}
+                                    variant="primary"
+                                >
+                                    <Icon name="calendar" />
+                                    <span>Schedule New</span>
+                                </ButtonLink>
+                                <ButtonLink
+                                    fullWidth
+                                    href={`${clubPath}/sessions/past/new?returnTo=${returnTo}`}
+                                >
+                                    <Icon name="clock" />
+                                    <span>Log Past</span>
+                                </ButtonLink>
+                            </div>
+                        ) : undefined
+                    }
+                />
             </div>
-            {hub.ratingSessions.length ? <HubSessionCards hub={hub} ratingsOnly /> : null}
             <SprocketDivider variant="section" />
             <section className={styles.card}>
                 <h2>Recent Activity</h2>
                 {hub.recentSessions.length ? (
                     <ul className={styles.activity}>
-                        {hub.recentSessions.map((session) => (
-                            <li key={session.id}>
-                                <Link href={`/sessions/${session.id}`} prefetch={false}>
-                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
-                                </Link>{' '}
-                                · {session.phase.toLowerCase()} ·{' '}
-                                <time dateTime={session.updatedAt}>
-                                    {new Intl.DateTimeFormat('en', {
-                                        dateStyle: 'medium',
-                                        timeZone: 'UTC',
-                                    }).format(new Date(session.updatedAt))}
-                                </time>
-                            </li>
-                        ))}
+                        {hub.recentSessions.map((session) => {
+                            const [before, after] = describeActivity(session);
+                            return (
+                                <li key={session.id}>
+                                    {before}
+                                    <Link href={`/sessions/${session.id}`} prefetch={false}>
+                                        {formatHubSessionTitle(session)}
+                                    </Link>
+                                    {after} ·{' '}
+                                    <LocalTime format="relative" value={session.updatedAt} />
+                                </li>
+                            );
+                        })}
                     </ul>
                 ) : (
                     <p>No Session activity yet.</p>
                 )}
             </section>
-            {hub.historySessions.length ? (
-                <details className={styles.history}>
-                    <summary>Session history</summary>
-                    <ul className={styles.activity}>
-                        {hub.historySessions.map((session) => (
-                            <li key={session.id}>
-                                <Link href={`/sessions/${session.id}`}>
-                                    {session.topic ?? session.movie?.title ?? 'Untitled Session'}
-                                </Link>{' '}
-                                · {session.phase.toLowerCase()}
-                            </li>
-                        ))}
-                    </ul>
-                </details>
-            ) : null}
         </div>
     );
 }
 
-function formatNumber(value: number | null) {
-    return value === null
-        ? null
-        : new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
+/** The words around the Session's title, the way the member event feed will read later. */
+const ACTIVITY: Record<IClubHubSession['phase'], [string, string]> = {
+    NOMINATION: ['Nominations opened for ', ''],
+    SELECTION: ['Selection opened for ', ''],
+    WATCHING: ['', ' was picked for the screening'],
+    RATING: ['Rating opened for ', ''],
+    COMPLETED: ['Screened ', ''],
+    CANCELLED: ['Cancelled ', ''],
+};
+
+/** A Session's latest step in words, with the Club score once it is known. */
+function describeActivity(session: IClubHubSession): [string, string] {
+    if (session.phase === 'COMPLETED' && session.ratingAverage !== null)
+        return ['Screened ', `, rated ${formatAverage(session.ratingAverage)}`];
+    return ACTIVITY[session.phase];
 }

@@ -1,22 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
-import { acceptedParticipants } from './session-facts';
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
+import { acceptedParticipants, expectSessionPhase } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 const ROUTE = '/sessions/30000000-0000-4000-8000-000000000049';
 async function authenticate(context: BrowserContext, scenario: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-watching-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-watching-${scenario}-${crypto.randomUUID()}`);
 }
 
 for (const viewport of canonicalViewports) {
@@ -28,18 +21,21 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
             await settle(page);
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
+            await expect(
+                page.getByRole('status').filter({
+                    hasText: '1 of 3 members have joined the screening.',
+                }),
+            ).toBeVisible();
             await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
-            await expect(page.getByText('Room A', { exact: true })).toBeVisible();
+            await expect(
+                page
+                    .getByRole('region', { name: 'Session details', exact: true })
+                    .getByText('Room A', { exact: true }),
+            ).toBeVisible();
             await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/watching-${viewport.name}.png`,
-                fullPage: true,
-            });
             const settings = page.getByRole('button', { name: 'Session settings' });
             await settings.focus();
             await page.keyboard.press('Enter');
@@ -52,13 +48,10 @@ for (const viewport of canonicalViewports) {
             ).toBeDisabled();
             await expect(dialog).toHaveCSS('opacity', '1');
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/open-rating-${viewport.name}.png`,
-            });
             await page.keyboard.press('Escape');
             await expect(dialog).toHaveCount(0);
             await expect(settings).toBeFocused();
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
             await settings.click();
             await expect(page.getByRole('menuitem', { name: 'Open Rating' })).toBeFocused();
             await settle(page);
@@ -66,10 +59,10 @@ for (const viewport of canonicalViewports) {
             await dialog.getByLabel('Type OPEN to confirm').fill('OPEN');
             await dialog.getByLabel('Type OPEN to confirm').press('Enter');
             await expect(dialog).toHaveCount(0);
-            await expect(page.getByText('rating', { exact: true })).toBeVisible();
+            await expectSessionPhase(page, 'Rating');
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
             await page.reload();
-            await expect(page.getByText('rating', { exact: true })).toBeVisible();
+            await expectSessionPhase(page, 'Rating');
         },
     );
 }
@@ -81,23 +74,23 @@ for (const scenario of ['member', 'readonly']) {
     }) => {
         await authenticate(context, scenario);
         await page.goto(ROUTE);
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
         await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Leave Session' })).toBeVisible();
         await page.reload();
-        await expect(page.getByText('watching', { exact: true })).toBeVisible();
+        await expectSessionPhase(page, 'Watching');
     });
 }
 
 for (const [scenario, message] of [
     ['failure', 'We could not open Rating. Try again.'],
     ['stale', 'This Session changed. Refresh before opening Rating.'],
-]) {
+] as const) {
     test(`Opening Rating keeps the dialog on ${scenario} and explains offline recovery`, async ({
         context,
         page,
     }) => {
-        await authenticate(context, scenario!);
+        await authenticate(context, scenario);
         await page.goto(ROUTE);
         await page.getByRole('button', { name: 'Session settings' }).click();
         await expect(page.getByRole('menuitem', { name: 'Open Rating' })).toBeFocused();
@@ -105,7 +98,7 @@ for (const [scenario, message] of [
         const dialog = page.getByRole('dialog', { name: 'Open Rating' });
         await dialog.getByLabel('Type OPEN to confirm').fill('OPEN');
         await dialog.getByRole('button', { name: 'Open Rating', exact: true }).click();
-        await expect(dialog.getByRole('status')).toHaveText(message!);
+        await expect(dialog.getByRole('status')).toHaveText(message);
         await expect(dialog.getByLabel('Type OPEN to confirm')).toHaveValue('OPEN');
         await context.setOffline(true);
         await dialog.getByRole('button', { name: 'Open Rating', exact: true }).click();

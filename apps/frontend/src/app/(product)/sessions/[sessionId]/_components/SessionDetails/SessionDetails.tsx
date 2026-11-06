@@ -6,13 +6,9 @@ import {
     type TMovieDetails,
     type TSession,
 } from '@pickflick/contracts';
-import Image from 'next/image';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-import nominationPanda from '#brand/panda-collection.webp';
-import watchingPanda from '#brand/panda-rating.webp';
-import selectionPanda from '#brand/panda-rating-2.webp';
 import MovieMedia from '#components/movies/MovieMedia/MovieMedia';
 import CancelSessionDialog from '#components/sessions/CancelSessionDialog/CancelSessionDialog';
 import NominationClose from '#components/sessions/NominationClose/NominationClose';
@@ -23,18 +19,16 @@ import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
-import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
-import { formatCount } from '#lib/format';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from '../../page.module.scss';
-import Completed from '../Completed/Completed';
 import Nomination from '../Nomination/Nomination';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
-import Rating from '../Rating/Rating';
+import YourRating from '../Rating/YourRating';
 import Selection from '../Selection/Selection';
-import SelectionOutcome from '../SelectionOutcome/SelectionOutcome';
-import SessionFacts from '../SessionFacts/SessionFacts';
 import SessionHeader from '../SessionHeader/SessionHeader';
+import SessionStatus from '../SessionStatus/SessionStatus';
+import DetailsSection from './DetailsSection';
 
 export default function SessionDetails({
     session,
@@ -62,7 +56,6 @@ export default function SessionDetails({
             renderedAt={renderedAt}
             onKick={onKick}
             onClosePhase={onClosePhase}
-            closePhaseLabel={getClosePhaseLabel(session.phase)}
             headingRef={headingRef}
             onEdit={() => setDialog('edit')}
             onCancel={() => setDialog('cancel')}
@@ -73,13 +66,11 @@ export default function SessionDetails({
             return (
                 <>
                     <PhaseProgress>
-                        {session.type === 'PAST' ? 'Imported past screening. ' : ''}
-                        Session complete —{' '}
-                        {formatCount(session.rating?.receivedCount ?? 0, 'rating')} received. This
-                        screening record is closed.
+                        This session has ended. The results are available{' '}
+                        <a href="#rating-heading">below</a>.
                     </PhaseProgress>
                     {header(participation)}
-                    <ScreeningFilm movie={movie} movieId={session.movieId} />
+                    <ScreeningFilm movie={movie} session={session} />
                 </>
             );
         const rating = session.rating;
@@ -94,17 +85,17 @@ export default function SessionDetails({
                         <>
                             <PhaseProgress>
                                 Rating in progress — {rating.submittedCount} of{' '}
-                                {rating.acceptedCount} participants have rated. Rating never blocks
-                                the next Session.
+                                {rating.acceptedCount} members have rated.
+                                {rating.canSubmit ? (
+                                    <>
+                                        {' '}
+                                        Please <a href="#your-rating-heading">rate</a>.
+                                    </>
+                                ) : null}
                             </PhaseProgress>
                             {header(participation, onKick, onClose)}
-                            <ScreeningFilm movie={movie} movieId={session.movieId} />
-                            <Rating
-                                key={session.phase}
-                                sessionId={session.id}
-                                data={rating}
-                                isCompleted={false}
-                            />
+                            <ScreeningFilm movie={movie} session={session} />
+                            <YourRating key={session.id} sessionId={session.id} data={rating} />
                         </>
                     )}
                 </RatingClose>
@@ -114,17 +105,16 @@ export default function SessionDetails({
                 <OpenRating
                     sessionId={session.id}
                     phaseVersion={session.phaseVersion}
-                    canOpen={session.phase === 'WATCHING' && session.canEdit}
+                    canOpen={session.phase === 'WATCHING' && session.canManage}
                 >
                     {(onOpen) => (
                         <>
                             <PhaseProgress>
-                                {roster.acceptedCount}{' '}
-                                {roster.acceptedCount === 1 ? 'member has' : 'members have'} joined
+                                {roster.acceptedCount} of {roster.memberCount} members have joined
                                 the screening.
                             </PhaseProgress>
                             {header(participation, onKick, onOpen)}
-                            <ScreeningFilm movie={movie} movieId={session.movieId} />
+                            <ScreeningFilm movie={movie} session={session} />
                         </>
                     )}
                 </OpenRating>
@@ -154,7 +144,7 @@ export default function SessionDetails({
                     phaseVersion={session.phaseVersion}
                     submittedCount={selection.submittedCount}
                     acceptedCount={selection.acceptedCount}
-                    canClose={session.canEdit && selection.nominations.length > 0}
+                    canClose={session.canManage && selection.nominations.length > 0}
                 >
                     {(onClose) => (
                         <Selection
@@ -173,17 +163,7 @@ export default function SessionDetails({
                 {(participation, onKick) => (
                     <>
                         {renderPhase(participation, onKick)}
-                        {session.selectionOutcome?.source === 'LIVE' &&
-                        session.phase !== 'COMPLETED' ? (
-                            <SelectionOutcome data={session.selectionOutcome} />
-                        ) : null}
-                        <div className={styles.reelBreak} aria-hidden="true">
-                            <SprocketDivider variant="section" />
-                            <Image src={getPhaseMascot(session.phase)} alt="" />
-                        </div>
-                        <h2 className={styles.detailsTitle}>Session Details</h2>
-                        <SessionFacts session={session} roster={roster} />
-                        {session.phase === 'COMPLETED' ? <Completed session={session} /> : null}
+                        <DetailsSection session={session} roster={roster} />
                     </>
                 )}
             </SessionRoster>
@@ -206,21 +186,24 @@ export default function SessionDetails({
     );
 }
 
-function ScreeningFilm({
-    movie,
-    movieId,
-}: {
-    movie: TMovieDetails | null;
-    movieId: string | null;
-}) {
+function ScreeningFilm({ movie, session }: { movie: TMovieDetails | null; session: TSession }) {
+    const movieId = session.movieId;
     if (movie)
         return (
             <div className={styles.film}>
                 <MovieMedia
+                    variant="session"
                     filmHref={movieId ? `/movies/${movieId}` : undefined}
-                    hidePhonePoster
+                    shouldHidePhonePoster
                     movie={movie}
-                    title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
+                    posterCorner={
+                        <SessionStatus
+                            phase={session.phase}
+                            isLogged={session.type === 'PAST'}
+                            placement="poster"
+                        />
+                    }
+                    title={formatMovieTitle(movie)}
                 />
             </div>
         );
@@ -230,17 +213,4 @@ function ScreeningFilm({
             {movieId ? <Link href={`/movies/${movieId}`}>View selected Movie</Link> : null}
         </Alert>
     );
-}
-
-function getPhaseMascot(phase: TSession['phase']) {
-    if (phase === 'NOMINATION') return nominationPanda;
-    if (phase === 'SELECTION') return selectionPanda;
-    return watchingPanda;
-}
-
-function getClosePhaseLabel(phase: TSession['phase']) {
-    if (phase === 'RATING') return 'Close Rating early';
-    if (phase === 'WATCHING') return 'Open Rating';
-    if (phase === 'NOMINATION') return 'Close nominations early';
-    return 'Close Selection early';
 }

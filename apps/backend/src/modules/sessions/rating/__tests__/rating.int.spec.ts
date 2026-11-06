@@ -6,10 +6,12 @@ import {
     addMember,
     createSession,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
-    removeUsers,
     startTestApi,
+    withFailingInsert,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Rating', () => {
     let api: ITestApi;
@@ -92,7 +94,7 @@ describe('Rating', () => {
             submittedCount: 1,
             receivedCount: 1,
             canSubmit: false,
-            results: null,
+            results: { average: 8, entries: null },
             own: { score: 8 },
         });
         const final = await Promise.all([submit(1), submit(2), submit(2)]);
@@ -110,6 +112,9 @@ describe('Rating', () => {
         });
         expect(events).toHaveLength(1);
         expect(events[0]!.kind).toBe('AUTOMATIC');
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'RATING_CLOSED')).toEqual(
+            users.slice(0, 3).toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await close()).status).toBe(201);
         expect(
             await api.prisma.clubAuditEvent.count({
@@ -118,6 +123,15 @@ describe('Rating', () => {
         ).toBe(0);
     });
 
+    it('should let a participant who joined the Club after the screening read but not rate', async () => {
+        await api.prisma.session.update({
+            where: { id: sessionId },
+            data: { scheduledAt: new Date(Date.now() - 86_400_000) },
+        });
+        expect((await detail(2)).rating).toMatchObject({ canSubmit: false });
+        expect((await submit(2)).status).toBe(403);
+        expect(await received()).toEqual([]);
+    });
     it('should preserve exactly the received ratings under concurrent partial closure', async () => {
         await submit(2, { score: 10, comment: '  Keep this\r\nresponse.  ' });
         const before = await received();
@@ -136,6 +150,9 @@ describe('Rating', () => {
                 where: { sessionId, action: 'SESSION_RATING_CLOSED' },
             }),
         ).toBe(1);
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'RATING_CLOSED')).toEqual(
+            users.slice(0, 3).toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await detail(2)).rating).toMatchObject({
             canSubmit: false,
             canClose: false,
@@ -205,36 +222,33 @@ describe('Rating', () => {
         expect((await detail()).rating?.results?.entries).toHaveLength(3);
     });
 
-    it('should hide other responses until completion and enforce snapshotted post-close visibility', async () => {
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showRatingResults: false },
+    it('should hide peer responses for all roles until the current Club policy permits disclosure', async () => {
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showRatingsAfter: false },
         });
         await submit();
         await submit(2, { score: 3, comment: 'Private response' });
-        expect((await detail()).rating?.results).toBeNull();
+        expect((await detail()).rating?.results).toEqual({ average: 5.5, entries: null });
         expect((await detail(1)).rating?.own).toBeNull();
         await close();
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: true } });
         for (const index of [2, 3]) {
             const session = await detail(index);
-            expect(session.rating?.results).toBeNull();
+            expect(session.rating?.results).toEqual({ average: 5.5, entries: null });
             expect(JSON.stringify(session)).not.toContain('A fine screening.');
         }
         expect((await detail(2)).rating?.own?.comment).toBe('Private response');
+        expect((await detail()).rating?.results).toEqual({ average: 5.5, entries: null });
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
         expect((await detail()).rating?.results?.entries).toHaveLength(2);
         expect((await detail(1)).rating?.results?.average).toBe(5.5);
     });
 
     it('should enforce authentication, Membership, participation and operator access including retries', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/rating`, {
-                    method: 'POST',
-                    json: { score: 8 },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/rating`, {
+            method: 'POST',
+            json: { score: 8 },
+        });
         expect((await submit(4)).status).toBe(404);
         expect((await submit(3)).status).toBe(403);
         expect((await close(2)).status).toBe(403);
@@ -262,32 +276,34 @@ describe('Rating', () => {
         const data = { sessionId, participantId: participantIds[0]!, score: 8 };
         await expect(
             api.prisma.sessionRating.create({ data: { ...data, score: 11 } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionRating_score_check');
         const other = await createSession(api.prisma, clubId, {
             type: 'PRE_SELECTED',
             phase: 'RATING',
         });
         await expect(
             api.prisma.sessionRating.create({ data: { ...data, sessionId: other.id } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionRating_participantId_sessionId_fkey');
         await submit();
-        await expect(api.prisma.sessionRating.create({ data })).rejects.toThrow();
+        await expect(api.prisma.sessionRating.create({ data })).rejects.toThrow(
+            'SessionRating_participantId_sessionId_key',
+        );
         const before = await received();
         await expect(
             api.prisma.sessionRating.update({ where: { id: before[0]!.id }, data: { score: 1 } }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Session Ratings are immutable');
         await close();
         await expect(
             api.prisma.sessionRating.update({
                 where: { id: before[0]!.id },
                 data: { comment: 'Rewrite history' },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Session Ratings are immutable');
         await expect(
             api.prisma.sessionRating.create({
                 data: { ...data, participantId: participantIds[1]! },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Live ratings require an open Rating Session and a submission time');
         expect(await received()).toEqual(before);
     });
 
@@ -315,27 +331,21 @@ describe('Rating', () => {
         await submit(2);
         const before = await state();
         const ratings = await received();
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION reject_rating_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action = 'SESSION_RATING_CLOSED' THEN RAISE EXCEPTION 'test audit failure'; END IF; RETURN NEW; END; $$`,
+        await withFailingInsert(
+            api.prisma,
+            'ClubAuditEvent',
+            `NEW.action = 'SESSION_RATING_CLOSED'`,
+            async () => {
+                expect((await close()).status).toBe(500);
+                expect(await state()).toEqual(before);
+                expect(await received()).toEqual(ratings);
+                expect(
+                    await api.prisma.sessionProgressEvent.count({
+                        where: { sessionId, phase: 'COMPLETED' },
+                    }),
+                ).toBe(0);
+            },
         );
-        await api.prisma.$executeRawUnsafe(
-            `CREATE TRIGGER reject_rating_audit BEFORE INSERT ON "ClubAuditEvent" FOR EACH ROW EXECUTE FUNCTION reject_rating_audit()`,
-        );
-        try {
-            expect((await close()).status).toBe(500);
-            expect(await state()).toEqual(before);
-            expect(await received()).toEqual(ratings);
-            expect(
-                await api.prisma.sessionProgressEvent.count({
-                    where: { sessionId, phase: 'COMPLETED' },
-                }),
-            ).toBe(0);
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER reject_rating_audit ON "ClubAuditEvent"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION reject_rating_audit()');
-        }
         expect((await close()).status).toBe(201);
     });
 
@@ -343,22 +353,16 @@ describe('Rating', () => {
         await submit();
         await submit(1);
         const before = await state();
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION reject_rating_progress() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.phase = 'COMPLETED' THEN RAISE EXCEPTION 'test progress failure'; END IF; RETURN NEW; END; $$`,
+        await withFailingInsert(
+            api.prisma,
+            'SessionProgressEvent',
+            `NEW.phase = 'COMPLETED'`,
+            async () => {
+                expect((await submit(2)).status).toBe(500);
+                expect(await received()).toHaveLength(2);
+                expect(await state()).toEqual(before);
+            },
         );
-        await api.prisma.$executeRawUnsafe(
-            `CREATE TRIGGER reject_rating_progress BEFORE INSERT ON "SessionProgressEvent" FOR EACH ROW EXECUTE FUNCTION reject_rating_progress()`,
-        );
-        try {
-            expect((await submit(2)).status).toBe(500);
-            expect(await received()).toHaveLength(2);
-            expect(await state()).toEqual(before);
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER reject_rating_progress ON "SessionProgressEvent"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION reject_rating_progress()');
-        }
         expect((await submit(2)).status).toBe(201);
         expect((await state()).phase).toBe('COMPLETED');
     });

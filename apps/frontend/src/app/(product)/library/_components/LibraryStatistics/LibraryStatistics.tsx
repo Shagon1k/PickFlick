@@ -2,6 +2,7 @@ import type { TLibraryStatistics } from '@pickflick/contracts';
 
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
+import { formatAverage, formatHours } from '#lib/format';
 
 import styles from './LibraryStatistics.module.scss';
 
@@ -14,10 +15,18 @@ export default function LibraryStatistics({ statistics }: { statistics: TLibrary
     }[] = [
         { label: 'Films rated', value: statistics.filmsRated, icon: 'film-reel' },
         { label: 'Rated this year', value: statistics.ratedThisYear, icon: 'clapperboard' },
-        { label: 'Avg rating', value: formatNumber(statistics.averageRating), icon: 'star-circle' },
+        {
+            label: 'Avg rating',
+            value:
+                statistics.averageRating === null ? null : formatAverage(statistics.averageRating),
+            icon: 'star-circle',
+        },
         {
             label: 'Total watch time, h',
-            value: formatNumber(statistics.totalWatchHours),
+            value:
+                statistics.totalWatchHours === null
+                    ? null
+                    : formatHours(statistics.totalWatchHours),
             icon: 'stopwatch',
         },
         { label: 'On watchlist', value: statistics.watchlistCount, icon: 'watchlist' },
@@ -41,18 +50,9 @@ export default function LibraryStatistics({ statistics }: { statistics: TLibrary
                     ))}
                 </div>
             </div>
-            <p className={styles.explanation}>
-                {statistics.filmsRated === 0 && 'Rate a film to start your personal statistics. '}
-                Each rated film counts once. This year uses the latest rating update in UTC. Watch
-                time estimates one viewing per rated film. Metadata summaries need details for every
-                rated film and may change with catalog updates. An em dash means unavailable.
-            </p>
+            {statistics.filmsRated === 0 ? (
+                <p className={styles.empty}>Rate a film to start your statistics.</p>
+            ) : null}
         </section>
     );
-}
-
-function formatNumber(value: number | null) {
-    return value === null
-        ? null
-        : new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
 }

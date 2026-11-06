@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { buildLoginPath, getSessionState } from '#api/session.server';
+import { buildLoginPath, getSessionState } from '#api/auth-session.server';
 import BackLink from '#components/navigation/BackLink/BackLink';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
 import ButtonLink from '#components/ui/Button/ButtonLink';

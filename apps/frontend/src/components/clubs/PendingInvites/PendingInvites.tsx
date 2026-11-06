@@ -1,52 +1,64 @@
 'use client';
 
 import type { TPendingInvitation } from '@pickflick/contracts';
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useEffect, useId, useRef, useState, useTransition } from 'react';
 
+import { useNotifications } from '#components/notifications/notifications-context';
 import { useProductOverlay } from '#components/shells/product-overlay';
+import Alert from '#components/ui/Alert/Alert';
 import Button from '#components/ui/Button/Button';
+import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
-import { formatCount, formatUtcDate } from '#lib/format';
+import { formatCalendarDate, formatCount } from '#lib/format';
 
 import { loadPendingInvitesAction, respondPendingInviteAction } from './actions';
 import styles from './PendingInvites.module.scss';
 
 export default function PendingInvites() {
     const { activeOverlay, closeOverlay, toggleOverlay } = useProductOverlay();
+    const { data: notifications } = useNotifications();
+    const router = useRouter();
     const isOpen = activeOverlay === 'invites';
     const triggerRef = useRef<HTMLButtonElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const [invitations, setInvitations] = useState<TPendingInvitation[]>([]);
-    const [message, setMessage] = useState('Loading pending invites…');
+    const [loadError, setLoadError] = useState('');
+    const [announcement, setAnnouncement] = useState('');
+    const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
     const [isLoaded, setIsLoaded] = useState(false);
-    // The ticket appears with the first invite and then stays, so focus can return to it after the
-    // last response; a failed load shows it too, so Retry stays reachable.
-    const [isShown, setIsShown] = useState(false);
     const [isPending, startTransition] = useTransition();
     const id = useId();
+    // The ticket stays while its panel is open, so an emptied list can still be read and closed.
+    const isShown = invitations.length > 0 || Boolean(loadError) || isOpen;
     async function load() {
         try {
             const result = await loadPendingInvitesAction();
             if (result.invitations) {
                 setInvitations(result.invitations);
-                if (result.invitations.length) setIsShown(true);
                 setIsLoaded(true);
-                setMessage('');
+                setLoadError('');
             } else {
                 setIsLoaded(false);
-                setIsShown(true);
-                setMessage(result.message ?? 'Pending invites are unavailable.');
+                setLoadError(result.message ?? 'Pending invites are unavailable.');
             }
         } catch {
             setIsLoaded(false);
-            setIsShown(true);
-            setMessage('Pending invites could not be loaded. Check your connection and retry.');
+            setLoadError('Pending invites could not be loaded. Check your connection and retry.');
         }
     }
 
+    // Each inbox refresh (a live signal, focus, reconnect or the periodic check) also rechecks
+    // invitations, so a new one slides in without a reload.
     useEffect(() => {
         startTransition(load);
-    }, []);
+    }, [notifications]);
+    useEffect(() => {
+        if (isShown || !widgetContains(triggerRef.current, document.activeElement)) return;
+        const main = document.querySelector('main');
+        main?.setAttribute('tabindex', '-1');
+        main?.focus({ preventScroll: true });
+    }, [isShown]);
     function openInvites() {
         if (triggerRef.current) {
             toggleOverlay('invites', triggerRef.current);
@@ -61,22 +73,41 @@ export default function PendingInvites() {
         headerRef.current
             ?.querySelector<HTMLButtonElement>('button')
             ?.focus({ preventScroll: true });
+        setRowErrors((current) => ({ ...current, [invitationId]: '' }));
         startTransition(async () => {
             try {
                 const result = await respondPendingInviteAction(invitationId, decision, kind);
-                setMessage(result.message);
-                if (result.resolved)
-                    setInvitations((current) =>
-                        current.filter(({ id: inviteId }) => inviteId !== invitationId),
-                    );
+                if (!result.resolved) {
+                    setRowErrors((current) => ({ ...current, [invitationId]: result.message }));
+                    return;
+                }
+                setAnnouncement(result.message);
+                setInvitations((current) =>
+                    current.filter(({ id: inviteId }) => inviteId !== invitationId),
+                );
+                if (result.href) {
+                    closeOverlay();
+                    router.push(result.href);
+                }
             } catch {
-                setMessage('The response could not be confirmed. Check your connection and retry.');
+                setRowErrors((current) => ({
+                    ...current,
+                    [invitationId]: 'Your response was not sent. Check your connection and retry.',
+                }));
             }
         });
     }
     const countLabel = formatCount(invitations.length, 'invitation');
+    let loadLabel = 'Checking invitations…';
+    if (isLoaded) loadLabel = countLabel;
+    else if (loadError && !isPending) loadLabel = 'Temporarily unavailable';
     return (
-        <div className={styles.widget} data-invite-ticket hidden={!isShown}>
+        <div
+            className={styles.widget}
+            data-invite-ticket
+            data-shown={isShown || undefined}
+            inert={!isShown}
+        >
             <Popover
                 id={id}
                 variant="invites"
@@ -119,7 +150,7 @@ export default function PendingInvites() {
                             <small className={styles.meta}>Club · Session</small>
                         </span>
                         <span className={styles.stub}>
-                            <strong>{isLoaded ? invitations.length : '—'}</strong>
+                            <strong data-invite-count>{isLoaded ? invitations.length : '—'}</strong>
                             <small>open</small>
                         </span>
                     </button>
@@ -128,24 +159,32 @@ export default function PendingInvites() {
                 <div className={styles.header} ref={headerRef}>
                     <div>
                         <h2>Pending invites</h2>
-                        <span>{isLoaded ? countLabel : 'Checking invitations…'}</span>
+                        <span>{loadLabel}</span>
                     </div>
                     <button type="button" className={styles.close} onClick={() => closeOverlay()}>
                         Close
                     </button>
                 </div>
-                <p className={styles.feedback} aria-live="polite" role="status">
-                    {message ||
-                        (isLoaded && invitations.length === 0 ? 'No pending invitations.' : '')}
+                <p aria-live="polite" className="visually-hidden" role="status">
+                    {announcement}
                 </p>
-                {!isLoaded ? (
-                    <Button
-                        disabled={isPending}
-                        onClick={() => startTransition(load)}
-                        variant="secondary"
-                    >
-                        Retry invites
-                    </Button>
+                {isLoaded && invitations.length === 0 ? (
+                    <p className={styles.feedback}>No pending invitations.</p>
+                ) : null}
+                {loadError ? (
+                    <div className={styles.recovery}>
+                        <Alert tone="warning">{loadError}</Alert>
+                        <div>
+                            <Button
+                                loading={isPending}
+                                onClick={() => startTransition(load)}
+                                size="small"
+                                variant="secondary"
+                            >
+                                Retry invites
+                            </Button>
+                        </div>
+                    </div>
                 ) : null}
                 <ul className={styles.list}>
                     {invitations.map((invitation) => (
@@ -159,6 +198,11 @@ export default function PendingInvites() {
                                     : (invitation.topic ?? 'Untitled Session')}
                             </h3>
                             <p>{describeInvitation(invitation)}</p>
+                            {rowErrors[invitation.id] ? (
+                                <p className={styles.rowError} role="alert">
+                                    {rowErrors[invitation.id]}
+                                </p>
+                            ) : null}
                             <div className={styles.actions}>
                                 <Button
                                     disabled={isPending}
@@ -188,15 +232,28 @@ export default function PendingInvites() {
     );
 }
 
-function describeInvitation(invitation: TPendingInvitation): string {
+function describeInvitation(invitation: TPendingInvitation): ReactNode {
     if (invitation.kind === 'club')
-        return `Invited by ${invitation.inviterName} · ${formatCount(invitation.memberCount, 'member')} · Expires ${formatUtcDate(invitation.expiresAt)}`;
-    return invitation.scheduledAt
-        ? `${invitation.clubName} · ${new Intl.DateTimeFormat('en', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              timeZone: 'UTC',
-          }).format(new Date(invitation.scheduledAt))}`
-        : invitation.clubName;
+        return (
+            <>
+                Invited by {invitation.inviterName} ·{' '}
+                {formatCount(invitation.memberCount, 'member')} · Expires{' '}
+                <LocalTime format="date" value={invitation.expiresAt} />
+            </>
+        );
+    if (!invitation.scheduledAt) return <>{invitation.clubName}</>;
+    const day = formatCalendarDate(invitation.scheduledAt, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+    });
+    return (
+        <>
+            {invitation.clubName} · {day}
+        </>
+    );
+}
+
+function widgetContains(trigger: HTMLElement | null, element: Element | null): boolean {
+    return Boolean(element && trigger?.closest('[data-invite-ticket]')?.contains(element));
 }

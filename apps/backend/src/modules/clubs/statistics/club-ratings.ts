@@ -12,6 +12,7 @@ interface IRatedMovie {
     total: number;
     count: number;
     latest: number | null;
+    genres: string[];
 }
 
 export function buildClubRatings(
@@ -27,6 +28,7 @@ export function buildClubRatings(
             total: 0,
             count: 0,
             latest: null,
+            genres: metadata.get(screening.movie.id)?.genres ?? [],
         };
         row.total += screening.ratings.reduce((sum, rating) => sum + rating.score, 0);
         row.count += screening.ratings.length;
@@ -34,18 +36,22 @@ export function buildClubRatings(
         if (date !== null && (row.latest === null || date > row.latest)) row.latest = date;
         movies.set(row.movie.id, row);
     }
-    const rows = [...movies.values()].sort((a, b) => compareMovies(a, b, query.sort));
+    // shortcut: every Completed Session is grouped, sorted and paged in memory. Fine for a Club's
+    // screening history (hundreds of films); move sorting into SQL if Clubs reach thousands.
+    const search = query.q?.toLocaleLowerCase('en') ?? '';
+    const rows = [...movies.values()]
+        .filter((row) => !search || row.movie.title?.toLocaleLowerCase('en').includes(search))
+        .sort((a, b) => compareMovies(a, b, query));
     const pages = Math.max(1, Math.ceil(rows.length / CLUB_RATINGS_PAGE_SIZE));
     const page = Math.min(query.page, pages);
     return {
-        analytics: 'EXTENDED',
         items: rows
             .slice((page - 1) * CLUB_RATINGS_PAGE_SIZE, page * CLUB_RATINGS_PAGE_SIZE)
             .map((row) => ({
                 movieId: row.movie.id,
                 title: row.movie.title,
                 year: row.movie.releaseYear,
-                genres: metadata.get(row.movie.id)?.genres ?? [],
+                genres: row.genres,
                 averageRating: row.total / row.count,
             })),
         total: rows.length,
@@ -55,20 +61,44 @@ export function buildClubRatings(
     };
 }
 
-function compareMovies(a: IRatedMovie, b: IRatedMovie, sort: TClubRatingsQuery['sort']) {
+function compareMovies(a: IRatedMovie, b: IRatedMovie, query: TClubRatingsQuery) {
+    const direction =
+        query.direction ?? (query.sort === 'title' || query.sort === 'genre' ? 'asc' : 'desc');
     let result: number;
-    if (sort === 'rating') result = b.total / b.count - a.total / a.count;
-    else if (sort === 'time') result = compareDates(a.latest, b.latest);
-    else result = compareTitles(a.movie.title, b.movie.title);
+    switch (query.sort) {
+        case 'rating':
+            result = compareValues(a.total / a.count, b.total / b.count, direction);
+            break;
+        case 'time':
+            result = compareValues(a.latest, b.latest, direction);
+            break;
+        case 'year':
+            result = compareValues(a.movie.releaseYear, b.movie.releaseYear, direction);
+            break;
+        case 'genre':
+            result = compareValues(
+                a.genres.join(', ') || null,
+                b.genres.join(', ') || null,
+                direction,
+            );
+            break;
+        case 'title':
+            result = compareValues(a.movie.title, b.movie.title, direction);
+            break;
+    }
     return result || a.movie.id.localeCompare(b.movie.id);
 }
 
-function compareDates(a: number | null, b: number | null) {
+function compareValues(
+    a: string | number | null,
+    b: string | number | null,
+    direction: 'asc' | 'desc',
+) {
     if (a === null) return b === null ? 0 : 1;
-    return b === null ? -1 : b - a;
-}
-
-function compareTitles(a: string | null, b: string | null) {
-    if (a === null) return b === null ? 0 : 1;
-    return b === null ? -1 : a.localeCompare(b, 'en');
+    if (b === null) return -1;
+    const result =
+        typeof a === 'string' && typeof b === 'string'
+            ? a.localeCompare(b, 'en')
+            : Number(a) - Number(b);
+    return direction === 'asc' ? result : -result;
 }

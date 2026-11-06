@@ -1,0 +1,65 @@
+.toast {
+    position: fixed;
+    bottom: var(--gap-lg);
+    left: 50%;
+    z-index: 20;
+    display: flex;
+    gap: var(--gap-sm);
+    align-items: center;
+    width: max-content;
+    max-width: calc(100vw - 2 * var(--gutter));
+    padding: var(--gap-xs) var(--gap-xs) var(--gap-xs) var(--gap-md);
+    background: var(--surface);
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-popover);
+    transform: translateX(-50%);
+    animation: toast-in var(--motion-menu) var(--ease-menu);
+}
+
+.toast p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.dismiss {
+    display: grid;
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-pill);
+}
+
+.dismiss:hover {
+    color: var(--fg);
+}
+
+.dismiss svg {
+    width: 18px;
+    height: 18px;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 8px);
+    }
+}
+
+/* Phones and tablets keep it above the bottom navigation bar. */
+@media (width < 1024px) {
+    .toast {
+        bottom: 96px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        animation: none;
+    }
+}

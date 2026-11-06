@@ -2,7 +2,7 @@
     display: grid;
     gap: var(--gap-lg);
     width: 100%;
-    padding-block: clamp(32px, 5vw, 56px) 110px;
+    padding-block: 0 110px;
     margin-inline: auto;
 }
 
@@ -12,68 +12,6 @@
     color: var(--ivory-muted);
     text-transform: uppercase;
     letter-spacing: var(--tracking-caps);
-}
-
-/* Club Hub header: centred Club name, quiet meta, and the Club view tabs. */
-.hero {
-    display: grid;
-    gap: 4px;
-    justify-items: center;
-    text-align: center;
-}
-
-.hero h1 {
-    max-width: 700px;
-    margin: 0 0 5px;
-    font: 600 clamp(48px, 5.2vw, 72px)/0.96 var(--font-display);
-    letter-spacing: var(--tracking-tight);
-    text-wrap: balance;
-}
-
-.tabs {
-    display: none;
-    justify-content: center;
-    border-bottom: 1px solid var(--border);
-}
-
-.tabs a {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--hit);
-    padding: 14px 22px;
-    font-size: var(--fs-body-sm);
-    font-weight: 500;
-    color: var(--fg-secondary);
-    white-space: nowrap;
-    transition: color 0.18s ease;
-}
-
-.tabs a::after {
-    position: absolute;
-    right: 50%;
-    bottom: -1px;
-    left: 50%;
-    height: 2px;
-    content: '';
-    background: var(--fg);
-    border-radius: var(--radius-pill);
-    transition:
-        left 0.18s ease,
-        right 0.18s ease;
-}
-
-.tabs a:hover,
-.tabs a:focus-visible,
-.tabs a[aria-current='page'] {
-    color: var(--fg);
-}
-
-.tabs a:hover::after,
-.tabs a:focus-visible::after,
-.tabs a[aria-current='page']::after {
-    right: 0;
-    left: 0;
 }
 
 .notice {
@@ -87,6 +25,7 @@
 }
 
 /* Cards in one row share a height, and their Save rows sit on the same line at the bottom. */
+.sessionCards,
 .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -186,6 +125,8 @@
 }
 
 .check input {
+    --action-scale: var(--action-scale-small);
+
     display: grid;
     flex-shrink: 0;
     place-items: center;
@@ -197,7 +138,14 @@
     background: var(--surface);
     border: 1.5px solid var(--border-lit);
     border-radius: 5px;
-    transition: border-color var(--motion-local) var(--ease-standard);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
+}
+
+.check:hover input:not(:disabled) {
+    background: var(--surface-lit);
+    border-color: var(--fg);
 }
 
 .check input:checked {
@@ -227,27 +175,6 @@
 .check:has(input:disabled) {
     color: var(--fg-secondary);
     cursor: not-allowed;
-}
-
-.lockedLabel {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
-    align-items: center;
-}
-
-.explanation {
-    margin: 0;
-    font-size: var(--fs-body-sm);
-    line-height: var(--lh-body);
-    color: var(--fg-secondary);
-}
-
-.formFooter {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: center;
-    min-height: 44px;
 }
 
 /* The tile spans the name field's label and input; the field's message line hangs below both. */
@@ -322,18 +249,10 @@
     flex-wrap: wrap;
     gap: 2px var(--gap-sm);
     align-items: center;
-    margin-top: calc(var(--gap-md) * -1);
     font-size: var(--fs-caption);
 }
 
 .avatarMeta small {
-    color: var(--fg-secondary);
-}
-
-.avatarTitle {
-    display: inline-flex;
-    gap: var(--gap-xs);
-    align-items: center;
     color: var(--fg-secondary);
 }
 
@@ -423,68 +342,17 @@
     color: var(--fg-secondary);
 }
 
-/* A narrow dialog moves the role controls under the name instead of truncating it. */
-.roleForm {
-    display: flex;
-    flex: 1 0 auto;
-    flex-wrap: wrap;
-    gap: var(--gap-xs);
-    align-items: center;
-    justify-content: flex-end;
+.moderatorGroups {
+    display: grid;
+    gap: var(--gap-md);
 }
 
-.roleForm .status {
-    flex-basis: 100%;
-    text-align: right;
+.moderatorGroups .memberList {
+    margin-top: 0;
 }
 
-.roleChoice {
-    display: flex;
-    padding: 2px;
-    margin: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.roleChoice label {
-    position: relative;
-    cursor: pointer;
-}
-
-.roleChoice input {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    cursor: inherit;
-    opacity: 0;
-}
-
-.roleChoice span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 36px;
-    padding: 0 12px;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-    border-radius: calc(var(--radius) - 3px);
-}
-
-.roleChoice input:checked + span {
-    color: var(--bg);
-    background: var(--fg);
-}
-
-.roleChoice input:focus-visible + span {
-    outline: 1px solid var(--focus);
-    outline-offset: 1px;
-}
-
-.roleChoice:disabled {
-    opacity: 0.58;
-}
-
-.roleChoice:disabled label {
-    cursor: not-allowed;
+.moderatorSave {
+    width: 100%;
 }
 
 .lockedRole {
@@ -522,51 +390,24 @@
     gap: var(--gap-xs);
 }
 
-@media (width >= 1024px) {
-    .tabs {
-        display: flex;
+@media (width < 1024px) {
+    .sessionCards {
+        grid-template-columns: 1fr;
     }
-}
 
-@media (width <= 1023px) {
     .grid {
         grid-template-columns: 1fr;
         gap: var(--gap-md);
     }
 }
 
-@media (width <= 767px) {
-    .hero h1 {
-        font-size: clamp(38px, 10vw, 52px);
-    }
-}
-
-@media (width <= 575px) {
+@media (width < 576px) {
     .layout {
         gap: var(--gap-md);
-        padding-top: var(--gap-lg);
     }
 
     .card {
         padding: var(--gap-md);
-    }
-
-    .formFooter {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .formFooter > * {
-        width: 100%;
-    }
-
-    .roleForm {
-        justify-content: flex-start;
-        width: 100%;
-    }
-
-    .roleForm .status {
-        text-align: left;
     }
 
     .cardActions > * {
@@ -578,66 +419,9 @@
     }
 }
 
-.invitationLink {
-    display: grid;
-    gap: var(--gap-xs);
-    margin-block: var(--gap-sm) 0;
-}
-
-.invitationLinkRow {
-    display: flex;
-    gap: var(--gap-xs);
-    align-items: center;
-}
-
-.invitationLink p {
-    margin: 0;
-    font-size: var(--fs-meta);
+.memberCapacity {
+    margin-left: var(--gap-xs);
+    font: 400 var(--fs-meta)/var(--lh-ui) var(--font-mono);
     color: var(--fg-secondary);
-}
-
-.invitationLink input {
-    flex: 1 1 auto;
-    width: 100%;
-    min-width: 0;
-    min-height: var(--hit);
-    padding: var(--gap-sm);
-    color: var(--fg);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.invitationList {
-    display: grid;
-    gap: var(--gap-sm);
-    padding: 0;
-    margin: 0;
-    font-size: var(--fs-body-sm);
-    list-style: none;
-}
-
-.invitationList li {
-    display: flex;
-    gap: var(--gap-md);
-    align-items: center;
-    justify-content: space-between;
-}
-
-.invitationListTitle {
-    margin: var(--gap-md) 0 var(--gap-xs);
-    font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
-}
-
-.invitationStatus {
-    margin: var(--gap-sm) 0 0;
-    font-size: var(--fs-meta);
-    color: var(--fg-secondary);
-}
-
-.invitationStatus:empty {
-    display: none;
+    white-space: nowrap;
 }

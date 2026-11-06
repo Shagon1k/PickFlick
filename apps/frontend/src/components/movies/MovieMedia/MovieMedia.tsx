@@ -5,8 +5,20 @@ import type { ReactNode } from 'react';
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import TrailerPlayer from '#components/movies/TrailerPlayer/TrailerPlayer';
 import Icon from '#components/ui/Icon/Icon';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './MovieMedia.module.scss';
+
+interface IMovieMediaLayoutProps {
+    title: string;
+    filmHref?: string;
+    shouldHidePhonePoster?: boolean;
+    posterCorner?: ReactNode;
+    variant?: 'movie' | 'session';
+}
+
+type TMovieMediaProps = IMovieMediaLayoutProps &
+    ({ movie: TMovieDetails; isLoading?: false } | { movie?: never; isLoading: true });
 
 /**
  * Poster, trailer, credits and synopsis in one grid; Movie Details and the Session film share it.
@@ -16,21 +28,21 @@ export default function MovieMedia({
     movie,
     title,
     filmHref,
-    hidePhonePoster = false,
+    shouldHidePhonePoster = false,
     posterCorner,
-}: {
-    movie: TMovieDetails;
-    title: string;
-    filmHref?: string;
-    /** The film ticket already shows the poster on phones. */
-    hidePhonePoster?: boolean;
-    /** A control over the poster's top-right corner, such as the Watchlist ribbon. */
-    posterCorner?: ReactNode;
-}) {
-    const poster = <MoviePoster url={movie.posterUrl} title={title} />;
+    variant = 'movie',
+    isLoading = false,
+}: TMovieMediaProps) {
+    const poster = (
+        <MoviePoster url={movie?.posterUrl ?? null} title={title} isLoading={isLoading} />
+    );
     return (
-        <div className={styles.heroGrid}>
-            <div className={styles.posterRegion} data-phone-hidden={hidePhonePoster || undefined}>
+        <div className={styles.heroGrid} data-variant={variant}>
+            <div
+                className={styles.posterRegion}
+                data-color-reveal-trigger
+                data-phone-hidden={shouldHidePhonePoster || undefined}
+            >
                 {filmHref ? (
                     <Link
                         aria-label={`${title}: film details`}
@@ -47,21 +59,56 @@ export default function MovieMedia({
                 )}
                 {posterCorner}
             </div>
-            <MovieCredits movie={movie} />
+            {movie ? <MovieCredits movie={movie} /> : <CreditsSkeleton />}
             <section className={styles.synopsis} aria-labelledby="synopsis-title">
                 <h2 id="synopsis-title">Synopsis</h2>
-                <p>{movie.overview ?? 'No synopsis is available in English.'}</p>
+                {movie ? (
+                    <p>{movie.overview ?? 'No synopsis is available in English.'}</p>
+                ) : (
+                    <p className={styles.synopsisSkeleton}>
+                        <Skeleton />
+                        <Skeleton />
+                        <Skeleton width="half" />
+                    </p>
+                )}
             </section>
             <div className={styles.trailer}>
-                <TrailerPlayer
-                    backdropUrl={movie.backdropUrl}
-                    posterUrl={movie.posterUrl}
-                    searchUrl={buildTrailerSearch(title, movie.releaseYear)}
-                    title={title}
-                    trailers={movie.trailers ?? []}
-                />
+                {movie ? (
+                    <TrailerPlayer
+                        key={movie.id}
+                        movieId={movie.id}
+                        searchUrl={buildTrailerSearch(title, movie.releaseYear)}
+                        title={title}
+                        trailers={movie.trailers ?? []}
+                    />
+                ) : (
+                    <div className={styles.trailerSkeleton}>
+                        <Skeleton shouldFill />
+                    </div>
+                )}
             </div>
         </div>
+    );
+}
+
+const CREDIT_ROW_COUNT = 5;
+
+function CreditsSkeleton() {
+    return (
+        <section className={styles.credits}>
+            <dl>
+                {Array.from({ length: CREDIT_ROW_COUNT }, (_, index) => (
+                    <div key={index}>
+                        <dt>
+                            <Skeleton width="half" />
+                        </dt>
+                        <dd className={styles.creditSkeleton}>
+                            <Skeleton width="half" />
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </section>
     );
 }
 

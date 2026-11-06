@@ -1,45 +1,60 @@
 import { HTTP_STATUS, isFilmSessionPhase, type TSession } from '@pickflick/contracts';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import { Suspense } from 'react';
 
+import { buildLoginPath } from '#api/auth-session.server';
 import { getMovieDetails } from '#api/movies.server';
-import { buildLoginPath } from '#api/session.server';
 import { getSessionRoster } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 import ProductFrame from '#components/shells/ProductFrame/ProductFrame';
 import { buildClubNavigation } from '#components/shells/shell-navigation';
-import ButtonLink from '#components/ui/Button/ButtonLink';
+import SystemState from '#components/shells/SystemState/SystemState';
 import { ApiError } from '#lib/api.server';
 import { NOT_FOUND_STATUSES } from '#lib/http-status';
 
+import SessionCreatedToast from './_components/SessionCreatedToast/SessionCreatedToast';
 import SessionDetails from './_components/SessionDetails/SessionDetails';
+import SessionLoading from './_components/SessionLoading/SessionLoading';
 import SessionProgress from './_components/SessionProgress/SessionProgress';
-import styles from './page.module.scss';
 
 export const metadata = { title: 'Session — PickFlick' };
-export default async function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default async function SessionPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ sessionId: string }>;
+    searchParams: Promise<{ created?: string }>;
+}) {
     await connection();
     const { sessionId } = await params;
+    const { created } = await searchParams;
     let session;
-    let roster;
     try {
-        [session, roster] = await Promise.all([getSession(sessionId), getSessionRoster(sessionId)]);
+        session = await getSession(sessionId);
     } catch (error) {
-        if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
-            redirect(buildLoginPath(`/sessions/${sessionId}`));
-        if (error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status)) notFound();
-        return (
-            <ProductFrame>
-                <SessionProgress sessionId={sessionId} version={null} />
-                <main className={styles.main}>
-                    <h1>Session unavailable</h1>
-                    <p role="alert">We could not load this Session. Try again shortly.</p>
-                    <ButtonLink href="/app">Back to your Clubs</ButtonLink>
-                </main>
-            </ProductFrame>
-        );
+        return renderSessionFailure(error, sessionId);
     }
-    const [movie, renderedAt] = await Promise.all([loadFilm(session), getRequestTime()]);
+    return (
+        <Suspense fallback={<SessionLoading session={session} />}>
+            <SessionContent session={session} created={created} />
+        </Suspense>
+    );
+}
+
+async function SessionContent({ session, created }: { session: TSession; created?: string }) {
+    let roster;
+    let movie;
+    let renderedAt;
+    try {
+        [roster, movie, renderedAt] = await Promise.all([
+            getSessionRoster(session.id),
+            loadFilm(session),
+            getRequestTime(),
+        ]);
+    } catch (error) {
+        return renderSessionFailure(error, session.id);
+    }
     return (
         <ProductFrame
             clubItems={buildClubNavigation(session.clubId, null)}
@@ -56,7 +71,26 @@ export default async function SessionPage({ params }: { params: Promise<{ sessio
                 movie={movie}
                 renderedAt={renderedAt}
             />
+            {created ? <SessionCreatedToast sessionId={session.id} /> : null}
         </ProductFrame>
+    );
+}
+
+function renderSessionFailure(error: unknown, sessionId: string) {
+    if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED)
+        redirect(buildLoginPath(`/sessions/${sessionId}`));
+    if (error instanceof ApiError && NOT_FOUND_STATUSES.includes(error.status))
+        return <SystemState isSignedIn variant="members-only" />;
+    return (
+        <SystemState
+            description="We could not load this Session. It reloads by itself once it can."
+            isSignedIn
+            retryHref={`/sessions/${sessionId}`}
+            title="Session unavailable"
+            variant="application-error"
+        >
+            <SessionProgress sessionId={sessionId} version={null} />
+        </SystemState>
     );
 }
 

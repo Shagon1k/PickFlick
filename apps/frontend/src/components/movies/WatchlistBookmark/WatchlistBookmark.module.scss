@@ -1,5 +1,7 @@
 /* A tall ribbon over the poster corner, filled only after a successful save. */
 .bookmark {
+    --action-scale: var(--action-scale-small);
+
     position: absolute;
     top: 10px;
     right: 10px;
@@ -14,6 +16,12 @@
     background: transparent;
     border: 0;
     filter: drop-shadow(0 5px 12px color-mix(in sRGB, black 38%, transparent));
+}
+
+.bookmarkIcon {
+    display: grid;
+    width: 100%;
+    height: 100%;
 }
 
 .bookmark svg {
@@ -38,7 +46,6 @@
 
 .bookmark:hover {
     color: var(--ivory);
-    transform: translateY(-2px);
 }
 
 .bookmark[aria-disabled='true'] {
@@ -59,91 +66,146 @@
 }
 
 .editor {
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--gap-xs);
+    align-items: center;
     font-size: var(--fs-body-sm);
 }
 
-.editor > strong {
-    padding: var(--gap-xs);
-    border-bottom: 1px solid var(--border);
+/* One unframed row of choices sits directly on the same surface as the rating picker. */
+.levels {
+    display: flex;
+    flex: 1;
+    gap: calc(var(--gap-xs) / 2);
+    min-width: 0;
+    padding: calc(var(--gap-xs) / 2);
 }
 
-.editor > button[aria-pressed] {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.levels button {
+    flex: 1;
+    min-width: var(--hit);
     min-height: var(--hit);
-    padding: var(--gap-xs);
+    padding: var(--gap-xs) calc(var(--gap-xs) / 2);
+    font: inherit;
     color: var(--fg-secondary);
     cursor: pointer;
     background: transparent;
-    border: 0;
+    border: 1px solid transparent;
     border-radius: var(--radius);
+    transition:
+        color var(--motion-local) var(--ease-standard),
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
 }
 
-.editor > button[aria-pressed]:hover,
-.editor > button[aria-pressed='true'] {
+.levels button:hover:not(:disabled, [aria-pressed='true']) {
     color: var(--fg);
     background: var(--accent-soft);
+    border-color: var(--border-lit);
 }
 
-.editor > button[aria-pressed] span {
-    width: var(--gap-xs);
-    height: var(--gap-xs);
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius-pill);
+.levels button[aria-pressed='true'] {
+    font-weight: 500;
+    color: var(--gold-light);
+    background: var(--gold-soft);
+    border-color: var(--gold-border);
 }
 
-.editor > button[aria-pressed='true'] span {
-    background: var(--gold);
+.levels button[aria-pressed='true']:hover:not(:disabled) {
     border-color: var(--gold);
-    box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+.levels button:focus-visible,
+.remove:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+    box-shadow: none;
+}
+
+.levels button:disabled,
+.remove:disabled {
+    cursor: progress;
 }
 
 .editor p {
+    flex-basis: 100%;
     margin: 0;
     color: var(--fg-secondary);
 }
 
 .remove {
-    min-height: var(--hit);
-    padding: var(--gap-xs);
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-    text-align: left;
+    --action-scale: var(--action-scale-small);
+
+    display: grid;
+    flex: 0 0 var(--hit);
+    place-items: center;
+    width: var(--hit);
+    height: var(--hit);
+    color: var(--danger-text);
     cursor: pointer;
     background: transparent;
-    border: 0;
-    border-top: 1px solid var(--border);
+    border: 1px solid var(--danger-border);
+    border-radius: var(--radius);
+    transition:
+        background-color var(--motion-local) var(--ease-standard),
+        border-color var(--motion-local) var(--ease-standard);
 }
 
-.remove:hover {
-    color: var(--fg);
+.remove:hover:not(:disabled) {
+    background: var(--danger-soft);
+    border-color: var(--danger);
 }
 
-.remove:disabled {
-    cursor: progress;
+.remove svg {
+    width: 18px;
+    height: 18px;
 }
 
 .priority {
-    min-height: var(--hit);
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    justify-content: space-between;
+    width: var(--watchlist-priority-control-width);
+    height: var(--hit);
     padding: var(--gap-xs) var(--gap-sm);
-    font: var(--fs-meta)/var(--lh-ui) var(--font-mono);
-    color: var(--fg-secondary);
+    font: 500 var(--fs-body-sm)/var(--lh-ui) var(--font-body);
+    color: var(--fg);
     cursor: pointer;
     background: transparent;
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color var(--motion-local) var(--ease-standard);
 }
 
-.priority:hover {
-    background: var(--accent-soft);
+.priority:hover:not([aria-disabled='true']) {
+    border-color: var(--fg);
 }
 
-.priority[data-priority='HIGH'] {
-    font-weight: 700;
-    color: var(--fg);
+.priority[aria-expanded='true'] {
+    border-color: var(--gold);
+}
+
+.priority:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+.priority[aria-disabled='true'] {
+    cursor: progress;
+}
+
+.priority svg {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    color: var(--fg-secondary);
+    transition: transform var(--motion-local) var(--ease-standard);
+}
+
+.priority[aria-expanded='true'] svg {
+    transform: rotate(180deg);
 }
 
 /* Stay inside the viewport even when the table's priority column scrolls offscreen. */

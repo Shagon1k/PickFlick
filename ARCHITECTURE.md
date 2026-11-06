@@ -84,12 +84,11 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | email                            | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
 | storage                          | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
 | health                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, Personal Ratings, and explicit failure states.                    | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
 | sessions                         | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
-| watchlist                        | Private saved Movies and Low/Medium/High priority.                                                                                                                                  | Active                                                                                        |
-| library                          | Private, searchable and paginated Ratings and Watchlist projections.                                                                                                                | Active                                                                                        |
+| library                          | My Library: Personal Ratings (`personal-rating/`), the Watchlist (`watchlist/`), and searchable, paginated views of both.                                                           | Active                                                                                        |
 | achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events, preferences, privacy-safe inbox projection, read state and authenticated refresh streams.                                                             | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
+| notifications                    | Durable per-recipient events and their write transactions (root), `preferences/`, `inbox/` (projection, read state, refresh stream) and `email-delivery/`.                          | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
 | Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -136,13 +135,13 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images                                   |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                                      |
 
-The schema (`packages/database/prisma/schema.prisma`, thirty-four migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, forty-four migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`,
-`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`, `NominationDeadlineNotification`,
+`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `Nomination`,
+`SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
 `PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
-and `NotificationDeliveryAttempt`. Database-enforced invariants:
+and `NotificationEmailDelivery`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -163,26 +162,26 @@ only to authenticated Users. The invitation page and API responses are private a
 Manager lists include the 20 most recent records and every live pending invitation, so older links
 remain reachable for revocation. The creation action preserves its returned token if a subsequent
 list refresh fails; the UI shows the link and a separate refresh warning.
+A consumed Club invitation returns `used` instead of `invalid`; both responses omit Club details.
 
 The reusable Session link is its canonical `/sessions/:sessionId` URL. Any active Club member may
 read it and call `POST /sessions/:sessionId/participation` with `accept` or `decline`; this never creates
 Club Membership. Club → Session locks serialize participation, phase completion and audit writes.
 Repeated acceptance is idempotent; accepted participants use typed Leave instead of Decline, and
 operator-removed participants cannot self-join. The roster projects `canJoin` from the same current
-membership, lifecycle, phase and participant rules. No new token table or migration is required.
+membership, lifecycle, phase and participant rules. Historical Memberships are matched by User
+to prevent a second participation after rejoining. Rating Sessions scheduled before the caller's
+current Membership began reject joining and rating. No new token table or migration is required.
 `GET /session-invitations/pending` derives unanswered invitations from open Club Sessions and uses
 Session IDs for their decisions. These rows have no separate expiry; closed Sessions disappear.
 
-Existing personalized Session invitations use separate digest-only tokens and target a Membership through a
-SessionParticipant. One rule governs every Session roster control (invite, revoke, remove): an
-Admin or Moderator in an active Club that has an Admin and is within its member limit;
-accepted participants can leave open Sessions, including in archived Clubs. `POST /sessions/:sessionId/invitations` returns the raw token once; preview and
-response tokens travel only in POST bodies. Existing token responses by invitation ID use the same locked
-eligibility check. Private, uncached preview/response APIs return a single detail-free `unavailable`
-state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses
-and roster changes lock Club → Session before writing. Roster projections use a repeatable-read snapshot. Club departure updates open
-Session participants and revokes their pending links in its membership transaction, preserving
-completed history. Migration 16 adds five Session invitation/participant audit actions without
+Club members join or decline a Session from the Session itself; personal Session invitation links
+were removed in Phase 18, and migration `20261106000200_drop_session_invites` dropped their table
+before launch. One rule governs Session roster removal: an Admin or Moderator in an active Club
+that has an Admin and is within its member limit; accepted participants can leave open Sessions,
+including in archived Clubs. Roster changes lock Club → Session before writing. Roster projections
+use a repeatable-read snapshot. Club departure updates open Session participants in its membership
+transaction, preserving completed history. Migration 16 adds five Session invitation/participant audit actions without
 changing existing data. The current workflow also evaluates Nomination/Selection completion
 after roster changes; deadline processing is described below.
 
@@ -201,6 +200,8 @@ listed for a recipient. Existing unsafe-state privacy rules apply to both flows.
 Hub and Manage Club projections carry `IClubAccess` (`adminless`, `newWorkAllowed`, and restriction
 `reasons`) and role permissions. Manage Club also identifies the caller's Membership. The access
 resolver currently uses lifecycle, active administration, member count, and fixture plan limits.
+The limits per plan are `CLUB_TIER_ENTITLEMENTS` in `@pickflick/contracts`, which the public
+pricing pages also read, so the advertised and enforced limits cannot drift.
 Phase 20 can replace entitlement input without making browser state an authorization boundary.
 `MEMBER_LIMIT` means excess roster size: history and existing participation stay available, and removal
 and leaving can restore capacity. At exact capacity, the invitation API still rejects new links.
@@ -208,25 +209,42 @@ The unresolved choice among excess administered Clubs is not implemented.
 
 Session persistence, live creation, editing/cancellation, member-only joining, Nomination,
 deadlines and Selection outcomes are Active. Manual Watching → Rating, Session Rating submission and completion are Active.
-Each new Session requires its own score bounds and five visibility/media flags. The internal
-`snapshotSessionSettings` helper locks the Club and reads those fields; creation must call it
-inside the same transaction as the Session insert. Club settings edits do not change saved Session
-fields. Migration 14 backfills skeleton Sessions from current Club settings because their original
+Each new Session stores its own Selection scale bounds; it keeps no visibility settings. The
+internal `snapshotSessionSettings` helper locks the Club and reads the scale; creation must call it
+inside the same transaction as the Session insert. Club scale edits do not change saved Sessions. Migration 14 backfills skeleton Sessions from current Club settings because their original
 settings were not stored; it preserves phase, version, details, and history.
+
+Migration `20261103000200_club_visibility_periods` added six non-null Club period settings. As
+approved on 2026-11-04, all disclosure reads use the current Club flags, including
+`showNominationsBeforeSubmit`, for every Session, role and plan; no legacy role or tier rule
+overrides them. Migration `20261106000000_drop_unread_visibility_columns` removed the Session
+visibility copies and the legacy single Club flags, which no code read. Saving changed
+visibility increments each Club Session's progressVersion in the same transaction without changing
+updatedAt or emitting phase events/notifications. Existing version polling refreshes open Session
+pages; the settings action also invalidates Session routes. Hub views retain their navigation/tab
+return refresh. Per-Session sharing remains Deferred in #204.
+
+Personal Appearance is Proposed as part of Phase 19 personal Settings (#65): per-user monochrome, quiet mode, list spacing
+and optional table columns across Club Hub, Sessions and My Library. No preference storage or
+runtime application has been added in the current Club-management pass.
 
 `SessionParticipant` references a historical Membership, with invited, accepted, declined, left,
 and removed states plus nullable attendance. Composite foreign keys require the Session and
-Membership to share a Club. `SessionInvite` references that participant and a same-Club inviter
-Membership, stores only a unique SHA-256 digest, and checks expiry and response consistency. These
-storage constraints do not authorize a request: current preview, participation and roster APIs
-re-read Membership, Club lifecycle, phase and actor permissions on every command.
+Membership to share a Club. These storage constraints do not authorize a request: participation
+and roster APIs re-read Membership, Club lifecycle, phase and actor permissions on every command.
 
 The existing partial unique index still enforces one Nomination/Selection/Watching Session per
 Club; Rating is outside it. A trigger keeps participant identity from moving between Sessions,
 Memberships, or Clubs (migration 20). Phase decisions lock the Session and count accepted
 participants inside that transaction, keeping the lock through the decision. Workflow writes take the Club lock before the Session lock and before
-participant writes. Club departure updates open participation before checking completion. Nomination and Selection
-automatic transitions reuse the same locked accepted-participant denominator.
+participant writes. Club departure updates Membership status and open participation before checking
+completion. Automatic Nomination closure requires every active Club member to be an accepted
+participant with a nomination, with at least two accepted participants. Selection uses the accepted
+participant denominator. Deadline and manual closure are unchanged. Cancellation checks received Session
+Ratings under the existing locks and refuses to erase a rated screening from history.
+
+Optional screening time shares `scheduledAt` with its calendar date. UTC components represent
+venue wall-clock values, not a time-zone-converted instant; midnight is treated as date-only.
 
 `POST /clubs/:clubId/sessions` validates live modes, date, location, optional topic/notes/deadline,
 and a canonical Movie UUID for pre-selected Sessions. Full-cycle starts in Nomination;
@@ -257,18 +275,19 @@ Migration 15 adds the nullable Movie relation, details version, and Session refe
 Club audit events. Legacy skeleton Sessions keep nullable details and Movies; no history is invented.
 Phase transitions increment `detailsVersion` alongside `phaseVersion`, so a stale cancellation
 requires the operator to review the current Session.
-Hub responses include every open Rating Session and the twenty latest Completed/Cancelled rows,
-independently of recent activity. Detail and Hub reads use repeatable-read snapshots. Session creation makes no provider calls. The deadline worker below reuses the
+Hub responses include every open Rating Session and the ten latest Completed/Cancelled rows,
+independently of recent activity; older history is loaded through the authenticated cursor endpoint.
+Detail and Hub reads use repeatable-read snapshots. Session creation makes no provider calls. The deadline worker below reuses the
 backend package and adds no dependency or environment variable.
 
 Notification email uses one PostgreSQL `NotificationEmailDelivery` per opted-in Notification,
 created with intent in the source transaction. Migration 35 backfills pending email intent and adds
-address-hash suppression and webhook receipts. Claims also materialize pending intent written
-by older API instances during rollout. The separate `email-worker` process polls one due row
-every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. Existing attempts
-record each claim and outcome. It sends through the shared email adapter, bounded to fifteen seconds.
-Six attempts and a 23-hour first-claim window bound provider idempotency. Request hashes stop changed
-payloads without storing bodies. The current authorization projection supplies static copy and safe
+address-hash suppression and webhook receipts. The separate `email-worker` process polls one due row
+every five seconds with a two-minute lease, `SKIP LOCKED` and fenced completion. The delivery row
+keeps the attempt count, first attempt and last reason; each attempt is in the structured log. It
+sends through the shared email adapter, bounded to fifteen seconds. Six attempts and a 23-hour
+first-claim window bound provider idempotency: a retry reuses the idempotency key, and a provider
+that refuses a changed payload under it ends the delivery as `FAILED`. The current authorization projection supplies static copy and safe
 links before every request; preference decisions remain those captured at event creation.
 
 `POST /webhooks/resend` is public to the provider and verifies signatures on the raw body before
@@ -277,8 +296,11 @@ tags and address hashes correlate early callbacks. Acceptance, confirmed deliver
 and suppression remain distinct. Bounce, complaint and provider suppression block future email to
 the address. One best-effort operator alert uses `CONTACT_DELIVERY_TO`; database/log evidence remains
 when Resend cannot send it. See [ADR-020](_docs/decisions/README.md#adr-020--dispatch-notification-email-from-postgresql)
-and [Email delivery operations](_docs/email-delivery.md). Local/test/preview dispatch is disabled;
-live provider and exact-head hosted visual verification remain pending.
+and [Email delivery operations](_docs/email-delivery.md). Local delivery is disabled by default.
+An explicit local live configuration restricts recipients in both claiming and sending, claims only
+Notifications created at or after the configured cutoff, prefixes subjects with `[LOCAL]`, and skips
+operator alerts. It reuses the existing dispatcher without draining older pending rows. Test and
+preview never send. Live provider and exact-head hosted visual verification remain pending.
 
 Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are Proposed.
 
@@ -346,6 +368,11 @@ every authentication session.
   validated detail-cache poster for the configured projection, then the newest validated
   search poster for the active source, ingests it through the same bounded image
   service and redirects only to the same-origin stored-image path. It makes no catalog API calls.
+  Authenticated `GET /movies/:movieId/trailers/:videoId/thumbnail` validates both path parameters
+  and requires the video ID to match a trailer in the Movie's validated details cache. It downloads
+  the fixed `i.ytimg.com/vi/<id>/hqdefault.jpg` image through the same bounded image service and
+  redirects to the stored same-origin image. It makes no catalog metadata calls; missing previews
+  return 404. The frontend uses the selected video's preview instead of a film poster or backdrop.
   Backdrops and cast portraits remain null. Details carry directors, writers, cast, and budget and
   worldwide revenue in whole US dollars (other currencies stay null). The composite prefers TheTVDB's
   credits, amounts and English YouTube trailers and falls back to PoiskKino's, keeping only persons
@@ -362,7 +389,11 @@ every authentication session.
   60-request/minute endpoint limit apply. The header calls it through a server action and
   `requestApi`, keeping credentials and provider calls on the server. Debounced queries discard
   obsolete responses and render text through React. Links use `/movies/[movieId]` with canonical
-  UUIDs. Authenticated `GET /movies/:movieId` validates the UUID and returns normalized
+  UUIDs. Search summaries retain optional genres; TMDB genre IDs and known PoiskKino genre names
+  normalize to English without per-result provider requests. The search projection key has its own
+  version so old summaries refresh without invalidating detail caches or canonical identities.
+  The HTTP projection fills missing genres from existing validated detail caches where available.
+  Authenticated `GET /movies/:movieId` validates the UUID and returns normalized
   detail state with backend-built outbound links; it has the same private/no-store and rate-limit
   boundary. Movie Details validates the response and opts into the existing bounded stale policy.
   A separate streamed section resolves up to six deduplicated related UUIDs through the same
@@ -390,9 +421,9 @@ every authentication session.
   participation counts, phase progress and join eligibility. Call Sheet numbers follow creation order
   within each Club, including cancelled Sessions; no rows are renumbered after cancellation. The
   Club's Session count excludes cancelled Sessions.
-  Completed-screening statistics use validated cached Movie metadata and policy-filtered historical
-  Session Ratings. Free projects basic counts; Pro adds the extended summaries described below. Active selected-Movie enrichment runs after the snapshot transaction
-  and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
+  Completed-screening statistics use validated cached Movie metadata and aggregate historical
+  Session Ratings. Every plan gets the same statistics. Active selected-Movie enrichment runs after the
+  snapshot transaction and reuses the catalog's fresh/stale policy; provider URLs remain behind the existing poster endpoint.
   Manage Club loads the active Session's detail and roster for Admins and Moderators and reuses the
   Session page's closure, Kick and cancellation dialogs; those actions revalidate every Club Hub view.
   Overview, Sessions, Ratings, Members and Manage Club share a persistent route-group layout. Its `loading.tsx` lets
@@ -423,12 +454,12 @@ every authentication session.
 
 ## 6. Runtime and delivery
 
-| Environment | Topology                                                                                                                                                                                                                 | Data                           |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
-| Local       | Frontend, backend and deadline worker run natively; PostgreSQL, Redis and MinIO in Docker.                                                                                                                               | Synthetic seed; email disabled |
-| CI          | Audit, lint, knip, types, unit, integration, browser journeys, images; PRs select UI smoke and visual checks by affected area (full selections for shared changes); main/manual run full contract and visual regression. | Ephemeral services             |
-| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`, Redis) + managed data.                                                                                                                                      | Synthetic; test-inbox email    |
-| Production  | Same shape, pinned to a SemVer tag.                                                                                                                                                                                      | Real users; live providers     |
+| Environment | Topology                                                                                                                                                                                                                 | Data                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| Local       | Frontend, backend, deadline worker and email worker run natively; PostgreSQL, Redis and MinIO in Docker.                                                                                                                 | Synthetic seed; email disabled by default, scoped live opt-in |
+| CI          | Audit, lint, knip, types, unit, integration, browser journeys, images; PRs select UI smoke and visual checks by affected area (full selections for shared changes); main/manual run full contract and visual regression. | Ephemeral services                                            |
+| UAT         | Dokploy Compose (`release`, `backend`, `worker`, `frontend`, Redis) + managed data.                                                                                                                                      | Synthetic; test-inbox email                                   |
+| Production  | Same shape, pinned to a SemVer tag.                                                                                                                                                                                      | Real users; live providers                                    |
 
 ```mermaid
 flowchart LR
@@ -507,8 +538,12 @@ updates phase/details versions and records `SESSION_NOMINATION_CLOSED` atomicall
 `POST /sessions/:sessionId/nominations/close` accepts `phaseVersion` and `CLOSE`
 confirmation. Responses are private and uncached. The server filters hidden films and author names
 using the Session snapshot, exposes aggregate accepted/nominated counts, and derives up to twelve
-personal suggestions from earlier same-Club losing nominations with a resolved winner. Movie titles
-and years come from `Movie.title` and `Movie.releaseYear` through `MoviesService.findSummaries`;
+personal suggestions from earlier same-Club losing nominations with a resolved winner.
+The viewer's own Watchlist is projected separately. Watchlist reads are scoped to the
+authenticated User ID and only included when that viewer can submit; order is priority descending,
+saved date ascending, then Movie ID. No private list is shared with another participant and no new
+write endpoint or migration is needed. Movie titles and years come from `Movie.title` and
+`Movie.releaseYear` through `MoviesService.findSummaries`;
 genres come from already cached, validated Movie details. Session reads never call providers.
 Missing summaries have an explicit placeholder and missing genres an empty list.
 Nomination mutations return no projection. Refresh and successful mutations revalidate the Session
@@ -519,16 +554,19 @@ progress version signals are Active under #44.
 ### Nomination deadlines
 
 Active deadline automation follows [ADR-018](_docs/decisions/README.md#adr-018--persist-nomination-deadline-jobs-in-postgresql).
-Migration 18 adds Session `deadlineVersion`, `NominationDeadlineDecision` audit records without a
-human actor, and recipient-specific `NominationDeadlineNotification` intent. Migration 22 removed
-the separate `NominationDeadlineJob` scheduling table: the Session row is the schedule. Notification
-delivery remains Proposed for the later notification phase; these rows do not send messages.
+Migration 18 adds Session `deadlineVersion` and `NominationDeadlineDecision` audit records without a
+human actor. Migration 22 removed the separate `NominationDeadlineJob` scheduling table: the Session
+row is the schedule. The decision transaction records `NOMINATION_STALLED` or the phase-change
+Notification rows; migration 36 dropped the earlier write-only `NominationDeadlineNotification`
+recipient intent, which nothing read once Notifications existed.
 
 Edits increment `deadlineVersion` when the deadline changes. A Session is due when it is in
 Nomination in an active Club, its `deadlineAt` has passed, and no decision exists for its current
-`deadlineVersion`. Migration 23 indexes `Session (phase, deadlineAt)` for that poll, and the worker
-reads only each candidate's newest decision. It locks Club → Session and rechecks the conditions. Zero accepted
-nominations leave Nomination open and record one operator-alert decision per deadline version.
+`deadlineVersion`. Migration 23 indexes `Session (phase, deadlineAt)` for that poll; because every
+decision clears the deadline or leaves Nomination, the poll itself selects only undecided rows. The
+worker locks Club → Session and rechecks the conditions. Zero accepted nominations leave Nomination
+open, clear the deadline with a details-version bump and record one operator-alert decision per
+deadline version.
 One selects that Movie for Watching; two or more nominations, including repeated Movies, open
 Selection. Transitions clear the deadline and increment phase/details/deadline versions. The
 decision, recipient intent and transition commit atomically.
@@ -553,9 +591,11 @@ Notification delivery and retention policy remain later phases; no dispatcher or
 introduced. Nothing reads these rows yet: the outbox is kept by owner decision (#172) as the source
 for the notification phase, an explicit exception to the no-speculative-code rule. Existing rows start at version 1 without invented events or retrospective transitions.
 
-Submission and roster changes evaluate accepted participants under Club → Session locks. Positive
-N/N completion selects a sole Movie for Watching or opens Selection with two or more nominations;
-repeated Movies count separately. Session/Club departure and removal update participation first.
+Submission and roster changes evaluate active Club Memberships and accepted participants under
+Club → Session locks. Automatic closure requires all active members to have joined and nominated,
+with at least two accepted participants; repeated Movies count as separate nominations. An unjoined
+active member keeps Nomination open. Club departure updates Membership and participation first,
+then rechecks Nomination even when that member had no participant row.
 Archived Clubs publish progress without advancing; reactivation checks the current roster.
 The shared transition clears the deadline and increments phase/details versions exactly once.
 Outbox failure rolls back the state change and submission. Deadline decision/recipient records remain
@@ -621,12 +661,18 @@ updated API; existing Selection Sessions are checked on their next workflow muta
 This internal snapshot is never included in Session detail responses. Session detail returns a
 discriminated `selectionOutcome` after closure, including in later phases. Native results have
 `source: 'LIVE'`; imported evidence has `source: 'IMPORTED'` without fabricated closure or ranking fields. Every current Club member
-can see the winning Movie and closure information. Admins and Moderators can read aggregate
-rankings; ordinary members need the current Pro entitlement and the Session's snapshotted
-`showVoteResults`. Free members receive `breakdown: null`, even if that flag is stored as true.
-App Admin status grants no Club access. Nominator names follow the independent Session author
-setting for both winner and ranking. Individual ballots, participant IDs, provider mappings,
+can see the winning Movie and closure information. All Sessions gate aggregate and named scores
+through the current Club Selection period policy: before Completed the caller must also have submitted
+a ballot, while Completed uses After. There is no operator or plan bypass. App Admin status grants
+no Club access. Nominator names use the independent current Club author period flag. Legacy
+visibility snapshots have no authority over disclosure. Provider mappings,
 closure actor IDs and the internal snapshot never enter the DTO.
+
+The separately authorized `selectionScores` DTO exposes only the saved scale, film summaries and
+named submitted score rows with opaque participant/nomination IDs. Reads use submitted relational
+scores during Selection and frozen closure inputs afterwards; Past imports retain sparse cells.
+Names reflect current anonymization. `nominationAuthors` supplies author-only rival facts when
+author visibility is enabled but the score breakdown is hidden, without totals or score counts.
 
 Totals, maximum-score counts, supporting-voter counts, order and the decisive tie-break come
 from the saved snapshot; reads and closure retries never recompute them. Movie summaries and
@@ -660,6 +706,8 @@ comment of at most 2000 characters. Current active Club Membership and accepted 
 participation are required; archived Clubs reject submissions. The shared zod contract normalizes
 comment line endings and trims whitespace. Session Ratings have no update or delete API and stay
 separate from editable `PersonalMovieRating` records.
+Rating entries expose `isOwn`, derived on the server, so the caller's final response can share
+the results list without exposing another identity.
 
 Migration 27 adds `SessionRating`, its unique participant/Session key, same-Session foreign key,
 score/comment bounds and an update-rejecting trigger. Inserts lock the Session row and require
@@ -681,34 +729,74 @@ publishes the existing progress event. Manual closure also writes `SESSION_RATIN
 same transaction. Any event or audit failure rolls back completion and its submission.
 
 Session detail includes `rating` in Rating and Completed: accepted/submitted/received counts,
-permissions, the caller's own immutable response and a policy-filtered results object. Other
-responses and the average remain absent until completion. Afterwards Admins and Moderators can
-read them; ordinary members require the Session's snapshotted `showRatingResults`. Hidden results
-are `null`, including their average and comments. Current Club Membership remains required for
+permissions, the caller's own immutable response and a results object. `results.average` includes
+all received responses and remains available to current Club members regardless of individual-rating
+visibility or their own submission; it is `null` only when there are no received scores.
+`results.entries` follows the current Club During/After policy for all roles and is `null` when
+hidden. During entries require the viewer's own submitted rating; After begins only at Completed.
+Legacy Sessions use the same global policy. Current Club Membership remains required for
 every read. The existing version poll refreshes other clients; no new transport, dependency,
 notification delivery, runtime variable or deployment topology is introduced.
 
 ### Completed detail and Hub history
 
 Completed detail composes the saved Selection outcome, immutable SessionRating rows and terminal
-Session roster with the existing Movie and Session facts. No new snapshot, migration or historical
-backfill is introduced. Later Club settings and source ballot edits cannot change saved Selection
+Session roster with the existing Movie and Session facts. It creates no extra rating/history rows.
+Later Club settings and source ballot edits cannot change saved Selection
 metrics or Session settings; Club departure leaves terminal attendance intact. Movie summaries and
-account display names remain current as described above. Individual ballots stay private; the UI
-uses only the existing server-filtered aggregate vote breakdown.
+account display names remain current as described above. The UI renders only server-authorized
+aggregate, author-only and named-score projections under current Club visibility.
 
 `GET /clubs/:clubId/hub` projects `activeSession` only from Nomination, Selection or Watching.
 Every open Rating Session remains in `ratingSessions`, regardless of the recent-activity limit.
 Rating `progressCount` counts received responses from accepted participants. History rows expose
-`ratingAverage` only for Completed Sessions permitted by the viewer's current Club role or the
-Session's `showRatingResults` snapshot. The average includes every received historical response,
-including departed participants. Empty, hidden and open results return `null`; comments and
+`ratingAverage` for every Completed Session, including legacy and imported Sessions, independently
+of the individual-rating visibility flags. The average includes every received historical response,
+including departed participants. Empty and open results return `null`; comments and
 individual scores are never added to Hub responses.
 
 `/clubs/[clubId]/sessions` reuses the persistent Hub frame and authorization/error boundaries.
-It displays the blocking Session, all open Ratings and the latest twenty Completed/Cancelled rows.
-Overview and Manage Club also retain the open Ratings collection. This adds no provider adapter,
-notification transport, environment variable or runtime service.
+It shows all open Ratings, followed by ten initial Completed/Cancelled rows; the blocking Session
+is already available in the Call Sheet. Hub responses include `historyNextCursor`.
+`GET /clubs/:clubId/sessions/history?cursor=:id` returns the next ten rows with one-row lookahead,
+ordered by `(updatedAt DESC, id DESC)`. Every request rechecks current Club Membership and scopes
+its optional UUID cursor to a closed Session in that Club. Both readers reuse the same ordinal,
+Movie and Club-average projection. The client deduplicates appended rows and retains older
+pages across ordinary refreshes; changing the Club role remounts the history collection so older
+privileged projections do not remain visible.
+
+Open Rating rows include accepted participants' names and nullable same-origin avatar paths,
+without scores, submission flags or provider URLs. The authenticated participant-avatar endpoint
+checks Club Membership and the matching accepted SessionParticipant before downloading only
+`https://lh3.googleusercontent.com` images. Redirects are rejected; downloads have a five-second
+whole-request deadline and a 512 KiB streaming limit, and must have PNG/JPEG/WebP signatures.
+Unsupported/missing photos return 404 for initials; upstream failures return sanitized 503.
+Responses are private/no-store. No browser CSP origin, storage service, environment variable,
+dependency or migration is added. Manage Club retains the open Ratings collection; Overview omits
+the duplicate card. The header's authenticated `GET /account/avatar` reads only the current user's
+stored Google image and reuses the same bounded downloader. It accepts no user ID or source URL.
+The browser requests it directly through `/api`, bypassing the Next image optimizer so session
+cookies reach the API. Initials remain visible while the photo loads or after a failed request.
+
+Active Club member projections likewise expose nullable same-origin avatar paths.
+`GET /clubs/:clubId/members/:membershipId/avatar` validates both UUIDs, checks the viewer's current
+Club Membership and the target's active Membership in that same Club in a repeatable-read snapshot,
+then reuses the same Google downloader. Departed or foreign memberships return 404. Responses stay
+private/no-store and expose no provider URL. Members, AvatarGroup and the header share one frontend
+Avatar primitive for photo/initial fallback and grayscale-to-color transitions.
+
+Session Rating entries now include nullable same-origin `avatarUrl` alongside their existing
+author fields, behind the unchanged result-visibility gate. Only accepted participants with stored
+images receive the existing participant-avatar path; departed/removed rows keep null and initials.
+The caller's own rating includes its actual `author` and nullable `/api/account/avatar` path, so
+the own-only projection can render the same Avatar without exposing hidden peers. No provider URL,
+new endpoint or broader image authorization is introduced. Ratings and Rival rows retain their
+separate historical data models while sharing UI geometry; imported totals remain read-only.
+
+Manage Club loads open Rating control snapshots in parallel and projects only phaseVersion,
+canClose and response counts to its Active Ratings widget. It reuses the Session detail's typed
+CLOSE workflow; a failed or changed read exposes per-row retry feedback. It adds no transition
+endpoint and does not send own-rating content or result payloads just to render the close action.
 
 ### Past Sessions and imported evidence
 
@@ -736,7 +824,10 @@ ballots, Selection result snapshot or phase times are generated.
 Optional `nominations` contain objects with a unique canonical `movieId` and optional
 `nominatorMembershipId`. Authors may be current or former Club members, including non-attendees;
 missing authors remain unknown. Foreign-Club Memberships reject the entire import.
-`scoreMatrix` contains selected attendee Membership IDs with sparse Movie/score cells. A nomination list needs no attendees or scores. A matrix
+The shared creation schema caps nominations at the selected attendee count, including the screened
+Movie if nominated. No selected attendees permits no recorded nominations; existing imports are
+not rewritten. Nominations need no scores.
+`scoreMatrix` contains selected attendee Membership IDs with sparse Movie/score cells. A matrix
 may omit rows and cells; empty rows carry no score evidence. Duplicate rows/Movies, unselected attendees,
 unknown Movies, malformed cells and scores outside the Club scale snapshot reject the entire import.
 An unchanged replay uses the saved evidence even if the Club scale has since changed.
@@ -754,13 +845,15 @@ Apply migration 30 before the updated API.
 
 The `selectionOutcome` union replaces the separate imported response field. Its `IMPORTED` variant
 returns the saved scale and permitted imported nomination summaries, including author display names
-when `showNominationAuthors` permits them. Names follow current account data and anonymization;
+when the current Club author policy permits them. Names follow current account data and anonymization;
 Membership IDs remain private. Its `LIVE` variant preserves native winner, closure and breakdown
 behavior. Active voting still uses `selection`; imported post-screening ratings still use `rating`.
 Zero is a recorded score; an absent score total is null. Totals count only supplied cells and do not
-rank nominations or recalculate the screened Movie. Current plan and snapshotted vote-result visibility
-use the same rules as live post-close breakdowns. Individual matrix cells and Membership IDs remain
-private. Completed labels imported and unknown evidence explicitly.
+rank nominations or recalculate the screened Movie. Current Club period flags use the same rules
+as live post-close breakdowns; sparse named cells are exposed only when After permits them,
+including for legacy imports. Membership IDs remain private. Completed reuses the live rival-card presentation for permitted imported nominations,
+labels the screened film independently of totals, and shows missing totals as `—` beside the recorded
+score count. One LOGGED info popover explains missing evidence; no winner or ranking is invented.
 
 The PAST Session type records imported provenance. Migration 28 makes SessionRating.submittedAt
 nullable: imported ratings require a Completed PAST Session and a null original submission time;
@@ -792,7 +885,8 @@ and does not set another user's current opinion. No recomputation or historical 
 
 The authenticated Library module serves `GET /library` with private/no-store caching. The shared
 strict query contract accepts `tab` (`my-ratings` by default, or `watchlist`), a trimmed title search
-`q` (up to 200 characters), exact `score`/`priority`, `sort` (`default`, `title`, `year`, `recent`)
+`q` (up to 200 characters), exact `score`/`priority`, `sort` (`default`, `title`, `year`, `recent`,
+`genre`, `value`), optional `direction=asc|desc`
 and a positive page up to 100,000. Unknown and repeated parameters are rejected. The inactive tab's
 filter is ignored. Identity always comes from the authenticated session.
 
@@ -801,6 +895,14 @@ case-insensitive and escapes SQL wildcard characters. A repeatable-read transact
 clamps the page to the current last page and reads at most 25 rows. Movie ID breaks sort ties;
 missing titles and years sort last. The response carries the tab, rows, total, page, pages and
 pageSize. Empty results retain page one of one.
+
+`value` orders the current tab's priority or personal score. Omitted direction preserves existing
+sort defaults. Genre sorting uses a parameterized PostgreSQL query over the configured cached
+genre labels to select only one page of Movie IDs, then reuses the existing Prisma projection in
+the same transaction. It orders the displayed joined label, with missing/invalid genre arrays last.
+The SQL branch checks the genre-array shape; a malformed cache whose other fields invalidate the
+full details schema can therefore sort by a label that the response omits. Normal field ordering
+stays in Prisma. The UI replaces dropdowns with shared sortable headers and centered title search.
 
 Genre labels come only from the configured provider/locale's existing details cache; absent or
 obsolete cache shapes yield an empty genre list. Listing a Library makes no provider calls.
@@ -830,8 +932,7 @@ LOW/MEDIUM/HIGH priority enum and `addedAt`. Foreign keys cascade private saved 
 User or Movie is deleted. The migration is additive, changes no existing rows, and must precede
 the updated API.
 
-The authenticated Watchlist module exposes private/no-store `GET /watchlist` and
-`GET /movies/:movieId/watchlist`, plus `PUT` and `DELETE` on the latter path. Identity comes only
+The Library module's Watchlist exposes private/no-store `GET /movies/:movieId/watchlist`, plus `PUT` and `DELETE` on the latter path. Identity comes only
 from the session; reads and writes always include that User ID. `PUT` accepts only `{ priority }`,
 requires an existing Movie and uses the database's atomic upsert. Duplicate saves and priority
 edits retain the original added date; repeat deletes succeed. Concurrent different priorities use
@@ -845,18 +946,20 @@ adds no dependency, environment variable, worker or deployment change.
 ### Club analytics and rating rankings
 
 The Hub and authenticated `GET /clubs/:clubId/ratings` reuse active Membership authorization and
-repeatable-read Completed Session projections. A Member's rating query selects only responses from
-Sessions with saved `showRatingResults`; Admins and Moderators may aggregate all Completed results.
+repeatable-read Completed Session projections. Aggregate rating queries include all received
+responses regardless of individual-rating visibility, including legacy and imported Sessions.
 No App Admin bypass exists. Archived Clubs remain readable. The response uses private/no-store
-caching. Free returns a BASIC projection without ranking rows; Pro returns EXTENDED analytics.
-The existing entitlement adapter supplies the plan; this adds no billing behavior.
+caching. Every plan gets the ranking rows and all Overview statistics. The existing
+entitlement adapter supplies the plan; this adds no billing behavior.
 
 The shared pure calculators count completed screenings, group received historical ratings by
 canonical Movie and weight every response equally. Departed participants and partial PAST imports
 remain history. PersonalMovieRating, open Rating and Cancelled Sessions do not affect the result.
-The strict shared query accepts `sort=rating|time|title` and a positive page up to 100,000; unknown
-or repeated parameters reject. Sorting uses Movie ID for stable ties, unknown title/date values
-last, and the latest permitted rated screening for time order. Responses clamp stale pages and
+The strict shared query accepts `sort=rating|time|title|year|genre`, optional `direction=asc|desc`,
+an optional trimmed title search up to 200 characters and a positive page up to 100,000; unknown
+or repeated parameters reject. Search applies literally and case-insensitively before pagination.
+Sorting uses Movie ID for stable ties, missing values last, and the latest permitted rated screening
+for legacy time order. Omitted direction preserves the existing sort defaults. Responses clamp stale pages and
 contain at most 25 rows. Individual scores, comments and participant identifiers stay internal.
 
 Cached metadata supplies genres and person/runtime summaries without provider requests. A summary
@@ -890,6 +993,8 @@ provider/locale's cached metadata. Stored evidence captures measured facts and s
 earning, including each ballot's Session ID and submission time alongside Selection opening times.
 Awarded rows retain the snapshot and award time. Attendance streaks are evaluated within individual
 Membership intervals, matching historical attendees by User. Pending progress recomputes on each read.
+For Completed live Sessions, accepted participation supplies attendance when the stored value is
+null; PAST imports still require recorded attendance. This is derived without a history backfill.
 There is no new worker, event bus, provider request, dependency or environment variable. Read/write
 cost grows with the subject's activity; source writes do not trigger awards. Transient criteria
 removed before a view evaluation are not captured. Results use statement snapshots under the
@@ -898,7 +1003,11 @@ existing default transaction isolation; the next read incorporates concurrent so
 Result-derived Club award state is restricted to Admins/Moderators to avoid leaking historical
 hidden results after visibility changes. Saved privacy classification also protects retired versions.
 Members receive only current private definition cards with masked state, independent of earned rows;
-retired private award rows are omitted. Personal Hot Take evaluates only currently accessible
+retired private award rows are omitted. Hidden Selection results mask Perfect Split for operators
+too, including older earned versions. Individual-rating flags do not mask average/count-derived
+criteria: Club averages and received counts remain available. Award records remain stored.
+Notification production and resolution recheck the same Selection keys.
+Personal Hot Take evaluates only currently accessible
 Completed results. World Tour uses the configured catalog's cached production countries. TheTVDB's
 client maps production-country records from its existing extended request into uppercase codes for
 the composite catalog; TMDB maps two-letter codes in its separate provider cache. The nullable
@@ -911,20 +1020,37 @@ owner visual acceptance are still pending.
 
 ### Durable notification intent
 
-Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt. Apply it
-before the updated API and deadline worker. It is additive, with no historical backfill. Source
+Phase 18 adds `SESSION_PARTICIPANT_REMOVED` with additive enum and notification-shape migrations.
+It notifies the removed member in the inbox; personal Session invitations no longer exist, so no
+targeted-invite producer is added. Audited Club/start actions omit actor
+self-notices, while Admin transfer retains the former Admin's role-change notice. Achievement
+awards still originate from view evaluation.
+
+Live Session starts and Club archive/reactivation target active Club members other than the
+audited actor. Phase events target accepted participants with active Membership; NOMINATION_STALLED
+targets current Admins/Moderators. Membership audit events target the affected User when actor and
+subject differ; Admin transfer also notifies the former Admin. Past imports emit no start alert.
+
+Migration 34 adds Notification, NotificationPreference and NotificationDeliveryAttempt; migration 38
+drops the per-attempt table and the email request hash in favour of the delivery row. Apply it
+before the updated API and deadline worker. Per-attempt history is removed; delivery counters and
+the latest failure remain.
+
 Session transitions, audited Membership/Club changes and new achievement awards record intent in
 their existing transaction. Notification writes failing roll back the source mutation. The
 per-recipient/event/source UUID/occurrence unique index handles concurrent replay; phase/deadline
-versions distinguish repeated Session events. First-write preferences and attempts survive retries.
-Existing SessionProgressEvent and NominationDeadlineNotification records retain their existing
-roles; neither is a second inbox. Only future writes produce Notifications.
+versions distinguish repeated Session events. First-write preferences and delivery rows survive
+retries.
+Existing SessionProgressEvent records retain their role (live progress and the Early Bird
+achievement's Selection opening time); they are not a second inbox. Only future writes produce
+Notifications.
 
 The authenticated preference GET/PUT API is private/no-store, derives identity from the session,
 and validates strict shared contracts. Optional defaults are in-app on/email off; transactional
 BILLING_SERVICE is mandatory on both channels. The database also rejects disabled mandatory rows.
-Preferences apply prospectively. Each Notification has initial per-channel attempts with a unique
-positive attempt number; email intent remains pending until #62 implements transport.
+Preferences apply prospectively. Eligible email intent has one `NotificationEmailDelivery` row
+per Notification; the Phase 17 email worker claims and retries that row using its saved counter
+and idempotency key.
 
 Only typed references and delivery/read metadata are stored. There is no payload JSON or copied
 entity content. Entity UUIDs intentionally have no foreign keys: deletion retains generic inbox

@@ -1,8 +1,7 @@
 .tabs__list {
     display: flex;
     gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: thin;
+    overflow: auto hidden;
     border-bottom: 1px solid var(--border);
 }
 
@@ -18,10 +17,15 @@
     border: 0;
 }
 
+/* Keep the scrollable tab geometry fixed while its label gives press feedback. */
+.tabs__label {
+    display: inline-block;
+}
+
 .tabs__tab::after {
     position: absolute;
     right: 12px;
-    bottom: -1px;
+    bottom: 0;
     left: 12px;
     height: 1px;
     content: '';
@@ -63,13 +67,6 @@
     box-shadow: var(--focus-ring);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .tabs__panel {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
-    }
-}
-
 @keyframes fade-in {
     from {
         opacity: 0;
@@ -78,4 +75,22 @@
     to {
         opacity: 1;
     }
+}
+
+.tabs {
+    min-width: 0;
+}
+
+.tabs.m-neutral .tabs__tab {
+    flex: 1;
+}
+
+.tabs.m-neutral .tabs__tab[aria-selected='true'] {
+    color: var(--fg);
+}
+
+.tabs.m-neutral .tabs__tab[aria-selected='true']::after {
+    right: 0;
+    left: 0;
+    background: var(--fg);
 }

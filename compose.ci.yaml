@@ -1,8 +1,0 @@
-services:
-    minio:
-        image: cgr.dev/chainguard/minio@sha256:d7c906993247627c19f37fc1fa302c34cf2d209ae0e7dc7d52fb0be6ac2849ba
-        healthcheck:
-            test: ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1:9000/minio/health/live']
-
-    minio-init:
-        image: cgr.dev/chainguard/minio-client@sha256:f0dd93b48af1f8a641edcd3c64661c8dbe05189bd2ef2f8cea216eb18af10bf8

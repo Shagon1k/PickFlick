@@ -1,19 +1,27 @@
-.main {
+.main,
+.progressFeedback {
     width: min(calc(var(--container) - 2 * var(--gutter)), calc(100% - var(--gutter) * 2));
-    padding-block: var(--gap-lg) var(--gap-2xl);
     margin-inline: auto;
+}
+
+.main {
+    padding-block: var(--gap-lg) var(--gap-2xl);
     overflow-wrap: anywhere;
 }
 
-/* One grid serves both layouts: title, stamp and rail in a row from 576px, a poster ticket below. */
+.progressFeedback {
+    margin-top: var(--gap-md);
+}
+
+/* Completed uses the Movie Details score rail; phase capsules live on the film poster. */
 .header {
     position: relative;
 
     /* Its own stacking layer keeps the gear menu above the phase content below. */
     z-index: 2;
     display: grid;
-    grid-template-areas: 'copy stamp rail';
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'copy rail';
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--gap-sm) var(--gap-lg);
     align-items: end;
     padding-block: 18px 28px;
@@ -44,6 +52,64 @@
     grid-area: copy;
     gap: 10px;
     min-width: 0;
+}
+
+.headingLine {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+    align-items: center;
+}
+
+.headingMeta {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+@media (width >= 768px) {
+    .header:has(.phaseStamp) {
+        grid-template-areas:
+            'heading heading'
+            'copy rail';
+    }
+
+    .header:has(.phaseStamp) .headingCopy {
+        display: contents;
+    }
+
+    .header:has(.phaseStamp) .headingLine {
+        flex-wrap: nowrap;
+        grid-area: heading;
+    }
+
+    .header:has(.phaseStamp) .headingLine h1 {
+        min-width: 0;
+    }
+
+    .header:has(.phaseStamp) .phaseStamp {
+        margin-left: auto;
+    }
+
+    .header:has(.phaseStamp) .headingMeta {
+        grid-area: copy;
+    }
+
+    .header:has(.phaseStamp) .actionRail {
+        place-self: center end;
+    }
+
+    .header[data-completed] {
+        grid-template-areas:
+            'heading rail'
+            'copy copy';
+    }
+}
+
+@media (width >= 576px) {
+    .header[data-film] .phaseStamp {
+        display: none;
+    }
 }
 
 .header h1 {
@@ -90,53 +156,12 @@
 
 .phaseStamp {
     display: inline-flex;
-    grid-area: stamp;
-    gap: var(--gap-xs);
     align-items: center;
-
-    /* As tall as the rail (a 44px cell and its border), so the stamp sits on its centre line. */
-    min-height: calc(var(--hit) + 2px);
-    font: 600 var(--fs-caption)/1 var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
-}
-
-/* Watching is the scene's one ambient loop: a live dot beside the phase. */
-.phaseStamp[data-live]::after {
-    width: 9px;
-    height: 9px;
-    content: '';
-    background: var(--gold);
-    border-radius: 50%;
-
-    /* Capitals sit above the line box's centre; the dot follows them, not the box. */
-    transform: translateY(-1px);
-    animation: live-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes live-pulse {
-    50% {
-        opacity: 0.35;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .phaseStamp[data-live]::after {
-        opacity: 0.82;
-        animation: none;
-    }
+    pointer-events: auto;
 }
 
 .actionRail {
     grid-area: rail;
-}
-
-.eyebrow {
-    font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
 }
 
 .reelBreak {
@@ -246,6 +271,17 @@
     border-radius: var(--radius-pill);
 }
 
+/* The bordered column every phase panel uses; each panel adds only what differs. */
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-md);
+    min-width: 0;
+    padding: var(--gap-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
 .card,
 .metric {
     min-width: 0;
@@ -282,6 +318,14 @@
     color: var(--fg-secondary);
 }
 
+.facts dt svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+}
+
 .facts dd {
     margin: 0;
     line-height: 1.4;
@@ -308,53 +352,18 @@
     letter-spacing: var(--tracking-tight);
 }
 
+.metric strong[data-loading] {
+    display: block;
+    width: 3ch;
+    height: 1lh;
+    border-radius: var(--radius);
+}
+
 .metric span {
     font: var(--fs-caption)/var(--lh-caption) var(--font-mono);
     color: var(--ivory-muted);
     text-transform: uppercase;
     letter-spacing: var(--tracking-caps);
-}
-
-@media (width < 768px) {
-    /* Phones end the page above the footer without the desktop's long tail. */
-    .main {
-        padding-bottom: var(--gap-lg);
-    }
-}
-
-@media (width < 768px) {
-    .header {
-        grid-template-areas:
-            'copy copy'
-            'stamp rail';
-        grid-template-columns: auto auto;
-        justify-content: center;
-        text-align: center;
-    }
-
-    .headingCopy {
-        justify-items: center;
-    }
-
-    .headingCopy .filmMeta {
-        justify-content: center;
-    }
-
-    .detailsGrid {
-        grid-template-columns: 1fr;
-    }
-
-    .metric {
-        padding: var(--gap-md);
-    }
-}
-
-.facts dt svg {
-    flex: 0 0 18px;
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    stroke-width: 1.6;
 }
 
 .metaLine {
@@ -374,6 +383,40 @@
 }
 
 @media (width < 768px) {
+    /* Phones end the page above the footer without the desktop's long tail. */
+    .main {
+        padding-bottom: var(--gap-lg);
+    }
+
+    .header {
+        grid-template-areas:
+            'copy'
+            'rail';
+        grid-template-columns: minmax(0, 1fr);
+        justify-content: center;
+        text-align: center;
+    }
+
+    .headingCopy {
+        justify-items: center;
+    }
+
+    .headingLine {
+        justify-content: center;
+    }
+
+    .headingCopy .filmMeta {
+        justify-content: center;
+    }
+
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .metric {
+        padding: var(--gap-md);
+    }
+
     .metaLine {
         justify-content: center;
     }
@@ -384,13 +427,8 @@
     .header:not([data-film]) {
         grid-template-areas:
             'copy'
-            'stamp'
             'rail';
         grid-template-columns: minmax(0, 1fr);
         justify-content: stretch;
-    }
-
-    .phaseStamp {
-        justify-self: center;
     }
 }

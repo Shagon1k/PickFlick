@@ -2,41 +2,45 @@ import { randomUUID } from 'node:crypto';
 
 import { ConflictException, Injectable } from '@nestjs/common';
 import {
+    clubVisibilityShape,
+    getPosterPath,
     type IClubHub,
+    type IClubSessionHistoryPage,
     type IClubSettings,
     type IClubSummary,
     type TChangeMemberRoleRequest,
     type TCreateClubRequest,
-    type TMovieDetails,
     type TUpdateClubSettingsRequest,
 } from '@pickflick/contracts';
-import type { Prisma } from '@pickflick/database';
 
 import { lockKey } from '../../database/advisory-lock.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { MoviesService } from '../movies/movies.service.js';
-import { NotificationTransactions } from '../notifications/notification-transactions.js';
+import { Transactions } from '../notifications/transactions.js';
 import {
     assertActive,
     assertAdmin,
+    assertBelowAdminLimit,
     findMembership,
     getClubAccess,
     lockClub,
     recordAudit,
 } from './access/club-access.js';
-import { canRemoveMember, getClubPermissions } from './access/club-permissions.js';
-import { getClubEntitlements, getTierEntitlements } from './access/club-tiers.js';
+import { getClubPermissions } from './access/club-permissions.js';
+import { getClubEntitlements } from './access/club-tiers.js';
 import { toClubSummary } from './club.mapper.js';
 import { readClubHub } from './club-hub.js';
+import { findActiveMembers, toClubMember } from './club-members.js';
+import { readClubSessionHistory } from './club-session-history.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
 
-const AUDIT_EVENTS_LIMIT = 20;
+const VISIBILITY_FIELDS = Object.keys(clubVisibilityShape) as (keyof typeof clubVisibilityShape)[];
 
 @Injectable()
 export class ClubsService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
         private readonly movies: MoviesService,
     ) {}
 
@@ -50,7 +54,7 @@ export class ClubsService {
     }
 
     async getHub(userId: string, clubId: string): Promise<IClubHub> {
-        const { hub: snapshot, completed } = await this.notifications.run(
+        const { hub: snapshot, completed } = await this.transactions.read(
             (tx) => readClubHub(tx, userId, clubId),
             { isolationLevel: 'RepeatableRead' },
         );
@@ -59,10 +63,7 @@ export class ClubsService {
             ...snapshot,
             statistics: buildClubStatistics(
                 completed,
-                snapshot.club.tier === 'PRO'
-                    ? await this.movies.getCachedMetadata(completedIds)
-                    : new Map<string, TMovieDetails>(),
-                snapshot.club.tier,
+                await this.movies.getCachedMetadata(completedIds),
             ),
         };
         const selected = hub.activeSession?.movie;
@@ -72,19 +73,26 @@ export class ClubsService {
                 selected.title = details.data.title ?? selected.title;
                 selected.runtime = details.data.runtime;
                 selected.genres = details.data.genres ?? [];
-                selected.posterUrl = details.data.posterUrl
-                    ? `/api/movies/${selected.id}/poster`
-                    : null;
+                selected.posterUrl = details.data.posterUrl ? getPosterPath(selected.id) : null;
             }
         }
         return hub;
     }
 
+    async getSessionHistory(
+        userId: string,
+        clubId: string,
+        cursor?: string,
+    ): Promise<IClubSessionHistoryPage> {
+        return this.transactions.read((tx) => readClubSessionHistory(tx, userId, clubId, cursor), {
+            isolationLevel: 'RepeatableRead',
+        });
+    }
+
     async create(userId: string, input: TCreateClubRequest): Promise<IClubSummary> {
-        const { adminClubLimit } = getTierEntitlements('FREE');
-        return this.notifications.run(async (transaction) => {
+        return this.transactions.write(async (transaction) => {
             await lockKey(transaction, `club-admin:${userId}`);
-            await assertBelowAdminLimit(transaction, userId, adminClubLimit);
+            await assertBelowAdminLimit(transaction, userId);
             const club = await transaction.club.create({
                 data: {
                     id: randomUUID(),
@@ -97,39 +105,13 @@ export class ClubsService {
     }
 
     async getSettings(userId: string, clubId: string): Promise<IClubSettings> {
-        return this.notifications.run(
+        return this.transactions.read(
             async (transaction) => {
                 const membership = await findMembership(transaction, userId, clubId);
                 const { club, role } = membership;
-                const [members, auditEvents] = await Promise.all([
-                    transaction.membership.findMany({
-                        where: { clubId, status: 'ACTIVE' },
-                        orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
-                        select: {
-                            id: true,
-                            role: true,
-                            joinedAt: true,
-                            user: { select: { displayName: true } },
-                            _count: {
-                                select: {
-                                    sessionParticipants: {
-                                        where: {
-                                            status: 'ACCEPTED',
-                                            session: { phase: { not: 'CANCELLED' } },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    }),
-                    role === 'ADMIN'
-                        ? transaction.clubAuditEvent.findMany({
-                              where: { clubId },
-                              orderBy: { createdAt: 'desc' },
-                              take: AUDIT_EVENTS_LIMIT,
-                              select: { id: true, action: true, createdAt: true },
-                          })
-                        : [],
+                const [members, sessionCount] = await Promise.all([
+                    findActiveMembers(transaction, clubId),
+                    transaction.session.count({ where: { clubId } }),
                 ]);
 
                 const access = getClubAccess(
@@ -143,26 +125,19 @@ export class ClubsService {
                     currentMembershipId: membership.id,
                     club: toClubSummary(club, role),
                     permissions: getClubPermissions(role, club.lifecycle, access),
+                    // The same rule `delete` enforces: only a Club without Sessions goes.
+                    canDelete: role === 'ADMIN' && sessionCount === 0,
                     entitlements: getClubEntitlements(clubId),
                     visibility: {
-                        showNominationAuthors: club.showNominationAuthors,
+                        showNominationAuthorsDuring: club.showNominationAuthorsDuring,
+                        showNominationAuthorsAfter: club.showNominationAuthorsAfter,
+                        showSelectionScoresDuring: club.showSelectionScoresDuring,
+                        showSelectionScoresAfter: club.showSelectionScoresAfter,
+                        showRatingsDuring: club.showRatingsDuring,
+                        showRatingsAfter: club.showRatingsAfter,
                         showNominationsBeforeSubmit: club.showNominationsBeforeSubmit,
-                        showVoteResults: club.showVoteResults,
-                        showRatingResults: club.showRatingResults,
-                        useMonochromeMedia: club.useMonochromeMedia,
                     },
-                    members: members.map((member) => ({
-                        id: member.id,
-                        displayName: member.user.displayName,
-                        role: member.role,
-                        joinedAt: member.joinedAt.toISOString(),
-                        sessionCount: member._count.sessionParticipants,
-                        canRemove: canRemoveMember(membership, member, club.lifecycle),
-                    })),
-                    auditEvents: auditEvents.map((event) => ({
-                        ...event,
-                        createdAt: event.createdAt.toISOString(),
-                    })),
+                    members: members.map((member) => toClubMember(membership, member)),
                 };
             },
             { isolationLevel: 'RepeatableRead' },
@@ -174,21 +149,25 @@ export class ClubsService {
         clubId: string,
         input: TUpdateClubSettingsRequest,
     ): Promise<IClubSettings> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertActive(membership);
-            if (
-                input.showVoteResults &&
-                getClubEntitlements(clubId).voteResultVisibility !== 'ADMIN_CONFIGURABLE'
-            ) {
-                throw new ConflictException({ reason: 'TIER_SETTING_UNAVAILABLE' });
+            // Club Info clears an omitted description; Club Settings never sends one.
+            const data =
+                'name' in input ? { ...input, description: input.description ?? null } : input;
+            await transaction.club.update({ where: { id: clubId }, data });
+            const isVisibilityChanged =
+                !('name' in input) &&
+                VISIBILITY_FIELDS.some((field) => input[field] !== membership.club[field]);
+            if (isVisibilityChanged) {
+                // Refresh open Session pages without changing history order or emitting phase events.
+                await transaction.$executeRaw`
+                    UPDATE "Session" SET "progressVersion" = "progressVersion" + 1
+                    WHERE "clubId" = ${clubId}::uuid
+                `;
             }
-            await transaction.club.update({
-                where: { id: clubId },
-                data: { ...input, description: input.description ?? null },
-            });
             await recordAudit(transaction, {
                 clubId,
                 actorUserId: userId,
@@ -206,7 +185,7 @@ export class ClubsService {
         membershipId: string,
         { role }: TChangeMemberRoleRequest,
     ): Promise<void> {
-        await this.notifications.run(async (transaction) => {
+        await this.transactions.write(async (transaction) => {
             await lockClub(transaction, clubId);
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
@@ -232,24 +211,5 @@ export class ClubsService {
                 nextRole: role,
             });
         });
-    }
-}
-
-/** Free Admins may run one active Club; the lock makes concurrent creations count each other. */
-export async function assertBelowAdminLimit(
-    transaction: Prisma.TransactionClient,
-    userId: string,
-    limit: number,
-): Promise<void> {
-    const administered = await transaction.membership.count({
-        where: {
-            userId,
-            role: 'ADMIN',
-            status: 'ACTIVE',
-            club: { lifecycle: 'ACTIVE', deletedAt: null },
-        },
-    });
-    if (administered >= limit) {
-        throw new ConflictException({ reason: 'ADMIN_CLUB_LIMIT_REACHED' });
     }
 }

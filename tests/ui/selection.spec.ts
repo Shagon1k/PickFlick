@@ -1,21 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, screenshotViewports } from './viewports';
 
 const PATH = '/sessions/30000000-0000-4000-8000-000000000045';
 async function authenticate(context: BrowserContext, scenario = '') {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-selection-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-selection-${scenario}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -28,23 +20,37 @@ test(
         await expect(groups).toHaveCount(2);
         await expect(page.getByText('Nominated by Jordan Member')).toHaveCount(0);
         await page.getByRole('button', { name: 'Submit scores' }).click();
-        await expect(page.getByText('Choose a score for every nomination.')).toBeVisible();
+        await expect(
+            page.getByRole('status').filter({ hasText: 'Choose a score for every nomination.' }),
+        ).toBeVisible();
         await expect(groups.first().getByRole('radio', { name: '0 of 3' })).toBeFocused();
         await page.keyboard.press('End');
         await expect(groups.first().getByRole('radio', { name: '3 of 3' })).toBeChecked();
         await groups.nth(1).getByRole('radio', { name: '0 of 3' }).focus();
         await page.keyboard.press('Home');
         await expect(groups.nth(1).getByRole('radio', { name: '0 of 3' })).toBeChecked();
-        await expect(page.getByText('2 of 2 films scored · Ready to submit')).toBeVisible();
+        await expect(
+            page.getByRole('status').filter({ hasText: '2 of 2 films scored. Ready to submit.' }),
+        ).toBeVisible();
         await page.getByRole('button', { name: 'Submit scores' }).click();
-        await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Score nominated films' })).toBeFocused();
+        await expect(
+            page
+                .getByRole('main')
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
+        ).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Your scores', exact: true })).toBeFocused();
         await expect(page.getByRole('radio')).toHaveCount(0);
         await expect(
-            page.getByText('2 of 3 participants have submitted.', { exact: false }),
+            page.getByRole('status').filter({ hasText: '2 of 3 participants have submitted.' }),
         ).toBeVisible();
         await page.reload();
-        await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
+        await expect(
+            page
+                .getByRole('main')
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
+        ).toBeVisible();
         await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
     },
 );
@@ -56,15 +62,18 @@ test('recoverable failure and offline submission preserve scores', async ({ cont
         await group.getByRole('radio', { name: '2 of 3' }).click();
     await page.getByRole('button', { name: 'Submit scores' }).click();
     await expect(
-        page.getByText('We could not save your ballot. Your scores are still here; try again.'),
+        page.getByRole('status').filter({
+            hasText: 'We could not save your ballot. Your scores are still here; try again.',
+        }),
     ).toBeVisible();
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(2);
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Submit scores' }).click();
     await expect(
-        page.getByText(
-            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
-        ),
+        page.getByRole('status').filter({
+            hasText:
+                'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
+        }),
     ).toBeVisible();
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(2);
 });
@@ -82,7 +91,12 @@ test('legacy scale supports touch and omits zero', async ({ browser }) => {
         for (const group of await page.getByRole('radiogroup').all())
             await group.getByRole('radio', { name: '10 of 10' }).tap();
         await page.getByRole('button', { name: 'Submit scores' }).tap();
-        await expect(page.getByText('Your ballot is saved. Your scores are locked.')).toBeVisible();
+        await expect(
+            page
+                .getByRole('main')
+                .getByRole('status')
+                .filter({ hasText: /^Submitted · Waiting for other participants$/u }),
+        ).toBeVisible();
     } finally {
         await context.close();
     }
@@ -93,8 +107,38 @@ for (const scenario of ['readonly', 'empty']) {
         await authenticate(context, scenario);
         await page.goto(PATH);
         await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
-        await expect(page.getByRole('button', { name: 'Refresh Selection' })).toBeVisible();
+        await expect(
+            page.getByRole('status').filter({ hasText: 'Selection in progress' }),
+        ).toBeVisible();
     });
+}
+
+for (const [scenario, joinCount, removedCount] of [
+    ['readonly', 0, 0],
+    ['removed', 0, 1],
+    ['unjoined', 1, 0],
+] as const) {
+    test(
+        `Selection ${scenario} state shows disabled scores and accurate participation controls`,
+        { tag: '@smoke' },
+        async ({ context, page }) => {
+            await authenticate(context, scenario);
+            await page.goto(PATH);
+            await expect(page.getByRole('list', { name: 'Nominated films' })).toBeVisible();
+            await expect(page.getByRole('radio')).toHaveCount(8);
+            expect(
+                await page
+                    .getByRole('radio')
+                    .evaluateAll((radios) => radios.every((radio) => radio.matches(':disabled'))),
+            ).toBe(true);
+            await expect(page.getByRole('button', { name: 'Submit scores' })).toHaveCount(0);
+            await expect(page.getByText('Join the Session to score films.')).toHaveCount(0);
+            await expect(
+                page.getByRole('button', { name: 'Join Session', exact: true }),
+            ).toHaveCount(joinCount);
+            await expect(page.getByText('Removed', { exact: false })).toHaveCount(removedCount);
+        },
+    );
 }
 
 for (const viewport of canonicalViewports) {
@@ -110,15 +154,10 @@ for (const viewport of canonicalViewports) {
         expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         ).toBe(true);
-        const refreshBounds = await page
-            .getByRole('button', { name: 'Refresh Selection' })
-            .boundingBox();
-        expect(refreshBounds?.width).toBeGreaterThanOrEqual(44);
         const target = page.getByRole('radio', { name: '10 of 10' }).first();
         const bounds = await target.boundingBox();
         expect(bounds?.width).toBeGreaterThanOrEqual(44);
         expect(bounds?.height).toBeGreaterThanOrEqual(44);
-        await page.screenshot({ path: test.info().outputPath('selection.png'), fullPage: true });
     });
 }
 
@@ -133,9 +172,6 @@ for (const viewport of screenshotViewports) {
             await settle(page);
             await expect(page).toHaveScreenshot(`selection-${viewport.name}.png`, {
                 fullPage: true,
-                animations: 'disabled',
-                caret: 'hide',
-                scale: 'css',
             });
         },
     );

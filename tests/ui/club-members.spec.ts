@@ -1,28 +1,18 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
-async function authenticate(context: BrowserContext, token: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: token,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
-}
 
 test(
     'Members removal confirms intent, preserves feedback, and returns focus after the row disappears',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, `valid-members-remove-${test.info().repeatEachIndex}`);
+        await signInMock(context, `valid-members-remove-${test.info().repeatEachIndex}`);
         await page.goto(`/clubs/${CLUB_ID}/members`);
         const trigger = page.getByRole('button', { name: 'Remove Morgan Member' });
         await trigger.focus();
@@ -40,6 +30,12 @@ test(
         await expect(page.getByText('Morgan Member')).toHaveCount(0);
         await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeFocused();
         await expect(page.getByRole('status')).toContainText('Shared history is preserved');
+        // Invite opens the link dialog right here instead of sending the Admin to Manage Club.
+        await page.getByRole('button', { name: 'Invite', exact: true }).click();
+        await expect(
+            page.getByRole('dialog', { name: 'Invite to this Club' }).getByLabel('Invitation link'),
+        ).toHaveValue(/\/invite\/club\//u);
+        await expect(page).toHaveURL(new RegExp(`/clubs/${CLUB_ID}/members$`, 'u'));
     },
 );
 
@@ -47,29 +43,29 @@ test('Member and restricted Club views explain unavailable actions without losin
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-members-member');
+    await signInMock(context, 'valid-members-member');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('button', { name: /remove/iu })).toHaveCount(0);
     await expect(page.getByText('Morgan Member')).toBeVisible();
-    await authenticate(context, 'valid-members-adminless');
+    await signInMock(context, 'valid-members-adminless');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText('no Admin');
-    await expect(page.getByRole('link', { name: '+ Invite' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Invite', exact: true })).toHaveCount(0);
     await page.goto(`/clubs/${CLUB_ID}/settings`);
     await expect(page.getByRole('button', { name: 'Manage Moderators' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Invite members' }).click();
+    await page.getByRole('button', { name: 'Invite members', exact: true }).click();
     const invitations = page.getByRole('dialog', { name: 'Invite to this Club' });
     await expect(
         invitations.getByText('New invitations are paused.', { exact: false }),
     ).toBeVisible();
-    await expect(invitations.getByRole('button', { name: 'Create invitation' })).toHaveCount(0);
-    await authenticate(context, 'valid-members-over-limit');
+    await expect(invitations.getByRole('button', { name: 'New link' })).toHaveCount(0);
+    await signInMock(context, 'valid-members-over-limit');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('region', { name: 'Club status' })).toContainText(
         'over its member limit',
     );
     await expect(page.getByRole('button', { name: 'Remove Morgan Member' })).toBeVisible();
-    await authenticate(context, 'valid-members-archived');
+    await signInMock(context, 'valid-members-archived');
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await expect(page.getByRole('button', { name: /remove/iu })).toHaveCount(0);
 });
@@ -78,7 +74,7 @@ test(
     'pending invitation popover supports keyboard focus, decline, and acceptance into the authorized Club',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, 'valid-pending-decline');
+        await signInMock(context, 'valid-pending-decline');
         await page.goto('/app');
         const trigger = page.getByRole('button', { name: 'Open pending invites' });
         await trigger.focus();
@@ -96,7 +92,7 @@ test(
         await expect(dialog.getByRole('status')).toContainText('Invitation declined');
         await expect(dialog.getByRole('button', { name: 'Accept', exact: true })).toHaveCount(0);
         await dialog.getByRole('button', { name: 'Close', exact: true }).click();
-        await authenticate(context, 'valid-pending-accept');
+        await signInMock(context, 'valid-pending-accept');
         await page.goto('/app');
         await trigger.click();
         await dialog.getByRole('button', { name: 'Accept', exact: true }).click();
@@ -110,7 +106,7 @@ for (const viewport of screenshotViewports) {
         context,
         page,
     }) => {
-        await authenticate(
+        await signInMock(
             context,
             `valid-pending-focus-${viewport.name}-${test.info().repeatEachIndex}-${test.info().retry}`,
         );
@@ -136,7 +132,9 @@ for (const viewport of screenshotViewports) {
         await expect(close).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(dialog).toHaveCount(0);
-        await expect(trigger).toBeFocused();
+        // The emptied ticket slides away, so focus lands on the page instead.
+        await expect(trigger).toBeHidden();
+        await expect(page.locator('main')).toBeFocused();
     });
 }
 
@@ -144,7 +142,7 @@ test('Moderator management remains accessible and keeps keyboard focus inside it
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-settings-admin-moderation');
+    await signInMock(context, 'valid-settings-admin-moderation');
     await page.goto(`/clubs/${CLUB_ID}/settings`);
     const trigger = page.getByRole('button', { name: 'Manage Moderators' });
     await trigger.click();
@@ -167,7 +165,7 @@ test('invite and notification overlays close each other and keep keyboard focus 
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-hub-pending-overlays');
+    await signInMock(context, 'valid-hub-pending-overlays');
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/clubs/${CLUB_ID}/members`);
     await page.getByRole('button', { name: 'Notifications', exact: true }).click();
@@ -188,13 +186,15 @@ test('pending invitations show recoverable loading failures and an explicit empt
     context,
     page,
 }) => {
-    await authenticate(context, 'valid-pending-error');
+    await signInMock(context, 'valid-pending-error');
     await page.goto('/app');
     await page.getByRole('button', { name: 'Open pending invites' }).click();
     const dialog = page.getByRole('dialog', { name: 'Pending invites' });
-    await expect(dialog.getByRole('status')).toContainText('could not be loaded');
+    await expect(
+        dialog.getByRole('status').filter({ hasText: 'could not be loaded' }),
+    ).toBeAttached();
     await expect(dialog.getByRole('button', { name: 'Retry invites' })).toBeVisible();
-    await authenticate(context, 'valid-empty-invites');
+    await signInMock(context, 'valid-empty-invites');
     await page.goto('/app');
     // Without invitations the ticket stays out of the way.
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -207,7 +207,7 @@ test('member management and invite popovers meet touch, focus, accessibility, an
     test.slow();
     const context = await browser.newContext({ hasTouch: true, isMobile: true });
     try {
-        await authenticate(context, 'valid-hub-pending-responsive');
+        await signInMock(context, 'valid-hub-pending-responsive');
         const page = await context.newPage();
         for (const viewport of [...canonicalViewports, ...gapViewports]) {
             await page.setViewportSize(viewport);
@@ -218,13 +218,7 @@ test('member management and invite popovers meet touch, focus, accessibility, an
             await expect(dialog.getByRole('button', { name: 'Accept', exact: true })).toBeVisible();
             await expect(dialog).toHaveCSS('opacity', '1');
             await settle(page);
-            const widths = await page.evaluate(() => ({
-                body: document.body.scrollWidth,
-                document: document.documentElement.scrollWidth,
-                client: document.documentElement.clientWidth,
-            }));
-            expect(widths.body).toBeLessThanOrEqual(widths.client);
-            expect(widths.document).toBeLessThanOrEqual(widths.client);
+            await expectNoPageOverflow(page);
             const box = await dialog.boundingBox();
             expect(box?.x).toBeGreaterThanOrEqual(0);
             expect(box?.y).toBeGreaterThanOrEqual(0);
@@ -254,7 +248,7 @@ for (const viewport of screenshotViewports) {
             `Club members ${state} matches ${viewport.name}`,
             { tag: '@visual' },
             async ({ context, page }) => {
-                await authenticate(context, `valid-members-${state}-visual-${viewport.name}`);
+                await signInMock(context, `valid-members-${state}-visual-${viewport.name}`);
                 await page.setViewportSize(viewport);
                 await page.goto(`/clubs/${CLUB_ID}/members`, { waitUntil: 'load' });
                 await settle(page);
@@ -269,10 +263,12 @@ for (const viewport of screenshotViewports) {
         `pending invite popover matches ${viewport.name}`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await authenticate(context, `valid-hub-pending-visual-${viewport.name}`);
+            await signInMock(context, `valid-hub-pending-visual-${viewport.name}`);
             await page.setViewportSize(viewport);
             await page.goto(`/clubs/${CLUB_ID}`, { waitUntil: 'load' });
             await settle(page);
+            // The popover anchors to the ticket, so wait until its slide-in has finished.
+            await expect(page.locator('[data-invite-ticket]')).toHaveCSS('right', '0px');
             await page.getByRole('button', { name: 'Open pending invites' }).click();
             await expect(
                 page

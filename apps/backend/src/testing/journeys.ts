@@ -5,12 +5,15 @@ import { movieSearchSchema, type TMovieSearchResults } from '@pickflick/contract
 import {
     assertSafeSeedOrResetTarget,
     createDatabaseClient,
+    type Prisma,
     type PrismaClient,
+    snapshotSessionSettings,
 } from '@pickflick/database';
 import { testUtils } from 'better-auth/plugins';
 
 import { createAuth } from '../modules/auth/auth.config.js';
 import { buildSearchCacheKey } from '../modules/movies/catalog-cache-key.js';
+import { removeUsers } from './remove-users.js';
 
 interface IBrowserCookie {
     name: string;
@@ -23,6 +26,10 @@ interface IBrowserCookie {
     expires?: number;
 }
 
+type TMemberRole = 'ADMIN' | 'MODERATOR' | 'MEMBER';
+type TJourneySessionData = Partial<Prisma.SessionUncheckedCreateInput> &
+    Pick<Prisma.SessionUncheckedCreateInput, 'type' | 'phase'>;
+
 interface IJourneyMovie {
     id: string;
     title: string;
@@ -34,7 +41,16 @@ interface IJourneyMovie {
  * test plugin in the test process, so the running API exposes no test-only sign-in.
  */
 export interface IJourneyBackend {
+    prisma: PrismaClient;
     createUser(displayName: string): Promise<string>;
+    /** Adds an active membership and returns its id. */
+    addMember(clubId: string, userId: string, role: TMemberRole): Promise<string>;
+    /** Creates a Session with the Club's current settings snapshot; `data` overrides any column. */
+    createSession(clubId: string, data: TJourneySessionData): ReturnType<typeof createSession>;
+    /** Removes the users with every Club, Session and audit row tied to them. */
+    removeUsers(userIds: string[]): Promise<void>;
+    /** Removes Movies with their cached searches and details. */
+    removeMovies(movieIds: string[]): Promise<void>;
     /** Session cookies for a User, signed with the API's secret for the given cookie domain. */
     cookiesFor(userId: string, domain: string): Promise<IBrowserCookie[]>;
     /** Stores a fresh catalog search so the API answers it without a provider. */
@@ -49,7 +65,8 @@ export async function connectJourneyBackend(): Promise<IJourneyBackend> {
     }
     assertSafeSeedOrResetTarget(environment);
     const prisma = createDatabaseClient(environment.databaseUrl);
-    // Journeys run with one worker; each starts with its own auth request allowance.
+    // Counters left by earlier runs, such as the shared loopback address, would throttle this
+    // one; per-visitor networks (tests/journeys/visitors.ts) keep visitors apart within a run.
     await prisma.authRateLimit.deleteMany();
     const auth = createAuth(environment, prisma, [testUtils()]);
     // Better Auth adds the test plugin's helpers to the context without typing them.
@@ -59,7 +76,14 @@ export async function connectJourneyBackend(): Promise<IJourneyBackend> {
         };
     };
     return {
+        prisma,
         createUser: (displayName) => createUser(prisma, displayName),
+        addMember: async (clubId, userId, role) =>
+            (await prisma.membership.create({ data: { id: randomUUID(), clubId, userId, role } }))
+                .id,
+        createSession: (clubId, data) => createSession(prisma, clubId, data),
+        removeUsers: (userIds) => removeUsers(prisma, userIds),
+        removeMovies: (movieIds) => removeMovies(prisma, movieIds),
         cookiesFor: (userId, domain) => context.test.getCookies({ userId, domain }),
         seedMovieSearch: (query, movies) =>
             seedMovieSearch(
@@ -80,6 +104,27 @@ async function createUser(prisma: PrismaClient, displayName: string): Promise<st
         data: { id, email: `journey-${id}@example.invalid`, emailVerified: true, displayName },
     });
     return id;
+}
+
+async function createSession(prisma: PrismaClient, clubId: string, data: TJourneySessionData) {
+    return prisma.session.create({
+        data: {
+            id: randomUUID(),
+            clubId,
+            ...(await snapshotSessionSettings(prisma, clubId)),
+            ...data,
+        },
+    });
+}
+
+async function removeMovies(prisma: PrismaClient, movieIds: string[]): Promise<void> {
+    await prisma.movieSearchCache.deleteMany({
+        where: {
+            OR: movieIds.map((id) => ({ data: { path: ['movies'], array_contains: [{ id }] } })),
+        },
+    });
+    // Cached details cascade with their Movie.
+    await prisma.movie.deleteMany({ where: { id: { in: movieIds } } });
 }
 
 async function seedMovieSearch(

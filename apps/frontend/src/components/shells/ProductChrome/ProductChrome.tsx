@@ -2,10 +2,10 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import PendingInvites from '#components/clubs/PendingInvites/PendingInvites';
+import NotificationsProvider from '#components/notifications/NotificationsProvider/NotificationsProvider';
 import AutoHideHeader from '#components/shells/AutoHideHeader/AutoHideHeader';
 import Brand from '#components/shells/Brand/Brand';
 import MobileProductNavigation from '#components/shells/MobileProductNavigation/MobileProductNavigation';
-import NotificationsProvider from '#components/shells/NotificationsProvider/NotificationsProvider';
 import ProductHeaderActions from '#components/shells/ProductHeaderActions/ProductHeaderActions';
 import ProductOverlayProvider from '#components/shells/ProductOverlayProvider/ProductOverlayProvider';
 import ProductSearch from '#components/shells/ProductSearch/ProductSearch';
@@ -24,7 +24,7 @@ import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 
 interface IProductChromeProps {
-    admin?: boolean;
+    isAdmin?: boolean;
     children: ReactNode;
     clubItems: readonly IShellNavigationItem[];
     /** `recovery` marks error states, where no product destination is current. */
@@ -37,7 +37,7 @@ interface IProductChromeProps {
 
 /** The header, footer, and mobile navigation every signed-in shell shares. */
 export default function ProductChrome({
-    admin = false,
+    isAdmin = false,
     children,
     clubItems,
     currentArea,
@@ -46,14 +46,8 @@ export default function ProductChrome({
     sessionBackHref,
     settingsItems,
 }: IProductChromeProps) {
-    const desktopItems = (currentArea === 'session' ? [] : buildProductNavigation(routes)).map(
-        (item) => ({
-            ...item,
-            current:
-                (item.label === 'Hub' && ['hub', 'session'].includes(currentArea)) ||
-                (item.label === 'My Library' && currentArea === 'library'),
-        }),
-    );
+    const desktopItems =
+        currentArea === 'session' ? [] : buildProductNavigation(routes, currentArea);
     return (
         <ProductOverlayProvider>
             <NotificationsProvider>
@@ -85,7 +79,7 @@ export default function ProductChrome({
                                     </span>
                                 ) : null}
                                 <ProductHeaderActions
-                                    accountItems={buildAccountNavigation(routes, admin)}
+                                    accountItems={buildAccountNavigation(routes, isAdmin)}
                                 />
                             </div>
                         </div>
@@ -96,7 +90,7 @@ export default function ProductChrome({
                     <PendingInvites />
                     <MobileProductNavigation
                         entries={buildMobileNavigation({
-                            admin,
+                            isAdmin,
                             clubItems,
                             currentArea,
                             libraryItems,

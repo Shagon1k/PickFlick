@@ -1,33 +1,10 @@
-import { selectionReasonSchema, type TLiveSelectionOutcome } from '@pickflick/contracts';
+import type { TLiveSelectionOutcome } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
-import { z } from 'zod';
 
 import type { TMembership } from '../../clubs/access/club-access.js';
 import type { MoviesService } from '../../movies/movies.service.js';
-import { canViewSelectionBreakdown } from '../session-access.js';
-
-// Read the stored JSON boundary once; never return its ballots, recipients or provider IDs.
-export const snapshotSchema = z.object({
-    movieId: z.uuid(),
-    winnerNominationId: z.uuid(),
-    closedAt: z.iso.datetime(),
-    closure: z.object({ kind: z.enum(['AUTOMATIC', 'MANUAL']) }),
-    reason: selectionReasonSchema,
-    inputs: z.object({
-        scaleMin: z.union([z.literal(0), z.literal(1)]),
-        scaleMax: z.int(),
-        ballots: z.array(z.object({})),
-    }),
-    ranking: z.array(
-        z.object({
-            id: z.uuid(),
-            movieId: z.uuid(),
-            total: z.int(),
-            maximumCount: z.int(),
-            supporterCount: z.int(),
-        }),
-    ),
-});
+import { canViewNominationAuthors, canViewSelectionScores } from '../session-visibility.js';
+import { selectionResultSchema } from './selection-result.js';
 
 export async function loadSelectionOutcome(
     tx: Prisma.TransactionClient,
@@ -36,8 +13,12 @@ export async function loadSelectionOutcome(
     moviesService: MoviesService,
 ): Promise<TLiveSelectionOutcome | null> {
     if (session.selectionResult === null) return null;
-    const saved = snapshotSchema.parse(session.selectionResult);
-    const canSeeBreakdown = canViewSelectionBreakdown(session, membership);
+    const saved = selectionResultSchema.parse(session.selectionResult);
+    const ownBallot = await tx.selectionBallot.findFirst({
+        where: { sessionId: session.id, participant: { membershipId: membership.id } },
+        select: { id: true },
+    });
+    const canSeeBreakdown = canViewSelectionScores(session, membership.club, Boolean(ownBallot));
     const visible = canSeeBreakdown
         ? saved.ranking
         : saved.ranking.filter((row) => row.id === saved.winnerNominationId);
@@ -45,7 +26,7 @@ export async function loadSelectionOutcome(
         tx,
         visible.map((row) => row.movieId),
     );
-    const nominations = session.showNominationAuthors
+    const nominations = canViewNominationAuthors(session, membership.club)
         ? await tx.nomination.findMany({
               where: { sessionId: session.id, id: { in: visible.map((row) => row.id) } },
               select: {

@@ -8,18 +8,17 @@ import {
     type TSession,
 } from '@pickflick/contracts';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
-import SessionLink from '#components/sessions/SessionLink/SessionLink';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Switch from '#components/ui/Switch/Switch';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid } from '#lib/form-errors';
-import { formatUtcDateTime } from '#lib/format';
-import { getOfflineMessage } from '#lib/offline';
+import { formatInstant } from '#lib/format';
+import { useActionStatus } from '#lib/use-action-status';
+import { useViewerTimeZone } from '#lib/use-is-hydrated';
 
 import { saveSessionAction } from './actions';
 import {
@@ -49,41 +48,33 @@ export default function SessionForm({
     creationRestriction,
 }: ISessionFormProps) {
     const router = useRouter();
-    const [isPending, startTransition] = useTransition();
-    const [message, setMessage] = useState('');
-    const [created, setCreated] = useState<TSession | null>(null);
+    const { message, setMessage, isPending, run } = useActionStatus();
+    const timeZone = useViewerTimeZone();
     const form = useForm<ISessionValues>({
         initialValues: getInitialSessionValues(session),
         validate: (values) => validateSession(values, session),
+        onValuesChange: () => setMessage(''),
     });
     function save(values: ISessionValues, element?: HTMLFormElement) {
-        const offlineMessage = getOfflineMessage();
-        if (offlineMessage) {
-            setMessage(offlineMessage);
-            return;
-        }
         const input = buildSessionInput(values, getNextDeadline(values, session), session);
-        setMessage('Saving Session…');
-        startTransition(async () => {
-            const result = await saveSessionAction(clubId, session?.id ?? null, input).catch(
-                () => ({
-                    ok: false as const,
-                    message:
-                        'We could not reach PickFlick. Your entries are still here; try again.',
-                }),
-            );
-            if (!result.ok) {
-                setMessage(result.message);
-                focusFirstInvalid(element);
-                return;
-            }
-            setMessage(session ? 'Session details saved.' : 'Session created.');
-            if (!session) {
-                setCreated(result.session);
-                return;
-            }
-            onSaved?.();
-            router.refresh();
+        run(() => saveSessionAction(clubId, session?.id ?? null, input), {
+            pendingMessage: 'Saving Session…',
+            unreachableMessage:
+                'We could not reach PickFlick. Your entries are still here; try again.',
+            onResult: (result) => {
+                if (!result.ok) {
+                    setMessage(result.message);
+                    focusFirstInvalid(element);
+                    return;
+                }
+                if (!session) {
+                    router.push(`/sessions/${result.session.id}?created=1`);
+                    return;
+                }
+                setMessage('Session details saved.');
+                onSaved?.();
+                router.refresh();
+            },
         });
     }
     const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) =>
@@ -94,7 +85,6 @@ export default function SessionForm({
                 focusFirstInvalid(invalidEvent?.currentTarget);
             },
         )(event);
-    if (created) return <SessionResult session={created} />;
     if (creationRestriction)
         return (
             <>
@@ -104,15 +94,25 @@ export default function SessionForm({
         );
     return (
         <form className={styles.form} noValidate onSubmit={handleSubmit}>
-            <TextInput
-                {...form.getInputProps('date')}
-                disabled={isPending}
-                id="session-date"
-                label="Date"
-                labelHint="required"
-                type="date"
-                required
-            />
+            <div className={styles.when}>
+                <TextInput
+                    {...form.getInputProps('date')}
+                    disabled={isPending}
+                    id="session-date"
+                    label="Date"
+                    labelHint="required"
+                    type="date"
+                    required
+                />
+                <TextInput
+                    {...form.getInputProps('time')}
+                    disabled={isPending}
+                    id="session-time"
+                    label="Time"
+                    labelHint="optional"
+                    type="time"
+                />
+            </div>
             <TextInput
                 {...form.getInputProps('location')}
                 disabled={isPending}
@@ -163,12 +163,8 @@ export default function SessionForm({
                     label="Nomination phase ends in"
                     labelHint="optional"
                     maxLength={DURATION_INPUT_LENGTH}
-                    placeholder="hh:mm"
-                    hint={
-                        session?.deadlineAt
-                            ? `Current deadline: ${formatUtcDateTime(session.deadlineAt)}. Leave blank to keep it.`
-                            : 'hh:mm from now. Leave blank for no deadline.'
-                    }
+                    placeholder="hh:mm from now"
+                    hint={describeDeadline(session?.deadlineAt, timeZone)}
                 />
             ) : null}
             {session?.phase === 'NOMINATION' && session.deadlineAt ? (
@@ -184,7 +180,7 @@ export default function SessionForm({
                     error={form.errors.movieId}
                     placeholder="Search films by title…"
                     value={form.values.movieId}
-                    onChange={(movieId) => form.setFieldValue('movieId', movieId)}
+                    onChange={(movie) => form.setFieldValue('movieId', movie?.id ?? null)}
                 />
             ) : null}
             <SessionFormActions
@@ -271,18 +267,7 @@ const CREATION_RESTRICTIONS = {
     permission: 'You cannot create a Session in this Club right now.',
 } as const;
 
-function SessionResult({ session }: { session: TSession }) {
-    let phaseMessage = `Current phase: ${session.phase.toLowerCase()}.`;
-    if (session.phase === 'NOMINATION') phaseMessage = 'Nomination is open.';
-    else if (session.phase === 'WATCHING') phaseMessage = 'Your Movie is ready for Watching.';
-    return (
-        <div className={styles.result}>
-            <p role="status">Session created. {phaseMessage}</p>
-            <SessionLink sessionId={session.id} />
-            <ButtonLink href={`/sessions/${session.id}`} variant="primary">
-                Open Session
-            </ButtonLink>
-            <ButtonLink href={`/clubs/${session.clubId}`}>Back to Club Hub</ButtonLink>
-        </div>
-    );
+function describeDeadline(deadlineAt: string | null | undefined, timeZone: string | undefined) {
+    if (!deadlineAt) return undefined;
+    return `Ends ${formatInstant(deadlineAt, 'dateTime', timeZone)}. Leave blank to keep it.`;
 }

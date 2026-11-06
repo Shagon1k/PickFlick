@@ -3,12 +3,12 @@
 import { type IClubSettings } from '@pickflick/contracts';
 import { startTransition, useActionState, useState } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { changeClubLifecycleAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
 import Button from '#components/ui/Button/Button';
 import ConfirmDialog from '#components/ui/ConfirmDialog/ConfirmDialog';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 
-import { initialClubActionState } from '../../action-state';
-import { changeClubLifecycleAction } from '../../actions';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 
@@ -19,7 +19,6 @@ function ConfirmAction({
     description,
     label,
     title,
-    variant = 'secondary-danger',
 }: {
     action: 'archive' | 'delete' | 'leave';
     clubId: string;
@@ -27,14 +26,13 @@ function ConfirmAction({
     description: string;
     label: string;
     title: string;
-    variant?: 'secondary-danger' | 'danger';
 }) {
     const serverAction = changeClubLifecycleAction.bind(null, clubId, action);
     const [state, formAction, isPending] = useActionState(serverAction, initialClubActionState);
     const [isOpen, setIsOpen] = useState(false);
     return (
         <>
-            <Button onClick={() => setIsOpen(true)} size="small" variant={variant}>
+            <Button onClick={() => setIsOpen(true)} size="small" variant="secondary-danger">
                 {label}
             </Button>
             <ConfirmDialog
@@ -47,7 +45,7 @@ function ConfirmAction({
                     startTransition(() => formAction(formData));
                 }}
                 open={isOpen}
-                pending={isPending}
+                isPending={isPending}
                 status={<ActionStatus state={state} />}
                 title={title}
                 word={confirmation}
@@ -75,16 +73,6 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
     const isActive = projection.club.lifecycle === 'ACTIVE';
     const isAdmin = projection.club.membershipRole === 'ADMIN';
     const clubId = projection.club.id;
-    const deleteAction = (
-        <ConfirmAction
-            action="delete"
-            clubId={clubId}
-            confirmation={projection.club.name}
-            description="This removes every active Membership and cannot be undone from the Club UI. Clubs with Session history cannot be deleted."
-            label="Delete Club"
-            title="Delete this Club?"
-        />
-    );
     return (
         <section
             aria-labelledby="club-danger-title"
@@ -94,15 +82,10 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                 <h2 id="club-danger-title">Danger Zone</h2>
                 <InfoTip label="About these actions">
                     {isAdmin
-                        ? 'Admins cannot leave their own Club. Delete it while it is empty, or ask the App Admin to transfer it.'
+                        ? 'Admins cannot leave their own Club. Clubs without Session history can be deleted; otherwise, archive the Club or ask the App Admin to transfer it.'
                         : 'Leaving ends your Membership immediately. Shared Club history remains for its members.'}
                 </InfoTip>
             </div>
-            <p className={styles.cardLead}>
-                {isAdmin
-                    ? 'Archiving makes the Club read-only; deleting cannot be undone.'
-                    : 'Leaving ends your Membership in this Club.'}
-            </p>
             {isAdmin ? (
                 <div className={styles.cardActions}>
                     {isActive ? (
@@ -117,7 +100,20 @@ export default function ClubDangerZone({ projection }: { projection: IClubSettin
                     ) : (
                         <ReactivateAction clubId={clubId} />
                     )}
-                    {deleteAction}
+                    {projection.canDelete ? (
+                        <ConfirmAction
+                            action="delete"
+                            clubId={clubId}
+                            confirmation={projection.club.name}
+                            description="This removes every active Membership and cannot be undone from the Club UI."
+                            label="Delete Club"
+                            title="Delete this Club?"
+                        />
+                    ) : (
+                        <Button disabled size="small" variant="secondary-danger">
+                            Delete Club
+                        </Button>
+                    )}
                 </div>
             ) : (
                 <div className={styles.cardActions}>

@@ -1,4 +1,6 @@
 .button {
+    --action-scale: var(--action-scale-button);
+
     position: relative;
     display: inline-flex;
     gap: var(--gap-xs);
@@ -18,7 +20,6 @@
     border: 1px solid transparent;
     border-radius: var(--radius);
     transition:
-        transform var(--motion-press) var(--ease-standard),
         color var(--motion-local) var(--ease-standard),
         background-color var(--motion-local) var(--ease-standard),
         border-color var(--motion-local) var(--ease-standard);
@@ -32,10 +33,6 @@
     outline: 2px solid var(--gold);
     outline-offset: 3px;
     box-shadow: none;
-}
-
-.button:active:not(:disabled, [aria-disabled='true']) {
-    transform: translateY(1px);
 }
 
 .button:disabled,
@@ -74,6 +71,23 @@
 .button.m-ghost:hover {
     color: var(--fg);
     background: var(--accent-soft);
+}
+
+.button.m-subtle {
+    font-weight: 600;
+    color: var(--fg);
+    background: transparent;
+}
+
+.button.m-subtle:hover,
+.button.m-subtle:focus-visible {
+    background: var(--accent-soft);
+}
+
+.button.m-subtle svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
 }
 
 .button.m-secondary-danger {
@@ -127,6 +141,12 @@
     gap: 5px;
 }
 
+.button.m-cell svg,
+.button.m-cell-danger svg {
+    width: var(--film-rail-icon-size);
+    height: var(--film-rail-icon-size);
+}
+
 @media (width >= 576px) {
     /* Inline cells stay 44px targets; the rail's own border is the only frame. */
     .button.m-cell,
@@ -144,18 +164,30 @@
         flex-direction: row;
         gap: 7px;
     }
-
-    .button.m-cell svg,
-    .button.m-cell-danger svg {
-        width: 16px;
-        height: 16px;
-    }
 }
 
 .button.m-small {
     min-height: 36px;
     padding: 6px 14px;
     font-size: var(--fs-meta);
+}
+
+.button.m-compact {
+    min-height: 28px;
+    padding: 4px var(--gap-xs);
+    font-size: var(--fs-micro);
+}
+
+/* Compact chrome actions keep a 44px hit area around their smaller visual surface. */
+.button.m-compact::before {
+    position: absolute;
+    inset-block: calc((28px - var(--hit)) / 2);
+    inset-inline: 0;
+    content: '';
+}
+
+.button.m-subtle.m-small {
+    min-height: var(--hit);
 }
 
 .button.m-large {
@@ -166,10 +198,44 @@
     width: 100%;
 }
 
-.button[data-state='success'] {
-    color: var(--success-text-strong);
-    background: var(--success-soft);
-    border-color: var(--success-border);
+.button__original {
+    display: inline-flex;
+    flex-direction: inherit;
+    gap: inherit;
+    align-items: inherit;
+    transition:
+        opacity var(--motion-local) var(--ease-standard),
+        transform var(--motion-local) var(--ease-standard);
+}
+
+.button__confirmation {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+        opacity var(--motion-local) var(--ease-standard),
+        transform var(--motion-local) var(--ease-standard);
+}
+
+.button__confirmation svg {
+    width: 16px;
+    height: 16px;
+}
+
+.button[data-state='success'] .button__original {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+.button[data-state='success'] .button__confirmation {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* Icons centre on the button, not on the text baseline. */
@@ -206,7 +272,7 @@
     animation: spin 700ms linear infinite;
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .button.m-small {
         min-height: var(--hit);
     }
@@ -218,17 +284,6 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .button {
-        transition-duration: 0.01ms;
-    }
-
-    .spinner {
-        animation-duration: 0.01ms;
-        animation-iteration-count: 1;
-    }
-}
-
 @keyframes spin {
     to {
         transform: rotate(360deg);
@@ -236,8 +291,44 @@
 }
 
 .button.m-icon {
+    --action-scale: var(--action-scale-small);
+
     flex: 0 0 var(--hit);
     width: var(--hit);
     height: var(--hit);
     padding: 0;
+}
+
+.button.m-navigation {
+    --action-scale: var(--action-scale-small);
+
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    color: var(--fg);
+    background: transparent;
+    border: 0;
+}
+
+.button.m-navigation svg {
+    width: 32px;
+    height: 32px;
+}
+
+/* One arrow glyph serves both directions: pass data-direction="next" to point it forward. */
+.button.m-navigation[data-direction='next'] svg {
+    transform: rotate(180deg);
+}
+
+.button.m-navigation:hover,
+.button.m-navigation:focus-visible {
+    background: var(--accent-soft);
+}
+
+@media (width < 768px) {
+    .button.m-navigation svg {
+        width: 28px;
+        height: 28px;
+    }
 }

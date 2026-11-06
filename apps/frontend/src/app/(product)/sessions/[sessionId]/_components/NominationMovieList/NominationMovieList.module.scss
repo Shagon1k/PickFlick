@@ -1,0 +1,21 @@
+.scroller {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: var(--session-result-list-max);
+    overflow: hidden auto;
+}
+
+/* Keep the intrinsic grid outside the scroll-height constraint so rows match the tallest card. */
+.list {
+    display: grid;
+    grid-auto-rows: 1fr;
+    gap: var(--gap-sm);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.list > li {
+    display: grid;
+    min-width: 0;
+}

@@ -7,9 +7,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 
 describe('Past Sessions', () => {
     let api: ITestApi;
@@ -23,7 +23,14 @@ describe('Past Sessions', () => {
     beforeEach(async () => {
         users = await Promise.all(Array.from({ length: 5 }, () => createUser(api.prisma)));
         clubId = randomUUID();
-        await api.prisma.club.create({ data: { id: clubId, name: 'Historical Club' } });
+        await api.prisma.club.create({
+            data: {
+                id: clubId,
+                name: 'Historical Club',
+                showSelectionScoresAfter: true,
+                showRatingsAfter: true,
+            },
+        });
         movieId = (await api.prisma.movie.create({ data: { title: 'Repeat screening' } })).id;
         memberships = [];
         for (const [index, role] of (['ADMIN', 'MODERATOR', 'MEMBER', 'MEMBER'] as const).entries())
@@ -60,10 +67,9 @@ describe('Past Sessions', () => {
             phase: 'COMPLETED',
             deadlineAt: null,
             selection: null,
-            selectionOutcome: { source: 'IMPORTED', scaleMin: 1, scaleMax: 5, nominations: [] },
+            selectionOutcome: { source: 'IMPORTED', scaleMin: 0, scaleMax: 5, nominations: [] },
             nominations: null,
-            canEdit: false,
-            canCancel: false,
+            canManage: false,
         });
         expect(session.rating).toMatchObject({
             acceptedCount: 0,
@@ -135,9 +141,7 @@ describe('Past Sessions', () => {
         });
         expect(participants).toHaveLength(2);
         expect(participants.every((row) => row.attended && row.status === 'ACCEPTED')).toBe(true);
-        expect((await api.request(`/sessions/${session.id}`, { userId: users[2] })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/sessions/${session.id}`, { userId: users[2] });
         const rating = await api.prisma.sessionRating.findFirstOrThrow({
             where: { sessionId: session.id },
         });
@@ -145,15 +149,11 @@ describe('Past Sessions', () => {
         await expect(
             api.prisma.sessionRating.update({ where: { id: rating.id }, data: { score: 1 } }),
         ).rejects.toThrow('immutable');
-        expect(
-            (
-                await api.request(`/sessions/${session.id}/rating`, {
-                    userId: users[0],
-                    method: 'POST',
-                    json: { score: 1 },
-                })
-            ).status,
-        ).toBe(403);
+        await api.expectStatus(403, `/sessions/${session.id}/rating`, {
+            userId: users[0],
+            method: 'POST',
+            json: { score: 1 },
+        });
     });
     it('should preserve repeat viewings of one Movie alongside a blocking Session', async () => {
         await createSession(api.prisma, clubId, {
@@ -350,20 +350,12 @@ describe('Past Sessions', () => {
             [users[2], 403],
         ] as const) {
             expect((await create({}, userId)).status).toBe(status);
-            expect(
-                (await api.request(`/clubs/${clubId}/sessions/past/members`, { userId })).status,
-            ).toBe(status);
+            await api.expectStatus(status, `/clubs/${clubId}/sessions/past/members`, { userId });
         }
-        expect(
-            (await api.request(`/clubs/${clubId}/sessions/past`, { method: 'POST', json: {} }))
-                .status,
-        ).toBe(401);
+        await api.expectStatus(401, `/clubs/${clubId}/sessions/past`, { method: 'POST', json: {} });
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await create()).status).toBe(409);
-        expect(
-            (await api.request(`/clubs/${clubId}/sessions/past/members`, { userId: users[0] }))
-                .status,
-        ).toBe(409);
+        await api.expectStatus(409, `/clubs/${clubId}/sessions/past/members`, { userId: users[0] });
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ACTIVE' } });
         await api.prisma.membership.update({
             where: { id: memberships[0] },
@@ -371,16 +363,17 @@ describe('Past Sessions', () => {
         });
         expect((await create({}, users[1])).status).toBe(409);
     });
-    it('should retain saved visibility and attendee attribution when Club settings and accounts change', async () => {
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: false } });
+    it('should apply current visibility and retain attendee attribution when accounts change', async () => {
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: false } });
         const session = await read(
             await create({ attendees: [{ membershipId: memberships[2], score: 6 }] }),
         );
-        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingResults: true } });
+        await api.prisma.club.update({ where: { id: clubId }, data: { showRatingsAfter: true } });
         const hidden = sessionSchema.parse(
             await (await api.request(`/sessions/${session.id}`, { userId: users[3] })).json(),
         );
-        expect(hidden.rating?.results).toBeNull();
+        expect(hidden.rating?.results?.average).toBe(6);
+        expect(hidden.rating?.results?.entries).toHaveLength(1);
         await api.prisma.user.update({
             where: { id: users[2] },
             data: { displayName: 'Deleted user', status: 'ANONYMIZED' },
@@ -428,6 +421,6 @@ describe('Past Sessions', () => {
             api.prisma.sessionRating.create({
                 data: { sessionId: live.id, participantId: participants[1]!.id, score: 5 },
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('SessionRating_participantId_sessionId_fkey');
     });
 });

@@ -141,6 +141,28 @@ describe('PoiskkinoClient', () => {
             (await client().search({ query: 'film', page: 1, locale: 'en-US' })).movies,
         ).toHaveLength(2);
     });
+    it('should keep search results when one film has a malformed ID, year or runtime', async () => {
+        request.mockResolvedValueOnce(
+            Response.json({
+                docs: [
+                    wire(),
+                    {
+                        ...wire(),
+                        id: 102,
+                        externalId: { imdb: 'tt012345', tmdb: null },
+                        year: 95.5,
+                        movieLength: 95.5,
+                    },
+                ],
+                page: 1,
+                pages: 1,
+                total: 2,
+            }),
+        );
+        const { movies } = await client().search({ query: 'film', page: 1, locale: 'en-US' });
+        expect(movies).toHaveLength(2);
+        expect(movies[1]?.externalIds.map(({ source }) => source)).not.toContain('imdb');
+    });
     it('should keep search results when optional media uses an unsupported CDN', async () => {
         request.mockResolvedValueOnce(
             Response.json({

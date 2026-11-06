@@ -2,8 +2,10 @@ import {
     closeRatingSchema,
     type ISessionRoster,
     submitRatingSchema,
+    type TImportedSelectionOutcome,
     type TLiveSelectionOutcome,
     type TRating,
+    type TSelectionScores,
     type TSession,
     type TSubmitRating,
 } from '@pickflick/contracts';
@@ -19,6 +21,10 @@ import {
 const SESSION_ID = '30000000-0000-4000-8000-000000000050';
 const saved = new Map<string, TSubmitRating>();
 const closed = new Set<string>();
+/** Scenarios whose viewer is not a current participant of the Session. */
+const isOutsider = (token: string) => /removed|unjoined|ineligible/u.test(token);
+/** Outsiders and read-only Club members can see the Session but not act in it. */
+const isReadOnly = (token: string) => token.includes('readonly') || isOutsider(token);
 
 export function handleRating(
     request: TMockRequest,
@@ -29,7 +35,7 @@ export function handleRating(
     if (!token?.startsWith('valid-rating') || !pathname.startsWith(`/sessions/${SESSION_ID}`))
         return false;
     const isCompleted = closed.has(token) || token.includes('completed');
-    const canManage = !token.includes('member') && !token.includes('readonly');
+    const canManage = !token.includes('member') && !isReadOnly(token);
     const canManageSession = canManage && !isCompleted;
     const own = saved.get(token);
     const version = 1 + Number(Boolean(own)) + Number(isCompleted);
@@ -60,15 +66,18 @@ export function handleRating(
         });
     } else if (pathname.endsWith('/progress')) sendJson(response, 200, { version });
     else if (pathname.endsWith('/roster')) {
+        const participantNames = isOutsider(token)
+            ? ['Casey', 'Morgan']
+            : ['Jordan', 'Casey', 'Morgan'];
         const roster: ISessionRoster = {
             progressVersion: version,
-            acceptedCount: 3,
-            canJoin: false,
-            canLeave: !isCompleted,
+            memberCount: 4,
+            acceptedCount: participantNames.length,
+            canJoin: !isCompleted && token.includes('unjoined'),
+            isRemoved: token.includes('removed'),
+            canLeave: !isCompleted && !isReadOnly(token),
             canManage: canManageSession,
-            canInvite: canManageSession,
-            eligibleMembers: [],
-            participants: ['Jordan', 'Casey', 'Morgan'].map((displayName, index) => ({
+            participants: participantNames.map((displayName, index) => ({
                 id: `40000000-0000-4000-8000-00000000005${index}`,
                 membershipId: `50000000-0000-4000-8000-00000000005${index}`,
                 displayName,
@@ -102,6 +111,8 @@ function buildRating(
         {
             id: '60000000-0000-4000-8000-000000000050',
             author: 'Casey',
+            avatarUrl: null,
+            isOwn: false,
             score: 8,
             comment: 'A memorable screening.',
             submittedAt: '2026-12-01T22:00:00.000Z',
@@ -112,39 +123,74 @@ function buildRating(
         entries.push({
             id: '60000000-0000-4000-8000-000000000051',
             author: 'Jordan',
+            avatarUrl: null,
+            isOwn: true,
             ...own,
             comment: own.comment ?? '',
             submittedAt: '2026-12-01T22:01:00.000Z',
         });
     return {
-        acceptedCount: 3,
+        acceptedCount: isOutsider(token) ? 2 : 3,
         submittedCount: entries.length,
         receivedCount: entries.length,
-        canSubmit: !isCompleted && !own && !token.includes('readonly'),
+        canSubmit: !isCompleted && !own && !isReadOnly(token),
         canClose: !isCompleted && canManage,
         own: own
-            ? { ...own, comment: own.comment ?? null, submittedAt: '2026-12-01T22:01:00.000Z' }
+            ? {
+                  ...own,
+                  author: 'Jordan',
+                  avatarUrl: null,
+                  comment: own.comment ?? null,
+                  submittedAt: '2026-12-01T22:01:00.000Z',
+              }
             : null,
-        results:
-            isCompleted && !token.includes('hidden')
-                ? {
-                      average: entries.length
-                          ? entries.reduce((total, entry) => total + entry.score, 0) /
-                            entries.length
-                          : null,
-                      entries,
-                  }
+        results: {
+            average: entries.length
+                ? entries.reduce((total, entry) => total + entry.score, 0) / entries.length
                 : null,
+            entries:
+                !token.includes('hidden') &&
+                (isCompleted || (token.includes('during-visible') && Boolean(own)))
+                    ? entries
+                    : null,
+        },
     };
 }
 
-function buildHistoricalSelection(token: string): TLiveSelectionOutcome {
+function buildHistoricalSelection(
+    token: string,
+): TLiveSelectionOutcome | TImportedSelectionOutcome {
     const winner = {
         id: '10000000-0000-4000-8000-000000000037',
         title: 'Selected film',
         year: 2026,
         genres: ['Drama'],
     };
+    if (token.includes('imported')) {
+        return {
+            source: 'IMPORTED',
+            scaleMin: 0,
+            scaleMax: 5,
+            nominations: [
+                {
+                    movie: winner,
+                    author: 'Jordan',
+                    total: 7,
+                    scoreCount: token.includes('matrix') ? 3 : 2,
+                },
+                {
+                    movie: {
+                        ...winner,
+                        id: '10000000-0000-4000-8000-000000000038',
+                        title: 'The rival nomination',
+                    },
+                    author: 'Morgan',
+                    total: token.includes('matrix') ? 0 : 8,
+                    scoreCount: token.includes('matrix') ? 2 : 3,
+                },
+            ],
+        };
+    }
     return {
         source: 'LIVE',
         winner,
@@ -193,11 +239,12 @@ function buildRatingSession({
     canManage: boolean;
 }): TSession {
     const rating = buildRating(token, own, isCompleted, canManage);
+    const liveType = token.includes('history') ? 'FULL_CYCLE' : 'PRE_SELECTED';
     return {
         id: SESSION_ID,
         clubId: '10000000-0000-4000-8000-000000000031',
         clubName: 'Midnight Society',
-        type: token.includes('history') ? 'FULL_CYCLE' : 'PRE_SELECTED',
+        type: token.includes('imported') ? 'PAST' : liveType,
         phase: isCompleted ? 'COMPLETED' : 'RATING',
         movieId: '10000000-0000-4000-8000-000000000037',
         scheduledAt: '2026-12-01T20:00:00.000Z',
@@ -208,11 +255,61 @@ function buildRatingSession({
         version,
         phaseVersion: isCompleted ? 2 : 1,
         progressVersion: version,
-        canEdit: canManageSession,
-        canCancel: canManageSession,
+        canManage: canManageSession,
         nominations: null,
         selection: null,
         selectionOutcome: token.includes('history') ? buildHistoricalSelection(token) : null,
+        selectionScores: token.includes('matrix') ? buildHistoricalMatrix() : null,
+        nominationAuthors: null,
         rating,
+    };
+}
+
+function buildHistoricalMatrix(): TSelectionScores {
+    const selected = '60000000-0000-4000-8000-000000000061';
+    const rival = '60000000-0000-4000-8000-000000000062';
+    const movie = {
+        id: '10000000-0000-4000-8000-000000000037',
+        title: 'Selected film',
+        year: 2026,
+        genres: ['Drama'],
+    };
+    return {
+        scaleMin: 0,
+        scaleMax: 5,
+        films: [
+            { nominationId: selected, movie },
+            {
+                nominationId: rival,
+                movie: {
+                    ...movie,
+                    id: '10000000-0000-4000-8000-000000000038',
+                    title: 'The rival nomination',
+                },
+            },
+        ],
+        ballots: [
+            {
+                participantId: '20000000-0000-4000-8000-000000000050',
+                author: 'Jordan',
+                scores: [
+                    { nominationId: selected, score: 3 },
+                    { nominationId: rival, score: 0 },
+                ],
+            },
+            {
+                participantId: '20000000-0000-4000-8000-000000000051',
+                author: 'Casey',
+                scores: [{ nominationId: selected, score: 4 }],
+            },
+            {
+                participantId: '20000000-0000-4000-8000-000000000052',
+                author: 'Morgan',
+                scores: [
+                    { nominationId: selected, score: 0 },
+                    { nominationId: rival, score: 0 },
+                ],
+            },
+        ],
     };
 }

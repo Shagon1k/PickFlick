@@ -32,7 +32,6 @@ export default function SelectionScaleField({
 }: ISelectionScaleFieldProps) {
     const [max, setMax] = useState(defaultMax);
     const maxId = `${idPrefix}-max`;
-    const summaryId = `${idPrefix}-summary`;
     const maxErrorId = `${idPrefix}-max-error`;
 
     return (
@@ -49,7 +48,7 @@ export default function SelectionScaleField({
             <input name="selectionScaleMin" type="hidden" value={min} />
             <div className={styles.rangeRow}>
                 <input
-                    aria-describedby={maxError ? `${summaryId} ${maxErrorId}` : summaryId}
+                    aria-describedby={maxError ? maxErrorId : undefined}
                     aria-invalid={maxError ? true : undefined}
                     aria-valuetext={`Scores run ${min} to ${max}`}
                     className={styles.range}
@@ -71,9 +70,6 @@ export default function SelectionScaleField({
                     {max}
                 </span>
             </div>
-            <p className={styles.summary} id={summaryId}>
-                Members score nominations {min}–{max}
-            </p>
             {maxError ? (
                 <p className={styles.error} id={maxErrorId}>
                     {maxError}

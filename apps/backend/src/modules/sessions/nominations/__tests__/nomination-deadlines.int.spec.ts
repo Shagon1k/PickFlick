@@ -5,10 +5,13 @@ import { sessionSchema } from '@pickflick/contracts';
 import {
     addMember,
     createUser,
+    findNotifiedUsers,
+    INJECTED_FAILURE,
     type ITestApi,
-    removeUsers,
     startTestApi,
+    withFailingInsert,
 } from '../../../../testing/integration.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { NominationDeadlines } from '../nomination-deadlines.js';
 
 describe('NominationDeadlines', () => {
@@ -32,10 +35,9 @@ describe('NominationDeadlines', () => {
     const log = vi.fn();
     const session = () => api.prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
     const decisions = () =>
-        api.prisma.nominationDeadlineDecision.findMany({
-            where: { sessionId },
-            include: { notifications: true },
-        });
+        api.prisma.nominationDeadlineDecision.findMany({ where: { sessionId } });
+    const notifiedUsers = (event: 'NOMINATION_STALLED' | 'SELECTION_CLOSED') =>
+        findNotifiedUsers(api.prisma, sessionId, event);
     beforeAll(async () => {
         api = await startTestApi();
     });
@@ -74,7 +76,7 @@ describe('NominationDeadlines', () => {
             });
         }
         movieId = (await api.prisma.movie.create({ data: {} })).id;
-        worker = new NominationDeadlines(api.prisma, log, api.notifications);
+        worker = new NominationDeadlines(api.prisma, log, api.transactions);
     });
     afterEach(async () => {
         vi.restoreAllMocks();
@@ -112,22 +114,28 @@ describe('NominationDeadlines', () => {
     it('should stay open with zero nominations and alert only operators once across restarts and unrelated edits', async () => {
         const moderator = await createUser(api.prisma);
         users.push(moderator);
-        const operator = await addMember(api.prisma, clubId, moderator, 'MODERATOR');
+        await addMember(api.prisma, clubId, moderator, 'MODERATOR');
         await worker.runOnce(due);
         expect(await session()).toMatchObject({
             phase: 'NOMINATION',
             phaseVersion: 1,
-            detailsVersion: 1,
+            // Clearing the deadline is a details change, so a form opened before it is stale.
+            detailsVersion: 2,
             deadlineVersion: 1,
-            deadlineAt: deadline,
+            // The passed deadline is cleared, so the header stops counting down.
+            deadlineAt: null,
         });
-        expect((await edit({ topic: 'Edited topic' })).status).toBe(200);
-        await new NominationDeadlines(api.prisma, log, api.notifications).runOnce(due);
+        const stale = await edit({ version: 1, topic: 'Stale topic' });
+        expect(stale.status).toBe(409);
+        expect(await stale.json()).toMatchObject({ error: { reason: 'SESSION_CHANGED' } });
+        expect((await edit({ topic: 'Edited topic', deadlineAt: null })).status).toBe(200);
+        await new NominationDeadlines(api.prisma, log, api.transactions).runOnce(due);
         const result = await decisions();
         expect(result).toHaveLength(1);
         expect(result[0]).toMatchObject({ outcome: 'EMPTY', nominationCount: 0 });
-        expect(result[0]!.notifications).toHaveLength(2);
-        expect(result[0]!.notifications.map((row) => row.membershipId)).toContain(operator);
+        expect(await notifiedUsers('NOMINATION_STALLED')).toEqual(
+            [admin, moderator].toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await submit()).status).toBe(201);
         await worker.runOnce(due);
         expect((await session()).phase).toBe('NOMINATION');
@@ -155,7 +163,9 @@ describe('NominationDeadlines', () => {
         const result = await decisions();
         expect(result).toHaveLength(1);
         expect(result[0]).toMatchObject({ outcome: 'WATCHING', nominationCount: 1 });
-        expect(result[0]!.notifications).toHaveLength(2);
+        expect(await notifiedUsers('SELECTION_CLOSED')).toEqual(
+            [admin, member].toSorted((a, b) => a.localeCompare(b)),
+        );
     });
     it('should count repeated Movies as multiple nominations and open Selection', async () => {
         await submit();
@@ -218,19 +228,12 @@ describe('NominationDeadlines', () => {
         });
         expect(await decisions()).toHaveLength(0);
     });
-    it('should not decide after manual closure or cancellation', async () => {
+    it('should not decide after manual closure', async () => {
         await submit();
         expect((await close()).status).toBe(201);
         expect(await worker.execute(sessionId, due)).toBe('STALE');
         expect(await decisions()).toHaveLength(0);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
-        const cancelled = await api.request(`/sessions/${sessionId}/cancel`, {
-            userId: admin,
-            method: 'POST',
-            json: { version: 2, confirmation: 'CANCEL' },
-        });
-        expect(cancelled.status).toBe(201);
-        expect(await worker.execute(sessionId, due)).toBe('STALE');
     });
     it('should not decide a cancelled Nomination', async () => {
         await submit();
@@ -273,44 +276,36 @@ describe('NominationDeadlines', () => {
         await worker.runOnce(due);
         expect((await session()).phase).toBe('WATCHING');
     });
-    it.each([{ deadlineAt: new Date(Date.now() + 120_000) }, { phase: 'CANCELLED' as const }])(
-        'should not decide a Session changed to %o',
-        async (data) => {
-            await api.prisma.session.update({ where: { id: sessionId }, data });
-            expect(await worker.execute(sessionId, due)).toBe('STALE');
-            expect(await decisions()).toHaveLength(0);
-        },
-    );
+    it('should not decide a Session whose deadline moved later', async () => {
+        await api.prisma.session.update({
+            where: { id: sessionId },
+            data: { deadlineAt: new Date(Date.now() + 120_000) },
+        });
+        expect(await worker.execute(sessionId, due)).toBe('STALE');
+        expect(await decisions()).toHaveLength(0);
+    });
     it('should roll back the decision, notifications and transition if the final write fails and retry after restart', async () => {
         await submit();
-        // A transaction-local trigger injects a real database failure at the final write.
-        await api.prisma.$executeRawUnsafe(
-            `CREATE FUNCTION pf43_fail_completion() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW."sessionId" = '${sessionId}'::uuid THEN RAISE EXCEPTION 'private text'; END IF; RETURN NEW; END $$`,
+        // The final write fails inside the transaction; the logged failure never carries its text.
+        await withFailingInsert(
+            api.prisma,
+            'SessionProgressEvent',
+            `NEW."sessionId" = '${sessionId}'::uuid`,
+            async () => {
+                await worker.runOnce(due);
+                expect(await session()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
+                expect(await decisions()).toHaveLength(0);
+                expect(await notifiedUsers('SELECTION_CLOSED')).toEqual([]);
+                expect(log).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        event: 'deadline.failure',
+                        reason: 'TRANSACTION_FAILED',
+                    }),
+                );
+                expect(JSON.stringify(log.mock.calls)).not.toContain(INJECTED_FAILURE);
+            },
         );
-        await api.prisma.$executeRawUnsafe(
-            'CREATE TRIGGER pf43_fail_completion BEFORE INSERT ON "SessionProgressEvent" FOR EACH ROW EXECUTE FUNCTION pf43_fail_completion()',
-        );
-        try {
-            await worker.runOnce(due);
-            expect(await session()).toMatchObject({ phase: 'NOMINATION', phaseVersion: 1 });
-            expect(await decisions()).toHaveLength(0);
-            expect(
-                await api.prisma.nominationDeadlineNotification.count({ where: { sessionId } }),
-            ).toBe(0);
-            expect(log).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    event: 'deadline.failure',
-                    reason: 'TRANSACTION_FAILED',
-                }),
-            );
-            expect(JSON.stringify(log.mock.calls)).not.toContain('private text');
-        } finally {
-            await api.prisma.$executeRawUnsafe(
-                'DROP TRIGGER pf43_fail_completion ON "SessionProgressEvent"',
-            );
-            await api.prisma.$executeRawUnsafe('DROP FUNCTION pf43_fail_completion()');
-        }
-        await new NominationDeadlines(api.prisma, log, api.notifications).runOnce(due);
+        await new NominationDeadlines(api.prisma, log, api.transactions).runOnce(due);
         expect(await session()).toMatchObject({ phase: 'WATCHING', phaseVersion: 2 });
         expect(await decisions()).toHaveLength(1);
     });

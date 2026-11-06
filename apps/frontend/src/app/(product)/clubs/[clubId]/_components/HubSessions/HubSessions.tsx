@@ -2,93 +2,98 @@ import type { IClubHub, IClubHubSession } from '@pickflick/contracts';
 import Link from 'next/link';
 
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
-import ButtonLink from '#components/ui/Button/ButtonLink';
+import {
+    formatHubSessionTitle,
+    formatRatingProgress,
+} from '#components/sessions/club-session-text';
+import AvatarGroup from '#components/ui/AvatarGroup/AvatarGroup';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import FilmProgress from '#components/ui/FilmProgress/FilmProgress';
-import { formatCount } from '#lib/format';
+import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
+import { formatCalendarDate, formatCount } from '#lib/format';
 
-import ActiveSessionCard from '../ActiveSessionCard/ActiveSessionCard';
 import styles from './HubSessions.module.scss';
+import SessionHistory from './SessionHistory';
 
+/** The running Session stays in the Call Sheet; only unfinished Ratings precede history. */
 export default function HubSessions({ hub }: { hub: IClubHub }) {
     return (
         <div className={styles.sessions}>
-            <h2>Active Sessions</h2>
-            {hub.permissions.manageSessions ? (
-                <ButtonLink href={`/clubs/${hub.club.id}/sessions/past/new`}>
-                    Log a Past Session
-                </ButtonLink>
+            {hub.ratingSessions.length ? (
+                <>
+                    <section aria-labelledby="open-ratings-heading">
+                        <header className={styles.heading}>
+                            <h2 id="open-ratings-heading">Open Ratings</h2>
+                            <span>{hub.ratingSessions.length} open</span>
+                        </header>
+                        <ul className={styles.list}>
+                            {hub.ratingSessions.map((session) => (
+                                <li key={session.id}>
+                                    <OpenRatingRow session={session} />
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                    <SprocketDivider variant="section" />
+                </>
             ) : null}
-            <p>One screening at a time. Open Rating Sessions never block the next screening.</p>
-            <ActiveSessionCard hub={hub} />
-            <section aria-labelledby="active-ratings-heading">
-                <h2 id="active-ratings-heading">Active Ratings</h2>
-                <SessionRows sessions={hub.ratingSessions} empty="No Sessions awaiting ratings." />
-            </section>
-            <section aria-labelledby="session-history-heading">
-                <h2 id="session-history-heading">History</h2>
-                <p>The latest 20 closed Sessions. Open a screening for its permitted results.</p>
-                <SessionRows sessions={hub.historySessions} empty="No completed Sessions yet." />
-            </section>
+            <SessionHistory
+                key={`${hub.club.id}:${hub.club.membershipRole}`}
+                clubId={hub.club.id}
+                initialSessions={hub.historySessions}
+                nextCursor={hub.historyNextCursor}
+                canLogPast={hub.permissions.manageSessions}
+            />
         </div>
     );
 }
 
-function SessionRows({ sessions, empty }: { sessions: IClubHubSession[]; empty: string }) {
-    if (!sessions.length) return <p>{empty}</p>;
+function OpenRatingRow({ session }: { session: IClubHubSession }) {
+    const title = formatHubSessionTitle(session);
+    const progress = formatRatingProgress(session);
+    const meta = [
+        session.scheduledAt ? formatCalendarDate(session.scheduledAt) : 'Not scheduled',
+        session.location,
+        progress,
+    ];
     return (
-        <ul className={styles.list}>
-            {sessions.map((session) => (
-                <li key={session.id}>
-                    <Link className={styles.row} href={`/sessions/${session.id}`} prefetch={false}>
-                        <SearchPoster
-                            className={styles.poster}
-                            url={session.movie?.posterUrl ?? null}
-                        />
-                        <div className={styles.copy}>
-                            <strong>
-                                {session.movie?.title ?? session.topic ?? 'Untitled Session'}
-                            </strong>
-                            <span>
-                                {session.scheduledAt
-                                    ? new Intl.DateTimeFormat('en', {
-                                          dateStyle: 'medium',
-                                          timeZone: 'UTC',
-                                      }).format(new Date(session.scheduledAt))
-                                    : 'Not scheduled'}
-                                {session.location ? ` · ${session.location}` : ''} ·{' '}
-                                {formatCount(session.acceptedCount, 'attendee')}
-                            </span>
-                            {session.phase === 'RATING' ? (
-                                <>
-                                    <span>
-                                        {session.progressCount ?? 0} of {session.acceptedCount}{' '}
-                                        rated
-                                    </span>
-                                    <FilmProgress
-                                        value={session.progressCount ?? 0}
-                                        max={session.acceptedCount}
-                                        label={`${session.progressCount ?? 0} of ${session.acceptedCount} rated`}
-                                    />
-                                </>
-                            ) : null}
-                        </div>
-                        <span className={styles.score}>
-                            <SessionScore session={session} />
-                        </span>
-                    </Link>
-                </li>
-            ))}
-        </ul>
-    );
-}
-
-function SessionScore({ session }: { session: IClubHubSession }) {
-    if (session.phase === 'RATING') return <>Rating</>;
-    if (session.phase === 'CANCELLED') return <>Cancelled</>;
-    return (
-        <>
-            <span>{session.ratingAverage?.toFixed(1) ?? '—'}</span>
-            <small>Club score</small>
-        </>
+        <article
+            className={`${styles.row} ${styles.ratingRow}`}
+            data-color-reveal-trigger
+            data-color-reveal-surface
+        >
+            <ColorReveal variant="surface" />
+            <SearchPoster
+                className={styles.poster}
+                url={session.movie?.posterUrl ?? null}
+                withColorReveal
+            />
+            <div className={styles.copy}>
+                <Link
+                    className={styles.ratingTitle}
+                    href={`/sessions/${session.id}`}
+                    prefetch={false}
+                >
+                    <strong>{title}</strong>
+                </Link>
+                <span>{meta.filter(Boolean).join(' · ')}</span>
+            </div>
+            <div className={styles.participants}>
+                <AvatarGroup
+                    items={session.participants ?? []}
+                    label={`${formatCount(session.acceptedCount, 'participant')} in ${title}`}
+                />
+            </div>
+            <div className={styles.ratingProgress}>
+                <ColorReveal shouldFill>
+                    <FilmProgress
+                        isCompact
+                        value={session.progressCount ?? 0}
+                        max={session.acceptedCount}
+                        label={progress}
+                    />
+                </ColorReveal>
+            </div>
+        </article>
     );
 }

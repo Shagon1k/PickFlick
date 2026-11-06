@@ -62,7 +62,7 @@ describe('buildClubAchievements', () => {
             buildScreening({ phase: 'CANCELLED' }),
             buildScreening({ phase: 'RATING' }),
         ]);
-        expect(metrics['first-ten']!).toBe(1);
+        expect(metrics['first-ten']).toBe(1);
         for (const key of [
             'full-house',
             'critics-circle',
@@ -74,9 +74,9 @@ describe('buildClubAchievements', () => {
             'shared-taste',
             'packed-calendar',
             'comeback',
-        ])
-            expect(metrics[key]!).toBe(0);
-        expect(buildClubAchievements([]).metrics['first-screening']!).toBe(0);
+        ] as const)
+            expect(metrics[key]).toBe(0);
+        expect(buildClubAchievements([]).metrics['first-screening']).toBe(0);
     });
 
     it('should exclude date-only entries from evening rules and unknown attendance from Full House', () => {
@@ -93,16 +93,33 @@ describe('buildClubAchievements', () => {
             ],
         });
         const { metrics } = buildClubAchievements([session]);
-        expect(metrics['full-house']!).toBe(0);
-        expect(metrics['double-feature']!).toBe(0);
-        expect(metrics['critics-circle']!).toBe(1);
+        expect(metrics['full-house']).toBe(0);
+        expect(metrics['double-feature']).toBe(0);
+        expect(metrics['critics-circle']).toBe(1);
     });
 
+    it('should count accepted participants of a completed live Session as attendees', () => {
+        const participant = {
+            id: 'participant-1',
+            membershipId: 'member-1',
+            status: 'ACCEPTED' as const,
+            attended: null,
+            membership: { userId: 'user-1' },
+        };
+        const live = buildScreening({ type: 'FULL_CYCLE', participants: [participant] });
+        const left = buildScreening({
+            type: 'FULL_CYCLE',
+            participants: [{ ...participant, status: 'LEFT' }],
+        });
+        expect(buildClubAchievements([live]).metrics['full-house']).toBe(1);
+        expect(buildClubAchievements([left]).metrics['full-house']).toBe(0);
+    });
     it('should ignore imported score matrices as Selection outcome evidence', () => {
         expect(
             buildClubAchievements([
-                buildScreening({ selectionResult: { ranking: [{ total: 9 }, { total: 8 }] } }),
-            ]).metrics['perfect-split']!,
+                // A valid snapshot that would earn Perfect Split on a live Session.
+                buildScreening({ type: 'PAST', selectionResult: buildSelectionSnapshot() }),
+            ]).metrics['perfect-split'],
         ).toBe(0);
     });
 
@@ -182,14 +199,11 @@ describe('buildClubAchievements', () => {
         });
     });
 
-    it('should ignore malformed frozen live snapshots without failing the read', () => {
+    it('should fail on a malformed frozen live snapshot instead of hiding corrupt data', () => {
         const session = buildScreening({
             type: 'FULL_CYCLE',
             selectionResult: { ranking: [{ total: 10 }, { total: 9 }] },
         });
-        expect(buildClubAchievements([session])).toMatchObject({
-            metrics: { 'perfect-split': 0 },
-            evidence: { selections: [] },
-        });
+        expect(() => buildClubAchievements([session])).toThrow();
     });
 });

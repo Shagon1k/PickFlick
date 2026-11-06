@@ -1,21 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
+import { expectSessionPhase } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 const ROUTE = '/sessions/30000000-0000-4000-8000-000000000050';
 async function authenticate(context: BrowserContext, scenario: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-rating-${scenario}-${crypto.randomUUID()}`,
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, `valid-rating-${scenario}-${crypto.randomUUID()}`);
 }
 
 for (const viewport of canonicalViewports) {
@@ -27,12 +21,15 @@ for (const viewport of canonicalViewports) {
             await page.setViewportSize(viewport);
             await page.goto(ROUTE, { waitUntil: 'load' });
             await settle(page);
-            await expect(page.getByText(/Rating in progress — 1 of 3/)).toBeVisible();
+            await expect(
+                page.getByRole('status').filter({ hasText: /Rating in progress — 1 of 3/ }),
+            ).toBeVisible();
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
             const first = page.getByRole('radio', { name: '1 of 10', exact: true });
-            expect(
-                await first.evaluate((element) => element.getBoundingClientRect().width),
-            ).toBeGreaterThanOrEqual(44);
+            // Ten stars share one row, so a star narrows on phones but keeps a 44px height.
+            const box = await first.evaluate((element) => element.getBoundingClientRect());
+            expect(box.width).toBeGreaterThanOrEqual(24);
+            expect(box.height).toBeGreaterThanOrEqual(44);
             await page.getByRole('button', { name: 'Submit Rating' }).click();
             await expect(first).toBeFocused();
             await page.keyboard.press('End');
@@ -42,16 +39,22 @@ for (const viewport of canonicalViewports) {
                 'true',
             );
             await page.getByLabel('Comment', { exact: false }).fill('A lasting impression.');
-            await page.screenshot({
-                path: `test-results/rating-${viewport.name}.png`,
-                fullPage: true,
-            });
             await page.getByRole('button', { name: 'Submit Rating' }).click();
-            await expect(page.getByText('Your rating is saved')).toBeVisible();
-            await expect(page.getByText(/Rating in progress — 2 of 3/)).toBeVisible();
+            await expect(
+                page
+                    .getByRole('list', { name: 'Session ratings' })
+                    .getByRole('listitem')
+                    .first()
+                    .getByText('You', { exact: true }),
+            ).toBeVisible();
+            await expect(
+                page.getByRole('status').filter({ hasText: /Rating in progress — 2 of 3/ }),
+            ).toBeVisible();
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
             await page.reload();
-            await expect(page.getByText('A lasting impression.', { exact: true })).toBeVisible();
+            await expect(
+                page.getByRole('button', { name: 'Read the review by You', exact: true }),
+            ).toContainText('A lasting impression.');
             await expect(page.getByText('A memorable screening.')).toHaveCount(0);
             const settings = page.getByRole('button', { name: 'Session settings' });
             await settings.focus();
@@ -71,24 +74,24 @@ for (const viewport of canonicalViewports) {
             await dialog.getByLabel('Type CLOSE to confirm').fill('CLOSE');
             await dialog.getByRole('button', { name: 'Complete Session' }).click();
             await expect(dialog).toHaveCount(0);
-            await expect(page.getByText('completed', { exact: true })).toBeVisible();
-            await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toBeVisible();
-            await expect(page.getByText('A memorable screening.')).toBeVisible();
+            await expectSessionPhase(page, 'Completed');
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toContainText(
+                'A lasting impression.',
+            );
+            await expect(
+                page
+                    .getByRole('button', { name: 'Read the review by Casey', exact: true })
+                    .getByText('A memorable screening.', { exact: true }),
+            ).toBeVisible();
             await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
+            await expectNoPageOverflow(page);
             await settle(page);
             expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-            await page.screenshot({
-                path: `test-results/rating-completed-${viewport.name}.png`,
-                fullPage: true,
-            });
         },
     );
 }
 
-for (const scenario of ['member', 'readonly', 'hidden-completed']) {
+for (const scenario of ['member', 'hidden-completed']) {
     test(`Rating enforces ${scenario} controls and visibility`, async ({ context, page }) => {
         await authenticate(context, scenario);
         await page.goto(ROUTE);
@@ -97,8 +100,40 @@ for (const scenario of ['member', 'readonly', 'hidden-completed']) {
             scenario === 'member' ? 1 : 0,
         );
         await expect(page.getByText('A memorable screening.')).toHaveCount(0);
-        await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toHaveCount(0);
+        await expect(page.getByRole('list', { name: 'Session ratings' })).toHaveCount(0);
     });
+}
+
+for (const [scenario, joinCount, removedCount] of [
+    ['readonly', 0, 0],
+    ['removed', 0, 1],
+    ['unjoined', 1, 0],
+    ['ineligible', 0, 0],
+] as const) {
+    test(
+        `Rating ${scenario} state omits the empty rating panel and keeps participation accurate`,
+        { tag: '@smoke' },
+        async ({ context, page }) => {
+            await authenticate(context, scenario);
+            await page.goto(ROUTE);
+            await expect(
+                page.getByRole('status').filter({ hasText: /Rating in progress/u }),
+            ).toBeVisible();
+            await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
+            await expect(
+                page.getByRole('heading', { name: 'Your rating', exact: true }),
+            ).toHaveCount(0);
+            await expect(page.getByRole('radio')).toHaveCount(0);
+            await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
+            await expect(page.getByText('Join the Session to rate.')).toHaveCount(0);
+            await expect(
+                page.getByRole('button', { name: 'Join Session', exact: true }),
+            ).toHaveCount(joinCount);
+            await expect(page.getByText('Removed', { exact: false })).toHaveCount(removedCount);
+            await expect(page.getByText('A memorable screening.')).toHaveCount(0);
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toHaveCount(0);
+        },
+    );
 }
 
 test('Rating keeps input and explains save failure and offline recovery', async ({
@@ -128,9 +163,9 @@ test('Rating keeps input and explains save failure and offline recovery', async 
 for (const [scenario, message] of [
     ['stale', 'This Session changed. Refresh before closing Rating.'],
     ['closefailure', 'We could not close Rating. Try again.'],
-]) {
+] as const) {
     test(`Rating closure preserves confirmation on ${scenario}`, async ({ context, page }) => {
-        await authenticate(context, scenario!);
+        await authenticate(context, scenario);
         await page.goto(ROUTE);
         await page.getByRole('button', { name: 'Session settings' }).click();
         await expect(page.getByRole('menuitem', { name: 'Close Rating early' })).toBeFocused();
@@ -138,7 +173,7 @@ for (const [scenario, message] of [
         const dialog = page.getByRole('dialog', { name: 'Close Rating early' });
         await dialog.getByLabel('Type CLOSE to confirm').fill('CLOSE');
         await dialog.getByRole('button', { name: 'Complete Session' }).click();
-        await expect(dialog.getByRole('status')).toHaveText(message!);
+        await expect(dialog.getByRole('status')).toHaveText(message);
         await expect(dialog.getByLabel('Type CLOSE to confirm')).toHaveValue('CLOSE');
     });
 }
@@ -155,10 +190,14 @@ test('Rating supports touch and reduced motion on a phone', async ({ browser }) 
         await page.goto(ROUTE);
         await page.getByRole('radio', { name: '7 of 10' }).tap();
         await page.getByRole('button', { name: 'Submit Rating' }).tap();
-        await expect(page.getByText('Your rating is saved')).toBeVisible();
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-            true,
-        );
+        await expect(
+            page
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
+        ).toBeVisible();
+        await expectNoPageOverflow(page);
     } finally {
         await context.close();
     }
@@ -170,9 +209,10 @@ test('Completed Rating explains an empty result without inventing responses', as
 }) => {
     await authenticate(context, 'empty-completed');
     await page.goto(ROUTE);
-    await expect(page.getByText('No ratings were received.')).toBeVisible();
     await expect(
-        page.getByText('This Session is complete. No more ratings can be added.'),
+        page
+            .getByRole('region', { name: 'Ratings', exact: true })
+            .getByText('No ratings were received.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
 });

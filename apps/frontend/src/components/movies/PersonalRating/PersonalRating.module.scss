@@ -1,11 +1,45 @@
+/* One row of stars; the selected value stays in the control's accessible description. */
 .personalRating {
     display: grid;
-    gap: var(--gap-sm);
+    gap: var(--gap-xs);
     min-width: 0;
 }
 
-.personalRating p {
+.status {
     margin: 0;
-    font-size: var(--fs-body-sm);
+    font-size: var(--fs-caption);
     color: var(--fg-secondary);
+    text-align: center;
+}
+
+.status:empty {
+    display: none;
+}
+
+/* The ticket pill: the viewer's score with "You", as on Movie Details in the prototype. */
+.pill {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.pill strong {
+    font: 600 var(--film-rail-score-size)/1 var(--font-mono);
+}
+
+.pill small {
+    font-size: var(--fs-caption);
+    line-height: 1;
+    color: var(--ivory-muted);
+}
+
+.tableScore {
+    font: var(--fs-card-title)/var(--lh-title) var(--font-display);
+    color: var(--fg);
+    transition: color var(--motion-local) var(--ease-standard);
+}
+
+tr:is(:hover, :focus-within) .tableScore,
+button:is(:hover, :focus-visible, [aria-expanded='true']) .tableScore {
+    color: var(--gold-light);
 }

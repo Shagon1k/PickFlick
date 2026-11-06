@@ -7,6 +7,7 @@ export const NOTIFICATION_EVENTS = [
     'RATING_OPENED',
     'RATING_CLOSED',
     'SESSION_CANCELLED',
+    'SESSION_PARTICIPANT_REMOVED',
     'NOMINATION_STALLED',
     'MEMBERSHIP_JOINED',
     'MEMBERSHIP_ROLE_CHANGED',
@@ -35,4 +36,3 @@ export const updateNotificationPreferenceSchema = notificationPreferenceSchema.o
     mandatory: true,
 });
 export type TUpdateNotificationPreference = z.infer<typeof updateNotificationPreferenceSchema>;
-export const notificationPreferencesQuerySchema = z.strictObject({});

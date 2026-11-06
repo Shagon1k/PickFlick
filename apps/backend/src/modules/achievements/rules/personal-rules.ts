@@ -1,6 +1,7 @@
-import { snapshotSchema } from '../../sessions/selection/selection-outcome.js';
+import { selectionResultSchema } from '../../sessions/selection/selection-result.js';
+import type { TPersonalAchievementKey } from './rule-catalog.js';
 import { getAverage, getLongestRun, getMembersAtScreening, readDetails } from './rule-helpers.js';
-import type { TAchievementSession } from './rule-sources.js';
+import { hasAttended, type TAchievementSession } from './rule-sources.js';
 
 const LONG_REVIEW = 301;
 const NIGHT_HOUR = 23;
@@ -42,7 +43,8 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     const completed = sessions.filter((session) => session.phase === 'COMPLETED');
     const isAttendee = (session: TAchievementSession) =>
         session.participants.some(
-            (participant) => ownParticipants.has(participant.id) && participant.attended === true,
+            (participant) =>
+                ownParticipants.has(participant.id) && hasAttended(session, participant),
         );
     const membershipIds = [
         ...new Set(
@@ -65,13 +67,12 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
         ),
     );
     const wins = sessions.flatMap((session) => {
-        if (session.type !== 'FULL_CYCLE') return [];
-        const result = snapshotSchema.safeParse(session.selectionResult);
-        return result.success
-            ? nominations
-                  .filter((nomination) => nomination.id === result.data.winnerNominationId)
-                  .map((nomination) => nomination.id)
-            : [];
+        if (session.type !== 'FULL_CYCLE' || session.selectionResult === null) return [];
+        // Our own Selection closure writes this snapshot, so a malformed one is corrupt data.
+        const { winnerNominationId } = selectionResultSchema.parse(session.selectionResult);
+        return nominations
+            .filter((nomination) => nomination.id === winnerNominationId)
+            .map((nomination) => nomination.id);
     });
     const evidence = {
         ballots: ballots.map((ballot) => ({
@@ -112,7 +113,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
         );
     });
     const hot = completed
-        .filter((session) => canReadAverage(session, userId))
+        .filter((session) => isActiveMember(session, userId))
         .flatMap((session) => {
             const average = getAverage(session);
             return session.ratings
@@ -129,7 +130,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
                     average,
                 }));
         });
-    const metrics: Record<string, number> = {
+    const metrics: Record<TPersonalAchievementKey, number> = {
         'opening-credits': Number(facts.hasProfile),
         'first-vote': ballots.length,
         'reliable-viewer': streak,
@@ -151,8 +152,7 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
                 (session) =>
                     isAttendee(session) &&
                     session.scheduledAt &&
-                    session.scheduledAt.getUTCHours() === NIGHT_HOUR &&
-                    session.scheduledAt.getTime() % HOUR_MS > 0,
+                    isStrictlyAfterElevenUtc(session.scheduledAt),
             ),
         ),
         'early-bird': Number(hasEarlyBallot),
@@ -171,9 +171,14 @@ export function buildPersonalAchievements(facts: IPersonalAchievementFacts) {
     };
 }
 
-function canReadAverage(session: TAchievementSession, userId: string) {
-    const member = session.club.memberships.find(
+/** Clubs the member has left no longer count, so Hot Take reads only current Memberships. */
+function isActiveMember(session: TAchievementSession, userId: string) {
+    return session.club.memberships.some(
         (membership) => membership.userId === userId && membership.status === 'ACTIVE',
     );
-    return member && (member.role !== 'MEMBER' || session.showRatingResults);
+}
+
+/** Night Owl: strictly after 23:00 on its UTC date, so 23:00 exactly does not count. */
+function isStrictlyAfterElevenUtc(date: Date) {
+    return date.getUTCHours() === NIGHT_HOUR && date.getTime() % HOUR_MS > 0;
 }

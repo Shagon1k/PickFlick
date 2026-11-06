@@ -1,5 +1,12 @@
 .libraryTable {
+    display: grid;
+    gap: var(--gap-md);
     min-width: 0;
+}
+
+.libraryTable p {
+    margin: 0;
+    color: var(--fg-secondary);
 }
 
 .libraryTable a {
@@ -9,19 +16,12 @@
     overflow-wrap: anywhere;
 }
 
-.libraryTable__pagination {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    align-items: center;
-    justify-content: space-between;
-    margin-top: var(--gap-md);
-    font-size: var(--fs-body-sm);
-}
-
 .libraryTable__film {
-    min-width: 16ch;
+    min-width: 150px;
     max-width: 28ch;
+    font-weight: 600;
+    color: var(--fg);
+    text-decoration: none;
 }
 
 .libraryTable__title {

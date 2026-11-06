@@ -27,6 +27,7 @@ export function settingsProjection(
         access: {
             adminless: isAdminless,
             newWorkAllowed: isNewWorkAllowed,
+            isAtCapacity: isOverLimit,
             reasons: [
                 ...(isActive ? [] : (['ARCHIVED'] as const)),
                 ...(isAdminless ? (['ADMINLESS'] as const) : []),
@@ -56,20 +57,21 @@ export function settingsProjection(
             manageRoles: isActive && isAdmin,
             manageSettings: isActive && isAdmin,
             manageLifecycle: isAdmin,
-            viewAudit: isAdmin,
         },
+        canDelete: isAdmin && !(token?.includes('history') ?? false),
         entitlements: {
             tier: 'FREE',
             adminClubLimit: 1,
             memberLimit: 8,
-            voteResultVisibility: 'ADMIN_HIDDEN',
         },
         visibility: {
-            showNominationAuthors: true,
+            showNominationAuthorsDuring: true,
+            showNominationAuthorsAfter: true,
+            showSelectionScoresDuring: false,
+            showSelectionScoresAfter: false,
+            showRatingsDuring: true,
+            showRatingsAfter: true,
             showNominationsBeforeSubmit: true,
-            showVoteResults: false,
-            showRatingResults: true,
-            useMonochromeMedia: true,
         },
         members: memberRoster(role, isAdminless, isOverLimit, isMemberRemoved).map((member) => ({
             ...member,
@@ -80,15 +82,6 @@ export function settingsProjection(
                 member.role !== role &&
                 (isAdmin || member.role === 'MEMBER'),
         })),
-        auditEvents: isAdmin
-            ? [
-                  {
-                      id: '50000000-0000-4000-8000-000000000031',
-                      action: 'CLUB_SETTINGS_UPDATED',
-                      createdAt: '2026-09-18T12:00:00.000Z',
-                  },
-              ]
-            : [],
     };
 }
 
@@ -104,6 +97,7 @@ function memberRoster(
         {
             id: '20000000-0000-4000-8000-000000000031',
             displayName: 'Avery Admin',
+            avatarUrl: null,
             role: 'ADMIN',
             sessionCount: 0,
             joinedAt: '2026-01-01T00:00:00.000Z',
@@ -111,6 +105,7 @@ function memberRoster(
         {
             id: '20000000-0000-4000-8000-000000000032',
             displayName: 'Morgan Member',
+            avatarUrl: null,
             role: 'MEMBER',
             sessionCount: 0,
             joinedAt: '2026-02-01T00:00:00.000Z',
@@ -120,6 +115,7 @@ function memberRoster(
                   {
                       id: '20000000-0000-4000-8000-000000000033',
                       displayName: 'Taylor Moderator',
+                      avatarUrl: null,
                       role: 'MODERATOR' as const,
                       sessionCount: 0,
                       joinedAt: '2026-02-02T00:00:00.000Z',
@@ -130,6 +126,7 @@ function memberRoster(
             ? Array.from({ length: 7 }, (_, index) => ({
                   id: `20000000-0000-4000-8000-00000000004${index}`,
                   displayName: `Club member ${index + 1}`,
+                  avatarUrl: null,
                   role: 'MEMBER' as const,
                   sessionCount: 0,
                   joinedAt: '2026-02-02T00:00:00.000Z',

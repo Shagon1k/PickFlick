@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 import { screenshotViewports } from './viewports';
 
@@ -12,14 +14,7 @@ for (const width of [390, 768, 1024, 1440]) {
         { tag: '@smoke' },
         async ({ context, page }) => {
             await page.setViewportSize({ width, height: 900 });
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: 'valid-movie',
-                    domain: '127.0.0.1',
-                    path: '/',
-                },
-            ]);
+            await signInMock(context, 'valid-movie');
             await page.route('**/api/movies/images/**', (route) =>
                 route.fulfill({
                     status: 200,
@@ -35,9 +30,10 @@ for (const width of [390, 768, 1024, 1440]) {
                 '<script>alert(1)</script> & Film',
             );
             // One rating: IMDb wins over Kinopoisk and TMDB, rounded to one decimal.
-            await expect(page.getByTitle('IMDb rating')).toHaveText(
-                'IMDb rating7.6 out of 10 431K ratings',
-            );
+            const externalRating = page.getByTitle('IMDb rating');
+            await expect(externalRating.locator('strong')).toHaveText('7.6');
+            await expect(externalRating).toContainText('out of 10');
+            await expect(externalRating.getByText('431K ratings', { exact: true })).toBeVisible();
             await expect(page.getByText('7.519')).toHaveCount(0);
             await expect(page.locator('[title$=" rating"]')).toHaveCount(1);
             // Personal Ratings and Watchlist use the shared editors.
@@ -90,10 +86,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 (await new AxeBuilder({ page }).include('main').exclude('iframe').analyze())
                     .violations,
             ).toEqual([]);
-            expect(
-                await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-            ).toBe(true);
-            await page.screenshot({ path: `test-results/movie-${width}.png`, fullPage: true });
+            await expectNoPageOverflow(page);
             await expect(page.getByRole('heading', { name: 'You may also like' })).toBeVisible();
             await expect(page.getByRole('img', { name: 'TMDB', exact: true })).toHaveCount(0);
             await page.getByRole('link', { name: /^Wikipedia search/u }).focus();
@@ -111,14 +104,7 @@ for (const [state, message] of [
     ['disabled', 'Film details are not configured yet.'],
 ] as const) {
     test(`Movie Details ${state} state`, { tag: '@smoke' }, async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: `valid-movie-${state}`,
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, `valid-movie-${state}`);
         await page.route('**/api/movies/images/**', (route) => route.abort());
         await page.goto(`/movies/${MOVIE_ID}`);
         await expect(page.getByText(message, { exact: false }).first()).toBeVisible();
@@ -129,29 +115,20 @@ test('missing media and identifiers omit unavailable links; broken poster become
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-movie-missing',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-movie-missing');
     await page.goto(`/movies/${MOVIE_ID}`);
     // The film's own poster: related titles stream in with placeholders of their own, and the phone
     // ticket keeps a hidden one.
     const hero = page.locator('section[aria-labelledby="movie-title"]');
     await expect(hero.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
-    await expect(page.getByText('Our film sources have no trailer for this Movie.')).toBeVisible();
+    await expect(page.getByText('Our film sources have no trailer for this film.')).toBeVisible();
     await expect(page.getByRole('link', { name: /Search YouTube for a trailer/u })).toHaveAttribute(
         'href',
         /^https:\/\/www\.youtube\.com\/results\?search_query=/u,
     );
     await expect(page.getByText('No related titles are available.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'IMDb' })).toHaveCount(0);
-    await context.addCookies([
-        { name: 'pickflick.session_token', value: 'valid-movie', domain: '127.0.0.1', path: '/' },
-    ]);
+    await signInMock(context, 'valid-movie');
     await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.reload();
     await expect(hero.getByText('Poster unavailable').filter({ visible: true })).toBeVisible();
@@ -161,26 +138,12 @@ test('unknown or malformed Movie identity uses safe recovery; related failure pr
     context,
     page,
 }) => {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-movie-not-found',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-movie-not-found');
     await page.goto(`/movies/${MOVIE_ID}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reel Not Found');
     await page.goto('/movies/100');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reel Not Found');
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-movie-related-unavailable',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-movie-related-unavailable');
     await page.route('**/api/movies/images/**', (route) => route.abort());
     await page.goto(`/movies/${MOVIE_ID}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
@@ -194,14 +157,7 @@ test('desktop credits and synopsis share the row equally below the media', async
     page,
 }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-movie-missing',
-            domain: '127.0.0.1',
-            path: '/',
-        },
-    ]);
+    await signInMock(context, 'valid-movie-missing');
     await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
     await settle(page);
     const credits = await page.getByRole('region', { name: 'Credits', exact: true }).boundingBox();
@@ -221,21 +177,12 @@ for (const viewport of screenshotViewports) {
         `Movie Details matches the ${viewport.name} prototype composition`,
         { tag: '@visual' },
         async ({ context, page }) => {
-            await context.addCookies([
-                {
-                    name: 'pickflick.session_token',
-                    value: 'valid-movie',
-                    url: 'http://127.0.0.1:41730',
-                },
-            ]);
+            await signInMock(context, 'valid-movie');
             await page.setViewportSize(viewport);
             await page.goto(`/movies/${MOVIE_ID}`, { waitUntil: 'load' });
             await settle(page);
             await expect(page).toHaveScreenshot(`movie-details-${viewport.name}.png`, {
                 fullPage: true,
-                animations: 'disabled',
-                caret: 'hide',
-                scale: 'css',
             });
         },
     );

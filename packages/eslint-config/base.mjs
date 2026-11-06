@@ -177,8 +177,10 @@ export default [
                         'achievements',
                         'movies',
                         'navigation',
+                        'notifications',
                         'sessions',
                         'shells',
+                        'statistics',
                         'ui',
                     ],
                 },
@@ -288,7 +290,12 @@ export default [
         rules: {
             ...vitest.configs.recommended.rules,
             // Helpers named expect* (expectConstraint, expectAccepted) assert on the test's behalf.
-            'vitest/expect-expect': ['error', { assertFunctionNames: ['expect*'] }],
+            'vitest/expect-expect': [
+                'error',
+                { assertFunctionNames: ['expect*', '*.expectStatus'] },
+            ],
+            // The same check without a way to name helpers; vitest/expect-expect covers it.
+            'sonarjs/assertions-in-tests': 'off',
             // vitest/unbound-method understands `expect(mock.method)`; the TypeScript rule does not.
             '@typescript-eslint/unbound-method': 'off',
             'vitest/unbound-method': 'error',
@@ -299,6 +306,14 @@ export default [
     {
         files: ['tests/**/*.ts'],
         ...playwright.configs['flat/recommended'],
+        rules: {
+            ...playwright.configs['flat/recommended'].rules,
+            // Shared helpers such as expectNoPageOverflow assert on the test's behalf.
+            'playwright/expect-expect': [
+                'warn',
+                { assertFunctionNames: ['expectNoPageOverflow', 'expectSessionPhase'] },
+            ],
+        },
     },
     {
         // Developer and CI tooling deliberately resolves pnpm, docker, and git from PATH.

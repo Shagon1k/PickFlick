@@ -1,90 +1,73 @@
 'use client';
 
-import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-
-import Icon from '#components/ui/Icon/Icon';
+import { Popover } from '@mantine/core';
+import { type ReactNode, useId, useState } from 'react';
 
 import styles from './InfoTip.module.scss';
 
+const TOOLTIP_OFFSET = 10;
+const EDGE_GAP = 8;
+const TOOLTIP_Z_INDEX = 300;
+
 export interface IInfoTipProps {
-    /** Accessible name for the trigger, such as "About the Selection score range". */
     label: string;
     children: ReactNode;
 }
 
-/**
- * A quiet "?" trigger that reveals a short explanation on hover, keyboard focus, or tap.
- * The explanation stays in the DOM as the trigger's accessible description.
- */
-const EDGE_GAP_PX = 8;
-
+/** A small explanation that escapes clipped cards and stays inside the viewport. */
 export default function InfoTip({ children, label }: IInfoTipProps) {
     const tipId = useId();
-    const rootRef = useRef<HTMLSpanElement>(null);
-    const bubbleRef = useRef<HTMLSpanElement>(null);
     const [isOpen, setIsOpen] = useState(false);
-
-    // A centred bubble beside a viewport edge slides inward instead of spilling out.
-    useLayoutEffect(() => {
-        const bubble = bubbleRef.current;
-        if (!isOpen || !bubble) return;
-        bubble.style.removeProperty('--tip-shift');
-        const { left, right } = bubble.getBoundingClientRect();
-        const limit = document.documentElement.clientWidth - EDGE_GAP_PX;
-        const shift = Math.max(EDGE_GAP_PX - left, 0) - Math.max(right - limit, 0);
-        bubble.style.setProperty('--tip-shift', `${shift}px`);
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-        const closeOnEscape = (event: globalThis.KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setIsOpen(false);
-            }
-        };
-        const closeOnOutsidePointer = (event: PointerEvent) => {
-            if (event.target instanceof Node && !rootRef.current?.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('keydown', closeOnEscape);
-        document.addEventListener('pointerdown', closeOnOutsidePointer);
-        return () => {
-            document.removeEventListener('keydown', closeOnEscape);
-            document.removeEventListener('pointerdown', closeOnOutsidePointer);
-        };
-    }, [isOpen]);
-
     return (
         <span
             className={styles.infoTip}
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
-            ref={rootRef}
         >
-            <button
-                aria-describedby={tipId}
-                aria-expanded={isOpen}
-                aria-label={label}
-                className={styles.infoTip__trigger}
-                onBlur={() => setIsOpen(false)}
-                onClick={() => setIsOpen(true)}
-                onFocus={() => setIsOpen(true)}
-                type="button"
-            >
-                <Icon className={styles.infoTip__icon} name="question" />
-            </button>
-            <span
-                className={styles.infoTip__bubble}
-                data-open={isOpen || undefined}
+            <Popover
                 id={tipId}
-                ref={bubbleRef}
-                role="tooltip"
+                floatingStrategy="fixed"
+                opened={isOpen}
+                onChange={setIsOpen}
+                position="top"
+                offset={TOOLTIP_OFFSET}
+                width="max-content"
+                middlewares={{ flip: true, shift: { padding: EDGE_GAP } }}
+                zIndex={TOOLTIP_Z_INDEX}
+                keepMounted
+                withRoles={false}
+                returnFocus={false}
+                withinPortal={false}
+                unstyled
             >
-                {children}
-            </span>
+                <Popover.Target>
+                    <button
+                        aria-describedby={`${tipId}-dropdown`}
+                        aria-expanded={isOpen}
+                        aria-label={label}
+                        className={styles.infoTip__trigger}
+                        onBlur={() => setIsOpen(false)}
+                        onClick={() => setIsOpen(true)}
+                        onFocus={() => setIsOpen(true)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape' && isOpen) {
+                                event.stopPropagation();
+                                setIsOpen(false);
+                            }
+                        }}
+                        type="button"
+                    >
+                        i
+                    </button>
+                </Popover.Target>
+                <Popover.Dropdown
+                    className={styles.infoTip__bubble}
+                    id={`${tipId}-dropdown`}
+                    role="tooltip"
+                >
+                    {children}
+                </Popover.Dropdown>
+            </Popover>
         </span>
     );
 }

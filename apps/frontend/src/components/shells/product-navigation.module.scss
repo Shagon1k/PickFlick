@@ -31,36 +31,40 @@
     display: none;
 }
 
-/* 44px targets that draw the design's 34px circle. */
+/* Shared Search/Close and account-control geometry. */
 .roundButton,
-.avatarButton {
+.avatarButton,
+.searchClose {
     position: relative;
     display: grid;
     place-items: center;
-    width: var(--hit);
-    height: var(--hit);
+    width: var(--header-action-size);
+    height: var(--header-action-size);
     padding: 0;
     color: var(--fg-secondary);
     cursor: pointer;
     background: transparent;
     border: 0;
-    transition: color 0.18s ease;
+    transition: color var(--motion-local) ease;
 }
 
 .roundButton::before,
-.avatarButton::before {
+.avatarButton::before,
+.searchClose::before {
     position: absolute;
-    inset: 5px;
+    inset: calc((var(--header-action-size) - 42px) / 2);
     z-index: -1;
     content: '';
     border: 1px solid var(--border-lit);
     border-radius: 50%;
-    transition: border-color 0.18s ease;
+    transition: border-color var(--motion-local) ease;
 }
 
 .roundButton,
 .avatarButton,
 .searchClose {
+    --action-scale: var(--action-scale-small);
+
     isolation: isolate;
 }
 
@@ -70,7 +74,9 @@
 .roundButton[aria-expanded='true'],
 .avatarButton:hover,
 .avatarButton:focus-visible,
-.avatarButton[aria-expanded='true'] {
+.avatarButton[aria-expanded='true'],
+.searchClose:hover,
+.searchClose:focus-visible {
     color: var(--ivory);
 }
 
@@ -79,28 +85,27 @@
 .roundButton[aria-expanded='true']::before,
 .avatarButton:hover::before,
 .avatarButton:focus-visible::before,
-.avatarButton[aria-expanded='true']::before {
+.avatarButton[aria-expanded='true']::before,
+.searchClose:hover::before,
+.searchClose:focus-visible::before {
     border-color: var(--gold-border);
-}
-
-.avatarButton {
-    font: 600 13px/1 var(--font-body);
-    color: var(--fg-secondary);
 }
 
 .avatarButton::before {
     background: var(--surface);
 }
 
-.searchClose::before {
+.avatarImage {
     position: absolute;
-    inset: -2px;
-    content: '';
+    inset: 0;
+    width: var(--header-avatar-size);
+    height: var(--header-avatar-size);
+    margin: auto;
 }
 
 .roundIcon {
-    width: 18px;
-    height: 18px;
+    width: var(--header-action-icon-size);
+    height: var(--header-action-icon-size);
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
@@ -133,10 +138,10 @@
 
 .notifHeader {
     display: flex;
-    gap: 16px;
+    gap: var(--gap-xs);
     align-items: center;
     justify-content: space-between;
-    padding: 18px 18px 15px;
+    padding: var(--gap-sm) 16px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -147,38 +152,31 @@
     letter-spacing: 0;
 }
 
-.notifHeader span {
-    display: block;
-    margin-top: 4px;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
+.notifTitle {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    min-width: 0;
 }
 
-.notifHeader button {
+.notifTitle h2 {
+    white-space: nowrap;
+}
+
+.notifUnreadCount {
+    display: inline-flex;
     flex: 0 0 auto;
-    min-height: 44px;
-    padding: 0 9px;
-    font: var(--fs-micro) var(--font-body);
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: none;
-    border: 0;
-    border-radius: 8px;
-}
-
-.notifHeader button:hover,
-.notifHeader button:focus-visible {
-    color: var(--fg);
-    outline: 1px solid var(--focus);
-    background: var(--accent-soft);
-}
-
-.notifHeader button:disabled {
-    color: var(--muted);
-    cursor: default;
-    outline: none;
-    background: transparent;
-    opacity: 0.48;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding-inline: 4px;
+    font: 600 var(--fs-micro)/1 var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--gold-light);
+    background: var(--gold-soft);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-pill);
 }
 
 .overlayEmpty {
@@ -232,16 +230,24 @@
     background: var(--accent-soft);
 }
 
+/* The prototype's unread dot, at the row's right edge. */
+.notifItem[data-unread]::after {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    width: 6px;
+    height: 6px;
+    content: '';
+    background: var(--gold);
+    border-radius: 50%;
+    transform: translateY(-50%);
+}
+
 .notifIcon {
     flex: 0 0 20px;
     width: 20px;
     height: 20px;
     color: var(--muted);
-}
-
-.notifBody {
-    flex: 1;
-    min-width: 0;
 }
 
 .notifBody p {
@@ -252,38 +258,37 @@
 
 .notifBody {
     display: block;
+    flex: 1;
+    min-width: 0;
     min-height: 44px;
+    padding: 0;
+    font: inherit;
     color: var(--fg);
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: 0;
 }
 
-.notifBody time {
+div.notifBody {
+    cursor: default;
+}
+
+/* A link or button stretches over the whole row, icon included. */
+a.notifBody::before,
+button.notifBody::before {
+    position: absolute;
+    inset: 0;
+    content: '';
+}
+
+.notifBody time,
+.notifLoadingTime {
     display: block;
     margin-top: 5px;
     font-size: var(--fs-micro);
     color: var(--fg-secondary);
-}
-
-.notifRead {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    cursor: pointer;
-    background: none;
-    border: 0;
-    transform: translateY(-50%);
-}
-
-.notifRead span {
-    width: 6px;
-    height: 6px;
-    background: var(--gold);
-    border-radius: 50%;
 }
 
 .notifStatus,
@@ -295,12 +300,13 @@
     border-bottom: 1px solid var(--border);
 }
 
-.notifFeedback p {
-    margin: 0;
+.notifFeedback {
+    display: grid;
+    gap: var(--gap-sm);
 }
 
-.notifMore,
-.notifFeedback button {
+.notifMore {
+    width: 100%;
     min-height: 44px;
     padding: 8px 18px;
     font: inherit;
@@ -308,10 +314,6 @@
     cursor: pointer;
     background: none;
     border: 0;
-}
-
-.notifMore {
-    width: 100%;
     border-top: 1px solid var(--border);
 }
 
@@ -355,10 +357,15 @@
     margin: 0 auto;
 }
 
-.globalSearchInner .globalSearchInput {
+.globalSearchField {
+    position: relative;
     flex: 0 1 480px;
     width: 100%;
     min-width: 0;
+}
+
+.globalSearchInner .globalSearchInput {
+    width: 100%;
     min-height: var(--hit);
     padding: 10px 16px;
     font: var(--fs-body) / var(--lh-ui) var(--font-body);
@@ -384,41 +391,7 @@
 }
 
 .searchClose {
-    position: relative;
-    display: grid;
     flex-shrink: 0;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    color: var(--fg-secondary);
-    cursor: pointer;
-    background: var(--surface);
-    border: 1px solid var(--border-lit);
-    border-radius: 50%;
-}
-
-.searchClose:hover {
-    color: var(--ivory);
-    border-color: var(--gold-border);
-}
-
-.searchResults {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 50%;
-    z-index: 1;
-    width: min(100%, 532px);
-    max-height: min(400px, calc(100dvh - 160px));
-    overflow-y: auto;
-    background: var(--surface);
-    border: 1px solid var(--border-lit);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-overlay);
-    transform: translateX(-50%);
-}
-
-.searchResults:empty {
-    display: none;
 }
 
 .filmStrip {
@@ -461,7 +434,6 @@
     max-height: calc(100dvh - 140px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: none;
 }
 
 .filmFrame {
@@ -482,8 +454,8 @@
     border: 0;
     border-bottom: 1px solid var(--border);
     transition:
-        color 0.16s ease,
-        background-color 0.16s ease;
+        color var(--motion-local) ease,
+        background-color var(--motion-local) ease;
 }
 
 .filmFrame:last-child {
@@ -576,7 +548,7 @@
     clip-path: inset(0 0 82% 0 round 0 0 7px 7px);
     transform: translateX(var(--menu-shift)) translateY(8px);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear var(--motion-menu),
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -589,7 +561,7 @@
     clip-path: inset(0 0 0 0 round 0 0 7px 7px);
     transform: translateX(var(--menu-shift)) translateY(0);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear 0s,
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -704,7 +676,7 @@
     cursor: pointer;
     background: transparent;
     border: 0;
-    transition: color 0.18s ease;
+    transition: color var(--motion-local) ease;
 }
 
 .navTrigger span {
@@ -749,7 +721,7 @@
     clip-path: inset(82% 0 0 0 round 7px 7px 0 0);
     transform: translateX(calc(-50% + var(--menu-shift))) translateY(14px);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear var(--motion-menu),
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -762,7 +734,7 @@
     clip-path: inset(0 0 0 0 round 7px 7px 0 0);
     transform: translateX(calc(-50% + var(--menu-shift))) translateY(0);
     transition:
-        opacity 0.18s ease,
+        opacity var(--motion-local) ease,
         visibility 0s linear 0s,
         transform var(--motion-menu) var(--ease-menu),
         clip-path var(--motion-menu) var(--ease-menu);
@@ -817,90 +789,30 @@
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .headerActions {
         grid-column: 3;
     }
 }
 
-@media (width <= 1023px) {
+@media (width < 1024px) {
     .headerActions {
         position: static;
     }
-}
 
-@media (prefers-reduced-motion: reduce) {
-    .filmMenu,
-    .accountPopover,
-    .globalSearch,
-    .navTrigger,
-    .filmFrame {
-        transition-duration: 0.01ms;
+    .globalSearch {
+        padding-inline: 0;
     }
 
-    .sectionMobileMenu {
-        animation-duration: 0.01ms;
-    }
-}
-
-.searchResult {
-    display: flex;
-    gap: var(--gap-sm);
-    align-items: center;
-    min-height: var(--hit);
-    padding: var(--gap-sm) var(--gap-md);
-    color: var(--fg);
-    text-decoration: none;
-
-    & + & {
-        border-top: 1px solid var(--border);
+    .globalSearchInner {
+        justify-content: space-between;
+        width: var(--product-header-width);
+        max-width: none;
     }
 
-    &:hover,
-    &[aria-selected='true'] {
-        background: var(--accent-soft);
+    .globalSearchField {
+        flex: 1;
     }
-}
-
-.searchPoster {
-    display: grid;
-    flex-shrink: 0;
-    place-items: center;
-    width: 36px;
-    height: 54px;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-    background: var(--surface-lit);
-    border-radius: var(--radius);
-}
-
-.searchInfo {
-    min-width: 0;
-}
-
-.searchTitle {
-    display: block;
-    font-size: var(--fs-body-sm);
-    font-weight: 600;
-    overflow-wrap: anywhere;
-}
-
-.searchMeta {
-    display: block;
-    font-size: var(--fs-caption);
-    color: var(--fg-secondary);
-}
-
-.searchResults .overlayEmpty {
-    color: var(--fg-secondary);
-}
-
-/* With results the count is a slim caption, so the films start at once. */
-.searchResults .overlayEmpty[data-count] {
-    padding: var(--gap-xs) 16px;
-    font-size: var(--fs-caption);
-    text-align: left;
-    border-bottom: 1px solid var(--border);
 }
 
 @media (prefers-reduced-motion: reduce) {

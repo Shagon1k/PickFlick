@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
+import { selectionScaleMaxSchema, selectionScaleMinSchema } from '../clubs/club.schema.js';
 import { nominationMovieSchema } from './nomination.schema.js';
 
 export const importedSelectionOutcomeSchema = z.strictObject({
     source: z.literal('IMPORTED'),
-    scaleMin: z.union([z.literal(0), z.literal(1)]),
-    scaleMax: z.int().min(1).max(10),
+    scaleMin: selectionScaleMinSchema,
+    scaleMax: selectionScaleMaxSchema,
     nominations: z
         .array(
             z.strictObject({

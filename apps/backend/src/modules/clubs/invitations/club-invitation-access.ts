@@ -39,9 +39,9 @@ export async function inspectInvitation(
     });
     if (membership) return buildInspection({ state: 'already-member', clubId: invitation.clubId });
     if (invitation.respondedAt) {
+        // Saying a real link was used reveals nothing about its Club.
         return buildInspection({
-            state:
-                invitation.responderId === userId && !invitation.accepted ? 'declined' : 'invalid',
+            state: invitation.responderId === userId && !invitation.accepted ? 'declined' : 'used',
         });
     }
     if (invitation.club.lifecycle !== 'ACTIVE') return buildInspection({ state: 'unavailable' });
@@ -49,6 +49,17 @@ export async function inspectInvitation(
     if (access.adminless) return buildInspection({ state: 'unavailable' });
     if (memberCount >= getClubEntitlements(invitation.clubId).memberLimit)
         return buildInspection({ state: 'over-limit' });
+    // A link lives only while its creator may still invite, as Session invites already require.
+    const inviter = await transaction.membership.findFirst({
+        where: {
+            clubId: invitation.clubId,
+            userId: invitation.inviterId,
+            status: 'ACTIVE',
+            role: { not: 'MEMBER' },
+        },
+        select: { id: true },
+    });
+    if (!inviter) return buildInspection({ state: 'revoked' });
     return buildInspection({
         state: 'valid',
         clubName: invitation.club.name,

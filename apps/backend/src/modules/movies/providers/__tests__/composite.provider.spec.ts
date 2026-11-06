@@ -205,6 +205,17 @@ describe('CompositeMovieProvider', () => {
             reason: 'NOT_FOUND',
         });
     });
+    it('should report a TheTVDB outage, not NOT_FOUND, when PoiskKino no longer knows the Movie', async () => {
+        primary.fetchDetails.mockRejectedValue(
+            new MovieProviderError('NOT_FOUND', undefined, 'poiskkino'),
+        );
+        enrichment.fetchDetails.mockRejectedValue(
+            new MovieProviderError('TIMEOUT', undefined, 'thetvdb'),
+        );
+        await expect(provider.fetchDetails(buildMovieLookup())).rejects.toMatchObject({
+            reason: 'TIMEOUT',
+        });
+    });
     it('should report a disabled enrichment source in provenance', async () => {
         enrichment.fetchDetails.mockRejectedValue(
             new MovieProviderError('DISABLED', undefined, 'thetvdb'),

@@ -2,38 +2,115 @@
     min-width: 0;
 }
 
-.selection h2 {
-    font: 400 var(--fs-app-section)/var(--lh-title) var(--font-display);
+.intro {
+    display: grid;
+    gap: var(--gap-xs);
+    margin-block: var(--gap-md);
 }
 
+.intro h2 {
+    margin: 0;
+    font: 600 var(--fs-app-section)/var(--lh-title) var(--font-body);
+}
+
+.intro p,
 .selection > p {
+    margin: 0;
+    font-size: var(--fs-body-sm);
     color: var(--fg-secondary);
+}
+
+.headingRow,
+.headingGroup {
+    display: flex;
+    gap: var(--gap-xs);
+    align-items: center;
+    min-width: 0;
+}
+
+.headingRow {
+    gap: var(--gap-sm);
+    justify-content: space-between;
+}
+
+.progress {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.confirmation {
+    display: inline-flex;
+    gap: var(--gap-xs);
+    align-items: center;
+}
+
+.confirmation svg {
+    flex-shrink: 0;
 }
 
 .movies {
     display: grid;
     gap: var(--gap-sm);
     padding: 0;
+    margin: 0;
     list-style: none;
 }
 
 .movie {
+    --color-reveal-border-width: 1px;
+
+    position: relative;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--gap-md);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-sm);
     align-items: center;
     min-width: 0;
-    padding: 16px;
+    padding: var(--gap-sm);
     background: transparent;
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius);
+    isolation: isolate;
+}
+
+.film {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--gap-sm);
+    align-items: start;
+    align-self: stretch;
+    min-width: 0;
+    color: var(--fg);
+    text-decoration: none;
+}
+
+/* Only score buttons intercept the card link; empty rail space passes through. */
+.film::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+}
+
+.film:hover {
+    text-decoration: none;
+}
+
+.film:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+.film:focus-visible::after {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
 }
 
 .poster {
     display: grid;
     place-items: center;
-    width: 64px;
-    height: 96px;
+    width: 48px;
+    height: 72px;
     overflow: hidden;
     font: var(--fs-micro)/var(--lh-caption) var(--font-mono);
     color: var(--fg-secondary);
@@ -43,18 +120,30 @@
 }
 
 .info h3 {
-    margin: 0 0 6px;
+    min-width: 0;
+    margin: 0;
     font: 600 var(--fs-body)/var(--lh-ui) var(--font-body);
     overflow-wrap: anywhere;
 }
 
-.info a {
-    color: var(--fg);
-    text-decoration: none;
+.filmHeading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--gap-sm);
+    align-items: baseline;
 }
 
-.info a:hover {
-    text-decoration: underline;
+.year {
+    font-size: var(--fs-meta);
+    font-variant-numeric: tabular-nums;
+    color: var(--fg-secondary);
+    white-space: nowrap;
+}
+
+.info {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
 }
 
 .info p {
@@ -63,27 +152,42 @@
     color: var(--fg-secondary);
 }
 
+.genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0;
+    margin: 2px 0 0;
+    list-style: none;
+}
+
+.genres li {
+    padding: 2px var(--gap-xs);
+    font-size: var(--fs-caption);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+}
+
 .control {
-    grid-column: 1 / -1;
+    position: relative;
+    z-index: 1;
     min-width: 0;
-    padding-top: var(--gap-sm);
+    padding-top: var(--gap-xs);
+    pointer-events: none;
     border-top: 1px solid var(--border);
 }
 
-.submit {
-    display: grid;
-    gap: var(--gap-sm);
-    justify-items: center;
-    padding-top: var(--gap-md);
-    text-align: center;
+.control button {
+    pointer-events: auto;
 }
 
-.summary {
-    margin: 0;
-    font: 600 var(--fs-caption)/var(--lh-caption) var(--font-mono);
-    color: var(--fg-secondary);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-caps);
+.submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: var(--gap-md);
+    text-align: center;
 }
 
 .submit button[type='submit'] {
@@ -91,33 +195,29 @@
     min-height: 48px;
 }
 
-/* Small screens stack each film above its score rail, as in the prototype. */
-@media (width < 768px) {
-    .movie {
-        grid-template-columns: 1fr;
-        justify-items: center;
-        text-align: center;
-    }
+.feedback {
+    margin: var(--gap-sm) 0 0;
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+    text-align: center;
+}
 
-    .poster {
-        width: 80px;
-        height: 120px;
-    }
-
-    .control {
-        width: 100%;
-        padding-top: var(--gap-md);
-    }
+.feedback:empty {
+    display: none;
 }
 
 @media (width >= 1024px) {
     .movie {
-        grid-template-columns: auto minmax(0, 1fr) minmax(0, 56%);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 56%);
     }
 
     .control {
-        grid-column: auto;
         padding-top: 0;
         border-top: 0;
+    }
+
+    .filmHeading {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
     }
 }

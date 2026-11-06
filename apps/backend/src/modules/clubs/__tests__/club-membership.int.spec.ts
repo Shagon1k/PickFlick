@@ -7,9 +7,9 @@ import {
     createSession,
     createUser,
     type ITestApi,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 
 describe('Club membership boundaries', () => {
     let api: ITestApi;
@@ -72,15 +72,11 @@ describe('Club membership boundaries', () => {
         expect((await remove(moderator, owner.id)).status).toBe(409);
         expect((await remove(admin, owner.id)).status).toBe(409);
         expect((await remove(admin, randomUUID())).status).toBe(409);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/members/${memberId}/role`, {
-                    userId: moderator,
-                    method: 'PATCH',
-                    json: { role: 'MODERATOR' },
-                })
-            ).status,
-        ).toBe(403);
+        await api.expectStatus(403, `/clubs/${clubId}/members/${memberId}/role`, {
+            userId: moderator,
+            method: 'PATCH',
+            json: { role: 'MODERATOR' },
+        });
     });
     it('should project removable members with the same rule the removal endpoint enforces', async () => {
         const removable = async (userId: string) => {
@@ -112,10 +108,8 @@ describe('Club membership boundaries', () => {
             }),
         ).toBe(1);
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
-        expect((await api.request(`/clubs/${clubId}/hub`, { userId: member })).status).toBe(404);
-        expect((await api.request(`/clubs/${clubId}/settings`, { userId: member })).status).toBe(
-            404,
-        );
+        await api.expectStatus(404, `/clubs/${clubId}/hub`, { userId: member });
+        await api.expectStatus(404, `/clubs/${clubId}/settings`, { userId: member });
     });
     it('should resolve promotion versus removal without stale authorization or duplicate events', async () => {
         const [role, removal] = await Promise.all([
@@ -134,25 +128,17 @@ describe('Club membership boundaries', () => {
     });
     it('should allow an Admin to remove a Moderator and allow members to leave with typed confirmation', async () => {
         expect((await remove(admin, moderatorId)).status).toBe(204);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/leave`, {
-                    method: 'POST',
-                    userId: member,
-                    json: { confirmation: 'LEAVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/leave`, {
+            method: 'POST',
+            userId: member,
+            json: { confirmation: 'LEAVE' },
+        });
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/leave`, {
-                    method: 'POST',
-                    userId: admin,
-                    json: { confirmation: 'LEAVE' },
-                })
-            ).status,
-        ).toBe(409);
+        await api.expectStatus(409, `/clubs/${clubId}/leave`, {
+            method: 'POST',
+            userId: admin,
+            json: { confirmation: 'LEAVE' },
+        });
     });
     it('should preserve adminless history and disable invitations and owner actions', async () => {
         await api.prisma.membership.updateMany({
@@ -164,6 +150,7 @@ describe('Club membership boundaries', () => {
         expect(settings.access).toEqual({
             adminless: true,
             newWorkAllowed: false,
+            isAtCapacity: false,
             reasons: ['ADMINLESS'],
         });
         expect(settings.permissions).toMatchObject({
@@ -172,24 +159,16 @@ describe('Club membership boundaries', () => {
             manageRoles: false,
             manageSettings: false,
         });
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations`, {
-                    method: 'POST',
-                    userId: moderator,
-                    json: {},
-                })
-            ).status,
-        ).toBe(409);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/archive`, {
-                    method: 'POST',
-                    userId: moderator,
-                    json: { confirmation: 'ARCHIVE' },
-                })
-            ).status,
-        ).toBe(403);
+        await api.expectStatus(409, `/clubs/${clubId}/invitations`, {
+            method: 'POST',
+            userId: moderator,
+            json: {},
+        });
+        await api.expectStatus(403, `/clubs/${clubId}/archive`, {
+            method: 'POST',
+            userId: moderator,
+            json: { confirmation: 'ARCHIVE' },
+        });
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
     });
     it('should pause new work over the member limit and restore it after roster recovery', async () => {
@@ -207,15 +186,11 @@ describe('Club membership boundaries', () => {
             manageMembers: true,
             participate: true,
         });
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/invitations`, {
-                    method: 'POST',
-                    userId: admin,
-                    json: {},
-                })
-            ).status,
-        ).toBe(409);
+        await api.expectStatus(409, `/clubs/${clubId}/invitations`, {
+            method: 'POST',
+            userId: admin,
+            json: {},
+        });
         expect((await remove(admin)).status).toBe(204);
         const restored = (await (
             await api.request(`/clubs/${clubId}/settings`, { userId: admin })
@@ -225,15 +200,11 @@ describe('Club membership boundaries', () => {
     it('should reject archived removal while preserving member leave access', async () => {
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await remove(admin)).status).toBe(409);
-        expect(
-            (
-                await api.request(`/clubs/${clubId}/leave`, {
-                    method: 'POST',
-                    userId: member,
-                    json: { confirmation: 'LEAVE' },
-                })
-            ).status,
-        ).toBe(204);
+        await api.expectStatus(204, `/clubs/${clubId}/leave`, {
+            method: 'POST',
+            userId: member,
+            json: { confirmation: 'LEAVE' },
+        });
         expect(await api.prisma.session.count({ where: { clubId } })).toBe(1);
     });
 });

@@ -1,7 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
-import { settle } from './settle';
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
+import { holdRoute, settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const tokens = {
@@ -24,17 +26,19 @@ const titles = {
     invalid: 'Invitation unavailable',
     error: 'Please try again',
 };
+/** A closed link is a voided ticket stamped with the reason. */
+const stamps = {
+    expired: 'Expired',
+    revoked: 'Revoked',
+    full: 'Full',
+    paused: 'Paused',
+    invalid: 'Void',
+} as const;
 const invitationPath = (state: keyof typeof tokens = 'valid') =>
     `/invite/club/${tokens[state].repeat(43)}`;
 
 async function signIn(context: BrowserContext, name: string) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: `valid-invitation-${name}`,
-            url: 'http://127.0.0.1:41730',
-        },
-    ]);
+    await signInMock(context, `valid-invitation-${name}-${crypto.randomUUID()}`);
 }
 
 test(
@@ -80,14 +84,9 @@ test('Club invitation waits for hydration before accepting keyboard input', asyn
     page,
 }) => {
     await signIn(context, `hydration-${test.info().repeatEachIndex}-${test.info().retry}`);
-    let releaseScripts!: () => void;
-    const scriptsReady = new Promise<void>((resolve) => {
-        releaseScripts = resolve;
-    });
-    await page.route('**/_next/static/chunks/*.js', async (route) => {
-        await scriptsReady;
-        await route.continue();
-    });
+
+    // Withholding the scripts keeps the page unhydrated until the test releases them.
+    const releaseScripts = await holdRoute(page, '**/_next/static/chunks/*.js');
     await page.goto(invitationPath(), { waitUntil: 'commit' });
     const accept = page.getByRole('button', { name: 'Accept Invitation' });
     await expect(accept).toBeVisible();
@@ -106,8 +105,11 @@ test('Club invitation declines without membership and keeps network failures ret
     await page.goto(invitationPath());
     await page.context().setOffline(true);
     await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
-    await expect(page.getByRole('status')).toContainText('could not be updated');
+    await expect(page.getByRole('status')).toContainText('You appear to be offline');
     await page.context().setOffline(false);
+    await page.route('**/invite/club/**', (route) => route.abort('failed'), { times: 1 });
+    await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
+    await expect(page.getByRole('status')).toContainText('could not be updated');
     await page.getByRole('button', { name: "No thanks, I'll pass" }).click();
     await expect(page.getByRole('heading', { name: 'Invitation declined' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open Screening Room' })).toHaveCount(0);
@@ -115,7 +117,7 @@ test('Club invitation declines without membership and keeps network failures ret
     await expect(page.getByRole('heading', { name: 'Invitation declined' })).toBeVisible();
 });
 
-test('Club invitation states keep stable geometry, privacy, and accessible recovery at every width', async ({
+test('Closed Club invitation states keep the valid card geometry and stay private at every width', async ({
     context,
     page,
 }) => {
@@ -147,13 +149,15 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
             expect(box?.height, `${viewport.name} ${state}`).toBe(validBox?.height);
             expect(box?.width, `${viewport.name} ${state}`).toBe(validBox?.width);
             await expect(page.getByText('Midnight Society')).toHaveCount(0);
-            const dimensions = await page.evaluate(() => ({
-                scroll: document.documentElement.scrollWidth,
-                width: document.documentElement.clientWidth,
-            }));
-            expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width);
+            await expectNoPageOverflow(page, `${viewport.name} ${state}`);
         }
     }
+});
+
+test('Club invitation outcomes keep the card height after accepting, declining and signing out', async ({
+    context,
+    page,
+}) => {
     for (const viewport of canonicalViewports) {
         await page.setViewportSize(viewport);
         await signIn(context, `success-${viewport.name}`);
@@ -175,6 +179,9 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
         await expect(page.getByRole('heading', { name: 'Your invitation awaits' })).toBeVisible();
         expect((await card.boundingBox())?.height).toBe(original?.height);
     }
+});
+
+test('Club invitation passes axe with 44px buttons', async ({ context, page }) => {
     await signIn(context, 'accessibility');
     for (const viewport of screenshotViewports) {
         await page.setViewportSize(viewport);
@@ -190,7 +197,7 @@ test('Club invitation states keep stable geometry, privacy, and accessible recov
 test('Maximum-length Club names keep invitation geometry after acceptance and decline', async ({
     context,
     page,
-}, testInfo) => {
+}) => {
     for (const viewport of [...canonicalViewports, ...gapViewports]) {
         await page.setViewportSize(viewport);
         for (const decision of ['accept', 'decline'] as const) {
@@ -201,18 +208,10 @@ test('Maximum-length Club names keep invitation geometry after acceptance and de
             await settle(page);
             const card = page.locator('[aria-label="Club invitation"] [aria-busy]');
             const original = await card.boundingBox();
-            const dimensions = await page.evaluate(() => ({
-                scroll: document.documentElement.scrollWidth,
-                width: document.documentElement.clientWidth,
-            }));
-            expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width);
+            await expectNoPageOverflow(page);
             expect(await name.evaluate((heading) => heading.scrollWidth)).toBeGreaterThan(
                 await name.evaluate((heading) => heading.clientWidth),
             );
-            await page.screenshot({
-                path: testInfo.outputPath(`long-name-${decision}-${viewport.name}.png`),
-                fullPage: true,
-            });
             await page
                 .getByRole('button', {
                     name: decision === 'accept' ? 'Accept Invitation' : "No thanks, I'll pass",
@@ -240,19 +239,19 @@ test('Club Admin keeps a created link usable when refreshing invitations fails',
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
     await page.getByRole('button', { name: 'Invite members' }).click();
     const dialog = page.getByRole('dialog', { name: 'Invite to this Club' });
-    // Opening the dialog loads the recent invitations once.
-    await expect(dialog.getByRole('status')).toHaveText('Recent invitations loaded.');
-    await dialog.getByRole('button', { name: 'Create invitation' }).click();
+    // Opening the dialog loads the recent invitations once, then tears off a fresh link.
     const link = page.getByLabel('Invitation link');
     await expect(link).toHaveValue(/\/invite\/club\/[A-Za-z0-9_-]{43}$/);
     await expect(dialog.getByRole('status')).toContainText('Link ready. Share it with one person.');
     await expect(dialog.getByRole('status')).toContainText('could not be refreshed');
+    await dialog.getByText(/^Recent links/u).click();
     await expect(dialog.getByText(/latest link/u)).toBeVisible();
     // Closing and reopening keeps the created link.
     const original = await link.inputValue();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Invite members' }).click();
     await expect(link).toHaveValue(original);
+    await dialog.getByText(/^Recent links/u).click();
     await dialog.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(link).toHaveCount(0);
 });
@@ -264,12 +263,15 @@ test('Club Admin creates, copies, and revokes a link through Manage Club', async
     await signIn(context, 'manager');
     await page.goto('/clubs/10000000-0000-4000-8000-000000000031/settings');
     await page.getByRole('button', { name: 'Invite members' }).click();
-    await page.getByRole('button', { name: 'Create invitation' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveValue(
         /\/invite\/club\/[A-Za-z0-9_-]{43}$/,
     );
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.getByRole('button', { name: 'Copy link' }).click();
-    await expect(page.getByRole('status').last()).toHaveText(/copied|Copy is unavailable/);
+    await expect(page.getByRole('status').last()).toHaveText('Link copied.');
+    const link = await page.getByLabel('Invitation link').inputValue();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
+    await page.getByText(/^Recent links/u).click();
     await page.getByRole('button', { name: 'Revoke current link' }).click();
     await expect(page.getByLabel('Invitation link')).toHaveCount(0);
     await expect(page.getByRole('status').last()).toHaveText('Invitation revoked.');
@@ -292,16 +294,10 @@ for (const viewport of screenshotViewports) {
             { tag: '@visual' },
             async ({ context, page }) => {
                 await page.setViewportSize(viewport);
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value:
-                            state === 'sign-in'
-                                ? 'forged'
-                                : `valid-visual-${state}-${viewport.name}`,
-                        url: 'http://127.0.0.1:41730',
-                    },
-                ]);
+                await signInMock(
+                    context,
+                    state === 'sign-in' ? 'forged' : `valid-visual-${state}-${viewport.name}`,
+                );
                 await page.goto(invitationPath(state === 'sign-in' ? 'valid' : state), {
                     waitUntil: 'load',
                 });
@@ -313,7 +309,7 @@ for (const viewport of screenshotViewports) {
                 await settle(page);
                 await expect(page).toHaveScreenshot(
                     `club-invitation-${state}-${viewport.name}.png`,
-                    { fullPage: true, scale: 'css' },
+                    { fullPage: true },
                 );
             },
         );
@@ -342,9 +338,20 @@ for (const viewport of screenshotViewports) {
                 await settle(page);
                 await expect(page).toHaveScreenshot(
                     `club-invitation-${decision}-${viewport.name}.png`,
-                    { fullPage: true, scale: 'css' },
+                    { fullPage: true },
                 );
             },
         );
     }
 }
+
+test('Closed Club invitations show a voided ticket stamped with the reason', async ({
+    context,
+    page,
+}) => {
+    await signIn(context, 'stamps');
+    for (const [state, stamp] of Object.entries(stamps)) {
+        await page.goto(invitationPath(state as keyof typeof stamps));
+        await expect(page.getByText(stamp, { exact: true })).toBeVisible();
+    }
+});

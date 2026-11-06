@@ -15,7 +15,6 @@ export async function readAchievementSessions(
             phase: true,
             scheduledAt: true,
             selectionResult: true,
-            showRatingResults: true,
             club: {
                 select: {
                     memberships: {
@@ -24,7 +23,6 @@ export async function readAchievementSessions(
                             userId: true,
                             joinedAt: true,
                             leftAt: true,
-                            role: true,
                             status: true,
                         },
                     },
@@ -78,3 +76,11 @@ export async function readAchievementSessions(
 }
 
 export type TAchievementSession = Awaited<ReturnType<typeof readAchievementSessions>>[number];
+
+/** Log a Past Session records attendance; everyone accepted into a live Session attended it. */
+export function hasAttended(
+    session: TAchievementSession,
+    participant: TAchievementSession['participants'][number],
+) {
+    return participant.attended ?? (session.type !== 'PAST' && participant.status === 'ACCEPTED');
+}

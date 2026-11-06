@@ -1,7 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
+
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Skeleton from '#components/ui/Skeleton/Skeleton';
 
 import styles from './SearchPoster.module.scss';
 
@@ -11,27 +14,34 @@ const POSTER_HEIGHT = 54;
 export default function SearchPoster({
     url,
     className,
+    withColorReveal = false,
+    isLoading = false,
 }: {
     url: string | null;
     className?: string;
+    withColorReveal?: boolean;
+    isLoading?: boolean;
 }) {
     const [failedUrl, setFailedUrl] = useState<string | null>(null);
+    const image =
+        url && failedUrl !== url ? (
+            <Image
+                src={url}
+                alt=""
+                width={POSTER_WIDTH}
+                height={POSTER_HEIGHT}
+                loading="lazy"
+                unoptimized
+                className={styles.image}
+                onError={() => setFailedUrl(url)}
+            />
+        ) : null;
+    let content: ReactNode = 'PF';
+    if (image) content = withColorReveal ? <ColorReveal shouldFill>{image}</ColorReveal> : image;
+    if (isLoading) content = <Skeleton shouldFill />;
     return (
         <span aria-hidden="true" className={className}>
-            {url && failedUrl !== url ? (
-                <Image
-                    src={url}
-                    alt=""
-                    width={POSTER_WIDTH}
-                    height={POSTER_HEIGHT}
-                    loading="lazy"
-                    unoptimized
-                    className={styles.image}
-                    onError={() => setFailedUrl(url)}
-                />
-            ) : (
-                'PF'
-            )}
+            {content}
         </span>
     );
 }

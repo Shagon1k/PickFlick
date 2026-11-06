@@ -1,5 +1,6 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
@@ -7,16 +8,7 @@ const publicRoutes = ['/', '/pricing', '/contact', '/legal/privacy', '/login', '
 const signedInRoutes = ['/app', '/clubs/new', `/clubs/${CLUB_ID}/settings`];
 
 async function authenticate(context: BrowserContext) {
-    await context.addCookies([
-        {
-            name: 'pickflick.session_token',
-            value: 'valid-settings-admin-actions',
-            domain: '127.0.0.1',
-            path: '/',
-            httpOnly: true,
-            sameSite: 'Lax',
-        },
-    ]);
+    await signInMock(context, 'valid-settings-admin-actions');
 }
 
 test.beforeEach(async ({ page }) => {

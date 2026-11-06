@@ -13,7 +13,6 @@ export function buildHubProjection(
             permissions: projection.permissions,
             memberCount: 1,
             sessionCount: 0,
-            completedSessionCount: 0,
             memberLimit: 8,
             members: projection.members,
             statistics: {
@@ -28,9 +27,9 @@ export function buildHubProjection(
             recentSessions: [],
             ratingSessions: [],
             historySessions: [],
+            historyNextCursor: null,
         };
     }
-    if (token?.includes('ratings-pro')) club = { ...club, tier: 'PRO' };
     const isSecondClub = club.id === SECOND_CLUB_ID;
     const session: IClubHubSession = {
         id: isSecondClub
@@ -58,7 +57,6 @@ export function buildHubProjection(
         permissions: projection.permissions,
         memberCount: isSecondClub ? 4 : 2,
         sessionCount,
-        completedSessionCount: isSecondClub ? 3 : 0,
         memberLimit: 8,
         members: projection.members,
         statistics: {
@@ -74,6 +72,7 @@ export function buildHubProjection(
         recentSessions: [session],
         ratingSessions: buildRatingSessions(session, token),
         historySessions: buildHistorySessions(session, token),
+        historyNextCursor: null,
     };
 }
 
@@ -135,7 +134,7 @@ function buildHistorySessions(
             id: '30000000-0000-4000-8000-000000000050',
             phase: 'COMPLETED',
             topic: 'A completed screening',
-            ratingAverage: token.includes('hidden') ? null : 8,
+            ratingAverage: 8,
         },
         {
             ...session,

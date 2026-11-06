@@ -108,7 +108,7 @@ flowchart LR
 
 ## The frontend side
 
-- `src/api/session.server.ts` asks the backend for the session and returns `authenticated`,
+- `src/api/auth-session.server.ts` asks the backend for the session and returns `authenticated`,
   `anonymous`, or `unavailable`. `unavailable` (timeout, rate limit, outage) is never treated as
   signed out: pages show a retry state instead of silently logging the person out.
 - `src/lib/auth-client.ts` holds the Better Auth client and `startSocialSignIn`, which starts sign-in in the browser.

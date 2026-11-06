@@ -39,10 +39,7 @@ for (const profile of screenshotViewports) {
         await openStablePreview(page, profile);
 
         await expect(page).toHaveScreenshot(`ui-preview-${profile.name}.png`, {
-            animations: 'disabled',
-            caret: 'hide',
             fullPage: true,
-            scale: 'css',
         });
     });
 }

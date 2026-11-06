@@ -2,20 +2,17 @@
 
 import type { TWatchlistItem, TWatchlistPriority } from '@pickflick/contracts';
 import clsx from 'clsx';
-import { useId, useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState } from 'react';
 
+import { WATCHLIST_PRIORITIES } from '#components/movies/watchlist-priority';
+import Icon from '#components/ui/Icon/Icon';
 import Popover from '#components/ui/Popover/Popover';
-import { getOfflineMessage } from '#lib/offline';
+import { useActionStatus } from '#lib/use-action-status';
 
 import { setWatchlistAction } from './actions';
 import styles from './WatchlistBookmark.module.scss';
 
 const RIBBON = 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z';
-const PRIORITIES: { value: TWatchlistPriority; label: string }[] = [
-    { value: 'LOW', label: 'Low' },
-    { value: 'MEDIUM', label: 'Medium' },
-    { value: 'HIGH', label: 'High' },
-];
 
 interface IWatchlistBookmarkProps {
     movieId: string;
@@ -33,37 +30,33 @@ export default function WatchlistBookmark({
     const id = useId();
     const feedbackRef = useRef<HTMLParagraphElement>(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [isPending, startTransition] = useTransition();
-    const [message, setMessage] = useState('');
+    const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
     const label = item ? 'Edit watchlist priority' : 'Add to watchlist';
+    const priorityLabel =
+        WATCHLIST_PRIORITIES.find((priority) => priority.value === item?.priority)?.label ?? 'Save';
 
-    function handleSave(priority: TWatchlistPriority | null, shouldClose = true) {
-        const offline = getOfflineMessage();
-        if (offline) {
-            setMessage(offline);
-            return;
-        }
-        setMessage('Updating your Watchlist…');
-        startTransition(async () => {
-            const result = await setWatchlistAction(movieId, priority).catch(() => ({
-                ok: false as const,
-                message: 'We could not reach PickFlick. Try again.',
-            }));
-            if (result.ok) {
-                setMessage(priority ? 'Watchlist saved.' : 'Removed from Watchlist.');
+    function save(priority: TWatchlistPriority | null, { shouldClose = true } = {}) {
+        run(() => setWatchlistAction(movieId, priority), {
+            pendingMessage: 'Updating your Watchlist…',
+            onResult: (result) => {
+                if (!result.ok) {
+                    setMessage(result.message);
+                    feedbackRef.current?.focus();
+                    return;
+                }
+                const savedMessage = priority ? 'Watchlist saved.' : 'Removed from Watchlist.';
+                announceSuccess(savedMessage);
                 if (shouldClose) setIsOpen(false);
-                onSaved?.(priority ? 'Watchlist saved.' : 'Removed from Watchlist.');
-            } else {
-                setMessage(result.message);
-                feedbackRef.current?.focus();
-            }
+                onSaved?.(savedMessage);
+            },
         });
     }
 
     function handleOpen() {
         if (isPending) return;
         setIsOpen(!isOpen);
-        if (!isOpen && !item) handleSave('MEDIUM', false);
+        // Opening an empty bookmark adds the film at once and keeps the priority choices open.
+        if (!isOpen && !item) save('MEDIUM', { shouldClose: false });
     }
 
     return (
@@ -76,7 +69,7 @@ export default function WatchlistBookmark({
                 onChange={setIsOpen}
                 trigger={
                     <button
-                        aria-label={label}
+                        aria-label={variant === 'table' ? `${label}: ${priorityLabel}` : label}
                         aria-pressed={Boolean(item)}
                         aria-busy={isPending || undefined}
                         aria-disabled={isPending}
@@ -89,42 +82,55 @@ export default function WatchlistBookmark({
                         type="button"
                     >
                         {variant === 'poster' ? (
-                            <svg aria-hidden="true" viewBox="0 0 24 24">
-                                <path className={styles.halo} d={RIBBON} />
-                                <path d={RIBBON} />
-                            </svg>
+                            <span className={styles.bookmarkIcon} data-press-surface>
+                                <svg aria-hidden="true" viewBox="0 0 24 24">
+                                    <path className={styles.halo} d={RIBBON} />
+                                    <path d={RIBBON} />
+                                </svg>
+                            </span>
                         ) : (
-                            (PRIORITIES.find((priority) => priority.value === item?.priority)
-                                ?.label ?? 'Save')
+                            <>
+                                <span data-press-surface>{priorityLabel}</span>
+                                <Icon name="chevron-down" />
+                            </>
                         )}
                     </button>
                 }
             >
                 <div className={styles.editor}>
-                    <strong>Watchlist priority</strong>
-                    {PRIORITIES.map((priority) => (
-                        <button
-                            key={priority.value}
-                            type="button"
-                            aria-pressed={item?.priority === priority.value}
-                            disabled={isPending}
-                            onClick={() => handleSave(priority.value)}
-                        >
-                            {priority.label}
-                            <span aria-hidden="true" />
-                        </button>
-                    ))}
+                    <div className={styles.levels} role="group" aria-label="Watchlist priority">
+                        {WATCHLIST_PRIORITIES.map((priority) => (
+                            <button
+                                key={priority.value}
+                                type="button"
+                                aria-pressed={item?.priority === priority.value}
+                                disabled={isPending}
+                                onClick={() => save(priority.value)}
+                            >
+                                {priority.label}
+                            </button>
+                        ))}
+                    </div>
                     {item ? (
                         <button
                             type="button"
+                            aria-label="Remove from watchlist"
                             className={styles.remove}
                             disabled={isPending}
-                            onClick={() => handleSave(null)}
+                            onClick={() => save(null)}
                         >
-                            Remove from watchlist
+                            <Icon name="close" />
                         </button>
                     ) : null}
-                    <p role="status" ref={feedbackRef} tabIndex={-1}>
+                    {/* The filled bookmark shows a save; only failures need visible text. */}
+                    <p
+                        className={
+                            isPending || isSuccess || !message ? 'visually-hidden' : undefined
+                        }
+                        role="status"
+                        ref={feedbackRef}
+                        tabIndex={-1}
+                    >
                         {message}
                     </p>
                 </div>

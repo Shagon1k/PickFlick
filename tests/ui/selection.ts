@@ -24,7 +24,7 @@ function buildSelection(token: string, ballot: TSubmitSelection | null): TSelect
         scaleMax: token.includes('maximum') ? 10 : 3,
         acceptedCount: 3,
         submittedCount: ballot ? 2 : 1,
-        canSubmit: !ballot && !token.includes('readonly'),
+        canSubmit: !ballot && !/readonly|removed|unjoined/u.test(token),
         submittedAt: ballot ? '2026-10-14T12:00:00.000Z' : null,
         nominations: token.includes('empty')
             ? []
@@ -64,13 +64,13 @@ export function handleSelection(
     if (pathname.endsWith('/roster')) {
         const roster: ISessionRoster = {
             progressVersion: version,
+            memberCount: 4,
             acceptedCount: 3,
-            canJoin: false,
-            canInvite: false,
+            canJoin: token.includes('unjoined'),
+            isRemoved: token.includes('removed'),
             canManage: false,
             canLeave: false,
             participants: [],
-            eligibleMembers: [],
         };
         sendJson(response, 200, roster);
         return true;
@@ -119,9 +119,10 @@ export function handleSelection(
         nominations: null,
         selection: isClosed ? null : buildSelection(token, ballot),
         selectionOutcome: isClosed ? buildOutcome(token) : null,
+        selectionScores: null,
+        nominationAuthors: null,
         rating: null,
-        canEdit: token.includes('operator'),
-        canCancel: false,
+        canManage: token.includes('operator'),
     };
     sendJson(response, 200, detail);
     return true;

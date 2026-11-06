@@ -4,47 +4,63 @@ import {
     TextInput as MantineTextInput,
     type TextInputProps as IMantineTextInputProps,
 } from '@mantine/core';
+import clsx from 'clsx';
+import type { ReactNode } from 'react';
 
 import styles from '#components/ui/Field/Field.module.scss';
-import { getFieldState, type IFieldProps } from '#components/ui/Field/field.types';
-import FieldAnnouncements from '#components/ui/Field/FieldAnnouncements';
-import FieldLabel from '#components/ui/Field/FieldLabel';
-import FieldMessage from '#components/ui/Field/FieldMessage';
+import type { IFieldProps } from '#components/ui/Field/field.types';
+import { FIELD_CLASS_NAMES, getFieldProps } from '#components/ui/Field/field-props';
 import type { TOmitStyling } from '#components/ui/types';
 
 export interface ITextInputProps
-    extends IFieldProps, TOmitStyling<IMantineTextInputProps, keyof IFieldProps | 'description'> {}
+    extends IFieldProps, TOmitStyling<IMantineTextInputProps, keyof IFieldProps | 'description'> {
+    /** Suggestions anchored to the control, above the field's help/error row. */
+    dropdown?: ReactNode;
+    shouldReserveMessage?: boolean;
+    variant?: 'default' | 'selected';
+    isLoading?: boolean;
+}
 
 export default function TextInput({
     error,
     hint,
+    isLabelHidden,
     label,
     labelHint,
     success,
+    dropdown,
+    shouldReserveMessage,
+    rightSection,
+    variant = 'default',
+    isLoading = false,
     ...props
 }: ITextInputProps) {
     return (
         <MantineTextInput
             {...props}
+            disabled={props.disabled || isLoading}
+            rightSection={rightSection}
+            {...getFieldProps({
+                error,
+                hint,
+                isLabelHidden,
+                label,
+                labelHint,
+                success,
+                dropdown,
+                shouldReserveMessage,
+                isLoading,
+            })}
             classNames={{
-                root: styles.field,
-                label: styles.field__label,
-                input: styles.control,
-                description: styles.field__description,
+                ...FIELD_CLASS_NAMES,
+                wrapper: styles['field__control-wrapper'],
+                section: styles.field__section,
+                input: clsx(
+                    styles.control,
+                    rightSection && styles['m-end-action'],
+                    variant === 'selected' && styles['m-selected'],
+                ),
             }}
-            data-state={getFieldState(error, success)}
-            description={<FieldMessage error={error} hint={hint} success={success} />}
-            error={Boolean(error)}
-            inputContainer={(input) => (
-                <>
-                    {input}
-                    <FieldAnnouncements error={error} success={success} />
-                </>
-            )}
-            inputWrapperOrder={['label', 'input', 'description']}
-            label={<FieldLabel hint={labelHint} label={label} />}
-            unstyled
-            withAsterisk={false}
         />
     );
 }

@@ -1,19 +1,34 @@
 'use client';
 
 import { resolveAuthReturnTarget, type TInvitationPreview } from '@pickflick/contracts';
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 
+import styles from '#app/(auth)/invite/invite.module.scss';
 import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import Icon from '#components/ui/Icon/Icon';
 import { formatCount } from '#lib/format';
+import { useActionStatus } from '#lib/use-action-status';
+import { useIsHydrated } from '#lib/use-is-hydrated';
 
 import { respondInvitationAction } from '../../actions';
-import styles from '../../page.module.scss';
+
+const RESPONSE_FAILURE = 'The invitation could not be updated. Check your connection and retry.';
 
 type TView = TInvitationPreview | { state: 'sign-in' | 'error' | 'loading' };
+/** A closed link shows as a voided ticket; the stamp names why, never which Club. */
+const STAMPS: Partial<Record<TView['state'], string>> = {
+    invalid: 'Void',
+    used: 'Used',
+    expired: 'Expired',
+    revoked: 'Revoked',
+    'over-limit': 'Full',
+    unavailable: 'Paused',
+    declined: 'Declined',
+};
 const messages = {
     invalid: ['Invitation unavailable', 'Ask the Club Admin for a new invitation.'],
+    used: ['Invitation used', 'Someone already used this link. Ask the Club Admin for a new one.'],
     expired: ['Invitation expired', 'This link has expired. Ask the Club Admin for a new one.'],
     revoked: [
         'Invitation revoked',
@@ -45,34 +60,22 @@ const messages = {
     'already-member': ['You are already a member', 'Open your Club to continue.'],
 } as const;
 
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
-
 export default function Invitation({ initial, token }: { initial: TView; token: string }) {
     const [view, setView] = useState(initial);
-    const [isPending, setIsPending] = useState(false);
     // Server-rendered buttons must wait until their decision handlers are attached.
-    const isReady = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
-    const [failure, setFailure] = useState('');
+    const isReady = useIsHydrated();
+    const { message: failure, setMessage, isPending, run } = useActionStatus();
     const [title, description] = messages[view.state];
     const returnTo = encodeURIComponent(resolveAuthReturnTarget(`/invite/club/${token}`));
 
-    async function respond(decision: 'accept' | 'decline') {
-        setIsPending(true);
-        setFailure('');
-        try {
-            const next = await respondInvitationAction({ token, decision });
-            if (next.state === 'error') {
-                setFailure('The invitation could not be updated. Check your connection and retry.');
-            } else {
-                setView(next);
-            }
-        } catch {
-            setFailure('The invitation could not be updated. Check your connection and retry.');
-        } finally {
-            setIsPending(false);
-        }
+    function respond(decision: 'accept' | 'decline') {
+        run(() => respondInvitationAction({ token, decision }), {
+            unreachableMessage: RESPONSE_FAILURE,
+            onResult: (next) => {
+                if ('ok' in next || next.state === 'error') setMessage(RESPONSE_FAILURE);
+                else setView(next);
+            },
+        });
     }
 
     return (
@@ -83,26 +86,8 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                     {failure || description}
                 </p>
             </div>
-            <div className={styles.preview}>
-                {view.state === 'valid' ? (
-                    <>
-                        <h2>{view.clubName}</h2>
-                        <p className={styles.previewMeta}>
-                            <Icon name="members" />
-                            {formatCount(view.memberCount, 'member')}
-                        </p>
-                        <p className={styles.previewMeta}>
-                            <Icon name="profile" />
-                            <span>
-                                Invited by <strong>{view.inviterName}</strong>
-                            </span>
-                        </p>
-                    </>
-                ) : (
-                    <p>
-                        {view.state === 'loading' ? 'Please wait.' : 'Your choice stays private.'}
-                    </p>
-                )}
+            <div className={styles.preview} data-voided={STAMPS[view.state] ? true : undefined}>
+                <PreviewContent view={view} />
             </div>
             <div className={styles.actions}>
                 {view.state === 'valid' ? (
@@ -143,11 +128,39 @@ export default function Invitation({ initial, token }: { initial: TView; token: 
                     </Button>
                 ) : null}
                 {!['valid', 'loading'].includes(view.state) ? (
-                    <ButtonLink href="/app" variant="ghost">
+                    <ButtonLink href="/app" variant={STAMPS[view.state] ? 'secondary' : 'ghost'}>
                         Back to your Clubs
                     </ButtonLink>
                 ) : null}
             </div>
         </div>
+    );
+}
+
+function PreviewContent({ view }: { view: TView }) {
+    const stamp = STAMPS[view.state];
+    if (stamp)
+        return (
+            <>
+                <span className={styles.voidKicker}>Club invitation</span>
+                <span className={styles.stamp}>{stamp}</span>
+            </>
+        );
+    if (view.state !== 'valid')
+        return <p>{view.state === 'loading' ? 'Please wait.' : 'Your choice stays private.'}</p>;
+    return (
+        <>
+            <h2>{view.clubName}</h2>
+            <p className={styles.previewMeta}>
+                <Icon name="members" />
+                {formatCount(view.memberCount, 'member')}
+            </p>
+            <p className={styles.previewMeta}>
+                <Icon name="profile" />
+                <span>
+                    Invited by <strong>{view.inviterName}</strong>
+                </span>
+            </p>
+        </>
     );
 }

@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
+import { signInMock } from './mock-session';
 import { settle } from './settle';
 
 for (const width of [390, 768, 1024, 1440]) {
@@ -13,14 +15,7 @@ for (const width of [390, 768, 1024, 1440]) {
                 hasTouch: true,
             });
             try {
-                await context.addCookies([
-                    {
-                        name: 'pickflick.session_token',
-                        value: `valid-library-stats-final-${width}`,
-                        domain: '127.0.0.1',
-                        path: '/',
-                    },
-                ]);
+                await signInMock(context, `valid-library-stats-final-${width}`);
                 const page = await context.newPage();
                 await page.goto('/library?q=Grand&score=8');
                 const statistics = page.getByRole('region', {
@@ -29,14 +24,12 @@ for (const width of [390, 768, 1024, 1440]) {
                 });
                 await expect(statistics.locator('dt')).toHaveCount(8);
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
-                await expect(statistics.locator('dd').nth(2)).toHaveText('8');
+                await expect(statistics.locator('dd').nth(2)).toHaveText('8.0');
                 await expect(
                     statistics.getByText('DirectorWithAVeryLongUnbrokenName'.repeat(4)),
                 ).toBeVisible();
                 await settle(page);
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
+                await expectNoPageOverflow(page);
                 expect(
                     await statistics
                         .locator('dd[data-text]')
@@ -52,25 +45,25 @@ for (const width of [390, 768, 1024, 1440]) {
                     );
                 expect(columns).toBe(width < 1024 ? 2 : 4);
                 expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-                await page.screenshot({
-                    path: `test-results/library-statistics-${width}.png`,
-                    fullPage: true,
-                });
                 await page.goto('/library?tab=watchlist');
                 await expect(page).toHaveURL(/tab=watchlist/u);
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
                 await page.reload();
                 await expect(statistics.locator('dd').nth(0)).toHaveText('28');
                 await page.goto('/library');
-                await page.getByLabel('Search rated films').fill('Grand');
-                await page.getByRole('button', { name: 'Apply', exact: true }).click();
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .fill('Grand');
+                await page
+                    .getByRole('searchbox', { name: 'Search rated films…', exact: true })
+                    .press('Enter');
+                await expect(page).toHaveURL(/q=Grand/u);
                 await page
                     .getByRole('button', { name: 'Your rating: 8 out of 10. Edit rating' })
                     .focus();
                 await page.keyboard.press('Enter');
                 const dialog = page.getByRole('dialog');
                 await dialog.getByRole('radio', { name: '10 of 10', exact: true }).check();
-                await dialog.getByRole('button', { name: 'Save rating', exact: true }).tap();
                 await expect(dialog).toHaveCount(0);
                 await expect(statistics.locator('dd').nth(2)).toHaveText('8.1');
             } finally {
@@ -84,28 +77,22 @@ test(
     'Personal statistics timeouts preserve the Library table and filters',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-library-statistics-timeout',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-library-statistics-timeout');
         await page.goto('/library?q=Grand&score=8');
         await expect(
             page.getByRole('region', { name: 'Personal statistics unavailable' }),
         ).toBeVisible();
         await expect(
             page.getByRole('link', { name: 'Retry statistics', exact: true }),
-        ).toHaveAttribute(
-            'href',
-            '/library?tab=my-ratings&q=Grand&score=8&priority=&sort=default&page=1',
-        );
+        ).toHaveAttribute('href', '/library?tab=my-ratings&sort=default&page=1&q=Grand&score=8');
         await expect(page.getByRole('table')).toBeVisible();
         await expect(page.getByRole('row')).toHaveCount(2);
-        await expect(page.getByLabel('Search rated films')).toHaveValue('Grand');
-        await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeEnabled();
+        await expect(
+            page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
+        ).toHaveValue('Grand');
+        await expect(
+            page.getByRole('searchbox', { name: 'Search rated films…', exact: true }),
+        ).toBeEnabled();
     },
 );
 
@@ -113,19 +100,18 @@ test(
     'Personal statistics show empty values and recover from read failure',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        const cookie = { name: 'pickflick.session_token', domain: '127.0.0.1', path: '/' };
-        await context.addCookies([{ ...cookie, value: 'valid-empty-statistics' }]);
+        await signInMock(context, 'valid-empty-statistics');
         await page.goto('/library');
         const statistics = page.getByRole('region', { name: 'Personal statistics', exact: true });
         await expect(statistics.locator('dd')).toHaveText(['0', '0', '—', '0', '0', '—', '—', '—']);
         await expect(statistics.getByText(/Rate a film to start/u)).toBeVisible();
-        await context.addCookies([{ ...cookie, value: 'valid-library-unavailable' }]);
+        await signInMock(context, 'valid-library-unavailable');
         await page.reload();
         await expect(
             page.getByRole('region', { name: 'Personal statistics unavailable' }),
         ).toBeVisible();
         await expect(statistics).toHaveCount(0);
-        await context.addCookies([{ ...cookie, value: 'valid-empty-statistics-recovered' }]);
+        await signInMock(context, 'valid-empty-statistics-recovered');
         await page.getByRole('link', { name: 'Retry statistics', exact: true }).click();
         await expect(statistics.locator('dd').first()).toHaveText('0');
     },
@@ -135,14 +121,7 @@ test(
     'Library starts statistics and tab content concurrently',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-parallel-library',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-parallel-library');
         await page.goto('/library');
         await expect(
             page.getByRole('region', { name: 'Personal statistics', exact: true }),
@@ -155,14 +134,7 @@ test(
     'Library table timeouts preserve statistics and show the existing recovery state',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await context.addCookies([
-            {
-                name: 'pickflick.session_token',
-                value: 'valid-library-table-timeout',
-                domain: '127.0.0.1',
-                path: '/',
-            },
-        ]);
+        await signInMock(context, 'valid-library-table-timeout');
         await page.goto('/library?q=Grand&score=8');
         await expect(
             page.getByRole('region', { name: 'Personal statistics', exact: true }),
@@ -170,7 +142,7 @@ test(
         await expect(page.getByRole('region', { name: 'My Ratings unavailable' })).toBeVisible();
         await expect(page.getByRole('link', { name: 'Try again', exact: true })).toHaveAttribute(
             'href',
-            '/library?tab=my-ratings&q=Grand&score=8&priority=&sort=default&page=1',
+            '/library?tab=my-ratings&sort=default&page=1&q=Grand&score=8',
         );
     },
 );

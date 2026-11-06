@@ -1,0 +1,36 @@
+.form {
+    display: grid;
+    gap: var(--gap-md);
+    width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
+    text-align: start;
+}
+
+.submitRow {
+    display: flex;
+    gap: var(--gap-md);
+    align-items: center;
+    justify-content: center;
+}
+
+/* Balance the InfoTip's visible width so the button remains centered in the card. */
+.submitRow::before {
+    flex: 0 0 18px;
+    content: '';
+}
+
+.submitButton {
+    flex: 0 1 250px;
+    min-width: 0;
+}
+
+.status {
+    margin: var(--gap-sm) 0 0;
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.status:empty {
+    margin: 0;
+}

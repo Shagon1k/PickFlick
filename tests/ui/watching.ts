@@ -41,12 +41,12 @@ export function handleWatching(
     } else if (pathname.endsWith('/roster')) {
         const roster: ISessionRoster = {
             progressVersion: version,
+            memberCount: 3,
             acceptedCount: 1,
             canJoin: false,
+            isRemoved: false,
             canLeave: true,
             canManage,
-            canInvite: canManage,
-            eligibleMembers: [],
             participants: [
                 {
                     id: '40000000-0000-4000-8000-000000000049',
@@ -54,7 +54,6 @@ export function handleWatching(
                     displayName: 'Jordan Member',
                     status: 'ACCEPTED',
                     canRemove: canManage,
-                    invitation: null,
                 },
             ],
         };
@@ -75,11 +74,12 @@ export function handleWatching(
             version,
             phaseVersion: version,
             progressVersion: version,
-            canEdit: canManage,
-            canCancel: canManage,
+            canManage,
             nominations: null,
             selection: null,
             selectionOutcome: null,
+            selectionScores: null,
+            nominationAuthors: null,
             rating: null,
         };
         sendJson(response, 200, session);

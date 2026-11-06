@@ -5,8 +5,11 @@ import Link from 'next/link';
 import choosingPanda from '#brand/panda-choosing.webp';
 import projectionistPanda from '#brand/panda-projectionist.webp';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
+import { getProgressTotal } from '#components/sessions/club-session-text';
 import ButtonLink from '#components/ui/Button/ButtonLink';
-import { formatCount, formatRuntime } from '#lib/format';
+import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import Icon from '#components/ui/Icon/Icon';
+import { formatCalendarDate, formatCount, formatRuntime, toScreeningTime } from '#lib/format';
 
 import styles from './CallSheet.module.scss';
 
@@ -21,33 +24,33 @@ export default function CallSheet({
     scheduleHref?: string;
 }) {
     if (!session) return <EmptyCallSheet scheduleHref={scheduleHref} />;
-    const scheduled = session.scheduledAt ? new Date(session.scheduledAt) : null;
-    const unit = scheduled
-        ? new Intl.DateTimeFormat('en', { weekday: 'long', timeZone: 'UTC' }).format(scheduled)
-        : 'Screening';
+    const scheduled = session.scheduledAt;
+    const unit = scheduled ? formatCalendarDate(scheduled, { weekday: 'long' }) : 'Screening';
     const date = scheduled
-        ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
-              scheduled,
-          )
+        ? formatCalendarDate(scheduled, { month: 'short', day: 'numeric' })
         : '—';
-    // Sessions store a date at midnight UTC; only a real time earns the Call time slot.
-    const hasTime = scheduled !== null && scheduled.getUTCHours() + scheduled.getUTCMinutes() > 0;
-    const time = hasTime
-        ? new Intl.DateTimeFormat('en', { timeStyle: 'short', timeZone: 'UTC' }).format(scheduled)
-        : null;
+    // A date-only Session has no time, so it shows its location in the Call time slot instead.
+    const time =
+        scheduled && toScreeningTime(scheduled)
+            ? formatCalendarDate(scheduled, { timeStyle: 'short' })
+            : null;
     const hasSelectedFilm = isFilmSessionPhase(session.phase);
     const title = hasSelectedFilm
         ? (session.movie?.title ?? session.topic ?? 'Film unavailable')
         : (session.topic ?? 'Untitled Session');
-    const fields = getPhaseFields(session, hasSelectedFilm);
+    const fields = getPhaseFields(session, hasSelectedFilm, memberCount);
     return (
         <Link
             className={styles.sheet}
+            data-color-reveal-trigger
+            data-color-reveal-surface
             href={`/sessions/${session.id}`}
             prefetch={false}
             aria-label={`Open Session: ${title}`}
         >
+            <ColorReveal variant="surface" />
             <header className={styles.head}>
+                <ColorReveal variant="outline" />
                 <span>Call sheet {String(session.ordinal).padStart(CALL_SHEET_DIGITS, '0')}</span>
                 <div className={styles.headMeta}>
                     <span className={styles.unit}>{unit} unit</span>
@@ -60,43 +63,44 @@ export default function CallSheet({
             </header>
             <div className={styles.layout}>
                 <dl className={styles.fields}>
-                    <div className={styles.picture}>
-                        <dt>{hasSelectedFilm ? 'Picture' : 'Session'}</dt>
-                        <dd>{title}</dd>
-                    </div>
+                    <Field
+                        className={styles.picture}
+                        label={hasSelectedFilm ? 'Picture' : 'Session'}
+                        value={title}
+                    />
                     {time ? (
-                        <div>
-                            <dt>Call time</dt>
-                            <dd title="Scheduled time in UTC">{time}</dd>
-                        </div>
+                        <Field label="Call time" value={time} />
                     ) : (
-                        <div className={styles.location}>
-                            <dt>Location</dt>
-                            <dd title={session.location ?? undefined}>{session.location ?? '—'}</dd>
-                        </div>
+                        <Field
+                            className={styles.location}
+                            label="Location"
+                            value={session.location ?? '—'}
+                            title={session.location ?? undefined}
+                        />
                     )}
-                    <div>
-                        <dt>Date</dt>
-                        <dd>{date}</dd>
-                    </div>
+                    <Field label="Date" value={date} />
                     {fields.map((field) => (
-                        <div key={field.label}>
-                            <dt>{field.label}</dt>
-                            <dd>{field.value}</dd>
-                        </div>
+                        <Field key={field.label} label={field.label} value={field.value} />
                     ))}
                 </dl>
                 <figure className={styles.still}>
+                    <ColorReveal variant="outline" />
                     <div className={styles.frameMeta}>
                         <span>{hasSelectedFilm ? 'Selected film' : 'Film selection'}</span>
                         <span>{formatCount(session.nominatedCount, 'nomination')}</span>
                     </div>
                     {session.movie ? (
-                        <SearchPoster className={styles.image} url={session.movie.posterUrl} />
+                        <SearchPoster
+                            className={styles.image}
+                            url={session.movie.posterUrl}
+                            withColorReveal
+                        />
                     ) : (
                         // The picture is still being chosen; nominations stay behind Club visibility rules.
                         <span className={styles.image} aria-hidden="true">
-                            <Image className={styles.mascot} src={choosingPanda} alt="" />
+                            <ColorReveal shouldFill>
+                                <Image className={styles.mascot} src={choosingPanda} alt="" />
+                            </ColorReveal>
                         </span>
                     )}
                     <figcaption className={styles.frameMeta}>
@@ -112,8 +116,16 @@ export default function CallSheet({
 /** The same sheet waits for the next screening instead of collapsing into a note. */
 function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
     return (
-        <section className={styles.sheet} aria-label="Screening Call Sheet" data-empty>
+        <section
+            className={styles.sheet}
+            aria-label="Screening Call Sheet"
+            data-empty
+            data-color-reveal-trigger
+            data-color-reveal-surface
+        >
+            <ColorReveal variant="surface" />
             <header className={styles.head}>
+                <ColorReveal variant="outline" />
                 <span>Call sheet —</span>
                 <div className={styles.headMeta}>
                     <span className={styles.phase}>
@@ -122,29 +134,30 @@ function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
                         <b>none</b>
                     </span>
                 </div>
+                {scheduleHref ? (
+                    <div className={styles.scheduleAction}>
+                        <ButtonLink href={scheduleHref} size="small" variant="subtle">
+                            <Icon name="calendar" />
+                            Schedule New
+                        </ButtonLink>
+                    </div>
+                ) : null}
             </header>
             <div className={styles.layout}>
                 <div className={styles.waiting}>
                     <p className={styles.waitingKicker}>Next screening</p>
                     <h2>No screening scheduled</h2>
-                    <p>
-                        {scheduleHref
-                            ? 'Pick a date and a place; the call sheet fills in as the Session moves.'
-                            : 'When your Club schedules a Session, its call time, place and film appear here.'}
-                    </p>
-                    {scheduleHref ? (
-                        <ButtonLink href={scheduleHref} size="small" variant="primary">
-                            Schedule a Session
-                        </ButtonLink>
-                    ) : null}
                 </div>
                 <figure className={styles.still} aria-hidden="true">
+                    <ColorReveal variant="outline" />
                     <div className={styles.frameMeta}>
                         <span>Projector</span>
                         <span>Standing by</span>
                     </div>
                     <span className={styles.image}>
-                        <Image className={styles.mascot} src={projectionistPanda} alt="" />
+                        <ColorReveal shouldFill>
+                            <Image className={styles.mascot} src={projectionistPanda} alt="" />
+                        </ColorReveal>
                     </span>
                     <figcaption className={styles.frameMeta}>
                         <span>Reel 00</span>
@@ -156,7 +169,29 @@ function EmptyCallSheet({ scheduleHref }: { scheduleHref?: string }) {
     );
 }
 
-function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean) {
+function Field({
+    label,
+    value,
+    className,
+    title,
+}: {
+    label: string;
+    value: string;
+    className?: string;
+    title?: string;
+}) {
+    return (
+        <div className={className}>
+            <dt>{label}</dt>
+            <dd title={title}>{value}</dd>
+            <dd className={styles.fieldOutline} aria-hidden="true">
+                <ColorReveal variant="outline" />
+            </dd>
+        </div>
+    );
+}
+
+function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean, memberCount: number) {
     if (hasSelectedFilm)
         return [
             { label: 'Runtime', value: formatRuntime(session.movie?.runtime ?? null) ?? '—' },
@@ -165,7 +200,7 @@ function getPhaseFields(session: IClubHubSession, hasSelectedFilm: boolean) {
     return [
         {
             label: session.phase === 'SELECTION' ? 'Ballots' : 'Nominated',
-            value: `${session.progressCount ?? 0}/${session.acceptedCount}`,
+            value: `${session.progressCount ?? 0}/${getProgressTotal(session, memberCount)}`,
         },
         {
             label: session.phase === 'SELECTION' ? 'Nominations' : 'Participants',

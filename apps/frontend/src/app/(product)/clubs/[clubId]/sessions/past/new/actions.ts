@@ -38,7 +38,10 @@ const SAVE_FAILURE: IFailureCopy = {
 export async function savePastSessionAction(clubId: string, input: unknown) {
     const parsed = createPastSessionSchema.safeParse(input);
     if (!parsed.success)
-        return { ok: false as const, message: 'Review the highlighted fields and try again.' };
+        return {
+            ok: false as const,
+            message: 'Some entries are no longer valid. Review the form and try again.',
+        };
     try {
         const session = await createPastSession(clubId, parsed.data);
         revalidatePath(`/clubs/${clubId}`);

@@ -3,10 +3,9 @@
 import { CLUB_AVATAR_MEDIA_TYPES, type IClubSettings } from '@pickflick/contracts';
 import { type ReactNode, useEffect, useState } from 'react';
 
-import InfoTip from '#components/ui/InfoTip/InfoTip';
+import type { IClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
 import { getMonogram } from '#lib/format';
 
-import type { IClubActionState } from '../../action-state';
 import styles from '../../page.module.scss';
 import ActionStatus from './ActionStatus';
 
@@ -27,10 +26,14 @@ export default function ClubAvatarField({
 }) {
     const { club, permissions } = projection;
     const [preview, setPreview] = useState<string | null>(null);
-    useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
+    useEffect(() => {
+        if (!preview) return;
+        return () => URL.revokeObjectURL(preview);
+    }, [preview]);
     const version = club.avatarVersion ? `?v=${encodeURIComponent(club.avatarVersion)}` : '';
     const stored = club.hasAvatar ? `/api/clubs/${club.id}/avatar${version}` : null;
     const image = preview ?? stored;
+    const canRemove = permissions.manageSettings && club.hasAvatar && !preview;
     // The authenticated API route checks membership before streaming; the optimizer has no cookie.
     // eslint-disable-next-line @next/next/no-img-element -- see above
     const picture = image ? <img alt={`${club.name} avatar`} src={image} /> : null;
@@ -63,29 +66,24 @@ export default function ClubAvatarField({
                 {tile}
                 <div className={styles.identityField}>{children}</div>
             </div>
-            <div className={styles.avatarMeta}>
-                <span className={styles.avatarTitle}>
-                    Avatar
-                    <InfoTip label="About the Club avatar">
-                        PNG, JPEG or WebP up to 512 KiB, stored privately. Click the image to choose
-                        one; Save Changes uploads it.
-                    </InfoTip>
-                </span>
-                {preview ? <small>New image chosen. Save Changes to upload it.</small> : null}
-                {permissions.manageSettings && club.hasAvatar && !preview ? (
-                    <button
-                        aria-label="Remove avatar"
-                        className={styles.textButton}
-                        disabled={disabled}
-                        formAction={removeAction}
-                        formNoValidate
-                        type="submit"
-                    >
-                        Remove
-                    </button>
-                ) : null}
-                <ActionStatus state={removeState} />
-            </div>
+            {preview || canRemove ? (
+                <div className={styles.avatarMeta}>
+                    {preview ? <small>New image chosen. Save Changes to upload it.</small> : null}
+                    {canRemove ? (
+                        <button
+                            aria-label="Remove avatar"
+                            className={styles.textButton}
+                            disabled={disabled}
+                            formAction={removeAction}
+                            formNoValidate
+                            type="submit"
+                        >
+                            Remove
+                        </button>
+                    ) : null}
+                </div>
+            ) : null}
+            <ActionStatus state={removeState} />
         </>
     );
 }

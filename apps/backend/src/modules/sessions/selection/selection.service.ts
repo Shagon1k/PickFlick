@@ -1,27 +1,51 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import type { TCloseSelection, TSelection, TSubmitSelection } from '@pickflick/contracts';
+import {
+    selectionScaleMinSchema,
+    type TCloseSelection,
+    type TSelection,
+    type TSubmitSelection,
+} from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { type findMembership, recordAudit } from '../../clubs/access/club-access.js';
+import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
 import { MoviesService } from '../../movies/movies.service.js';
-import { NotificationTransactions } from '../../notifications/notification-transactions.js';
+import { Transactions } from '../../notifications/transactions.js';
 import { loadPastSelection } from '../past/past-selection-projection.js';
-import { assertManager } from '../session-access.js';
+import { assertManager, recordSessionAction } from '../session-access.js';
 import { lockSessionForMember } from '../session-lock.js';
+import { canViewNominationAuthors } from '../session-visibility.js';
+import { loadNominationAuthors } from './nomination-authors.js';
 import { advanceSelection, completeSelection } from './selection-completion.js';
 import { loadSelectionOutcome } from './selection-outcome.js';
+import { loadSelectionScores } from './selection-scores.js';
 
 @Injectable()
 export class SelectionService {
     constructor(
-        private readonly notifications: NotificationTransactions,
+        private readonly transactions: Transactions,
         private readonly movies: MoviesService,
     ) {}
+
+    loadScores(
+        tx: Prisma.TransactionClient,
+        session: Prisma.SessionGetPayload<object>,
+        membership: TMembership,
+    ) {
+        return loadSelectionScores(tx, session, membership, this.movies);
+    }
+
+    loadAuthors(
+        tx: Prisma.TransactionClient,
+        session: Prisma.SessionGetPayload<object>,
+        membership: TMembership,
+    ) {
+        return loadNominationAuthors(tx, session, membership, this.movies);
+    }
 
     async loadOutcome(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        membership: TMembership,
     ) {
         return session.type === 'PAST'
             ? loadPastSelection(tx, session, membership, this.movies)
@@ -31,7 +55,7 @@ export class SelectionService {
     async loadSelection(
         tx: Prisma.TransactionClient,
         session: Prisma.SessionGetPayload<object>,
-        membership: Awaited<ReturnType<typeof findMembership>>,
+        membership: TMembership,
     ): Promise<TSelection> {
         const participants = await tx.sessionParticipant.findMany({
             where: { sessionId: session.id },
@@ -56,7 +80,7 @@ export class SelectionService {
             nominations.map((row) => row.movieId),
         );
         return {
-            scaleMin: session.selectionScaleMin === 0 ? 0 : 1,
+            scaleMin: selectionScaleMinSchema.parse(session.selectionScaleMin),
             scaleMax: session.selectionScaleMax,
             acceptedCount: accepted.length,
             submittedCount: accepted.filter((participant) => participant.selectionBallot).length,
@@ -69,7 +93,7 @@ export class SelectionService {
             nominations: nominations.map((row) => ({
                 id: row.id,
                 movie: movies.get(row.movieId)!,
-                author: session.showNominationAuthors
+                author: canViewNominationAuthors(session, membership.club)
                     ? row.participant.membership.user.displayName
                     : null,
                 ownScore:
@@ -79,12 +103,11 @@ export class SelectionService {
     }
 
     async submit(userId: string, id: string, input: TSubmitSelection): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             if (session.phase !== 'SELECTION')
                 throw new ConflictException({ reason: 'SELECTION_CLOSED' });
-            if (membership.club.lifecycle !== 'ACTIVE')
-                throw new ConflictException({ reason: 'CLUB_ARCHIVED' });
+            assertActive(membership);
             const participant = await tx.sessionParticipant.findUnique({
                 where: { sessionId_membershipId: { sessionId: id, membershipId: membership.id } },
                 include: { selectionBallot: true },
@@ -125,21 +148,14 @@ export class SelectionService {
     }
 
     async close(userId: string, id: string, input: TCloseSelection): Promise<void> {
-        await this.notifications.run(async (tx) => {
+        await this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, id);
             await assertManager(tx, membership);
             if (session.selectionResult !== null) return;
             if (session.phase !== 'SELECTION' || session.phaseVersion !== input.phaseVersion)
                 throw new ConflictException({ reason: 'SELECTION_CHANGED' });
             await advanceSelection(tx, session, { kind: 'MANUAL', membershipId: membership.id });
-            await recordAudit(tx, {
-                clubId: session.clubId,
-                sessionId: id,
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: membership.id,
-                action: 'SESSION_SELECTION_CLOSED',
-            });
+            await recordSessionAction(tx, id, membership, 'SESSION_SELECTION_CLOSED');
         });
     }
 }

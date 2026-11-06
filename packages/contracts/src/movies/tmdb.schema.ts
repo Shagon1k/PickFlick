@@ -17,6 +17,7 @@ export const tmdbMovieSchema = z.object({
     backdrop_path: movieImagePathSchema,
     vote_average: z.number().min(0).max(10),
     vote_count: z.number().int().nonnegative(),
+    genre_ids: z.array(tmdbIdSchema).max(100).default([]),
 });
 export type TTmdbMovie = z.infer<typeof tmdbMovieSchema>;
 

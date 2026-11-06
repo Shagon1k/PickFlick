@@ -1,18 +1,18 @@
 import { randomInt, randomUUID } from 'node:crypto';
 
 import { sessionSchema } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     addMember,
     createSession,
     createUser,
+    findNotifiedUsers,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../../testing/integration.js';
 import { buildMovieDetails } from '../../../../testing/movie-fixtures.js';
+import { removeUsers } from '../../../../testing/remove-users.js';
 import { MoviesRepository } from '../../../movies/movies.repository.js';
 import { MoviesService } from '../../../movies/movies.service.js';
 import type { IMovieProvider } from '../../../movies/providers/movie-provider.js';
@@ -130,14 +130,10 @@ describe('Nominations', () => {
         });
     });
     it('should reject unauthenticated, nonmember, nonparticipant, invalid and unknown Movie submissions', async () => {
-        expect(
-            (
-                await api.request(`/sessions/${sessionId}/nominations`, {
-                    method: 'POST',
-                    json: { movieId: movies[0] },
-                })
-            ).status,
-        ).toBe(401);
+        await api.expectStatus(401, `/sessions/${sessionId}/nominations`, {
+            method: 'POST',
+            json: { movieId: movies[0] },
+        });
         expect((await submit(outsider)).status).toBe(404);
         await api.prisma.sessionParticipant.update({
             where: { id: memberParticipant },
@@ -157,9 +153,10 @@ describe('Nominations', () => {
             where: { id: member },
             data: { displayName: 'Private Nominator' },
         });
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showNominationsBeforeSubmit: false, showNominationAuthors: false },
+        // The Club setting applies to the open Session at once, like the other visibility flags.
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationsBeforeSubmit: false, showNominationAuthorsDuring: false },
         });
         await submit();
         const response = await read(admin);
@@ -182,9 +179,9 @@ describe('Nominations', () => {
         expect(visible.nominations.every((row) => row.author === null)).toBe(true);
         expect(JSON.stringify(visible)).not.toContain('Private Nominator');
         expect(JSON.stringify(visible)).not.toContain(memberParticipant);
-        await api.prisma.session.update({
-            where: { id: sessionId },
-            data: { showNominationAuthors: true },
+        await api.prisma.club.update({
+            where: { id: clubId },
+            data: { showNominationAuthorsDuring: true },
         });
         expect(nominationData(await (await read()).json()).nominations).toEqual(
             expect.arrayContaining([expect.objectContaining({ author: 'Private Nominator' })]),
@@ -197,41 +194,32 @@ describe('Nominations', () => {
         const otherMembership = await api.prisma.membership.findFirstOrThrow({
             where: { clubId, userId: admin },
         });
-        const settings = await snapshotSessionSettings(api.prisma, clubId);
         async function history(
             owner: string,
             movieId: string,
             winner: string | null,
-            phase: 'COMPLETED' | 'CANCELLED' = 'COMPLETED',
-            isOtherClub = false,
-            isEarlier = true,
+            {
+                phase = 'COMPLETED',
+                isOtherClub = false,
+                isEarlier = true,
+            }: {
+                phase?: 'COMPLETED' | 'CANCELLED';
+                isOtherClub?: boolean;
+                isEarlier?: boolean;
+            } = {},
         ) {
             let historyClub = clubId;
             let membershipId = owner;
             if (isOtherClub) {
                 historyClub = randomUUID();
                 await api.prisma.club.create({ data: { id: historyClub, name: 'Other Club' } });
-                membershipId = (
-                    await api.prisma.membership.create({
-                        data: {
-                            id: randomUUID(),
-                            clubId: historyClub,
-                            userId: member,
-                            role: 'ADMIN',
-                        },
-                    })
-                ).id;
+                membershipId = await addMember(api.prisma, historyClub, member, 'ADMIN');
             }
-            const session = await api.prisma.session.create({
-                data: {
-                    id: randomUUID(),
-                    clubId: historyClub,
-                    type: 'FULL_CYCLE',
-                    phase,
-                    movieId: winner,
-                    createdAt: new Date(isEarlier ? '2020-01-01' : '2090-01-01'),
-                    ...settings,
-                },
+            const session = await createSession(api.prisma, historyClub, {
+                type: 'FULL_CYCLE',
+                phase,
+                movieId: winner,
+                createdAt: new Date(isEarlier ? '2020-01-01' : '2090-01-01'),
             });
             const participant = await api.prisma.sessionParticipant.create({
                 data: {
@@ -249,10 +237,10 @@ describe('Nominations', () => {
         await history(membership.id, movies[0]!, movies[1]!);
         await history(membership.id, movies[1]!, movies[1]!);
         await history(membership.id, movies[2]!, null);
-        await history(membership.id, movies[2]!, movies[1]!, 'CANCELLED');
+        await history(membership.id, movies[2]!, movies[1]!, { phase: 'CANCELLED' });
         await history(otherMembership.id, movies[2]!, movies[1]!);
-        await history(membership.id, movies[2]!, movies[1]!, 'COMPLETED', true);
-        await history(membership.id, movies[2]!, movies[1]!, 'COMPLETED', false, false);
+        await history(membership.id, movies[2]!, movies[1]!, { isOtherClub: true });
+        await history(membership.id, movies[2]!, movies[1]!, { isEarlier: false });
         const data = nominationData(await (await read()).json());
         expect(data.suggestions.map((movie) => movie.id)).toEqual([movies[0]]);
         expect((await submit(member, data.suggestions[0]?.id)).status).toBe(201);
@@ -308,6 +296,9 @@ describe('Nominations', () => {
                 where: { sessionId, action: 'SESSION_NOMINATION_CLOSED' },
             }),
         ).toBe(1);
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'SELECTION_CLOSED')).toEqual(
+            [admin, member].toSorted((a, b) => a.localeCompare(b)),
+        );
         expect((await submit(admin)).status).toBe(409);
     });
     it('should automatically open Selection with multiple nominations and keep the winner unresolved', async () => {
@@ -318,6 +309,9 @@ describe('Nominations', () => {
             phase: 'SELECTION',
             movieId: null,
         });
+        expect(await findNotifiedUsers(api.prisma, sessionId, 'SELECTION_OPENED')).toEqual(
+            [admin, member].toSorted((a, b) => a.localeCompare(b)),
+        );
     });
     it('should prevent linking a participant from another Session through a direct database write', async () => {
         const session = await createSession(api.prisma, clubId, {

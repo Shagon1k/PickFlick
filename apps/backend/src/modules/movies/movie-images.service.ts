@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto';
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { movieImageUrlSchema, type TMovieMetadata } from '@pickflick/contracts';
+import {
+    movieImageUrlSchema,
+    type TMovieMetadata,
+    youtubeVideoIdSchema,
+} from '@pickflick/contracts';
 
 import { detectImageType, type TImageType } from '../../common/image-type.js';
 import { StorageService } from '../storage/storage.service.js';
@@ -27,6 +31,12 @@ export class MovieImagesService {
         return image;
     }
 
+    /** The thumbnail URL is built from a checked video ID on one fixed host and path. */
+    async storeTrailerThumbnail(videoId: string): Promise<string | null> {
+        const id = youtubeVideoIdSchema.parse(videoId);
+        return this.download(`https://i.ytimg.com/vi/${id}/hqdefault.jpg`, 'trailer');
+    }
+
     async storeMedia<
         TMovie extends Pick<TMovieMetadata, 'posterUrl' | 'backdropUrl'> &
             Partial<Pick<TMovieMetadata, 'cast'>>,
@@ -39,15 +49,23 @@ export class MovieImagesService {
         };
     }
 
+    /** Provider image URLs are untrusted: only allowlisted image hosts are fetched. */
     private async store(url: string | null): Promise<string | null> {
         if (!url) return null;
+        if (!movieImageUrlSchema.safeParse(url).success) {
+            this.logger.warn({ event: 'movies.image.unavailable', source: 'catalog' });
+            return null;
+        }
+        return this.download(url, 'catalog');
+    }
+
+    private async download(url: string, source: 'catalog' | 'trailer'): Promise<string | null> {
         const key = createHash('sha256').update(url).digest('hex');
         const objectKey = `movie-images/${key}`;
-        if (await this.storage.get(objectKey)) return `/api/movies/images/${key}`;
+        if (await this.storage.exists(objectKey)) return `/api/movies/images/${key}`;
         let body: Buffer;
         let contentType: string;
         try {
-            movieImageUrlSchema.parse(url);
             // Never follow a provider redirect to an unvalidated host or private network.
             const response = await fetch(url, {
                 redirect: 'error',
@@ -57,7 +75,7 @@ export class MovieImagesService {
             body = await readBoundedBody(response, MAX_BYTES);
             contentType = requireImageType(body);
         } catch {
-            this.logger.warn({ event: 'movies.image.unavailable', key });
+            this.logger.warn({ event: 'movies.image.unavailable', key, source });
             return null;
         }
         await this.storage.put(objectKey, body, contentType);

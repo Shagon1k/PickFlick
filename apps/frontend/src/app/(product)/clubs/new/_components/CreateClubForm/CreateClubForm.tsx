@@ -101,7 +101,7 @@ export default function CreateClubForm() {
                 labelHint="optional"
                 maxLength={CLUB_DESCRIPTION_MAX_LENGTH}
                 placeholder="What kind of films does your Club watch?"
-                showCount
+                shouldShowCount
                 size="compact"
             />
 

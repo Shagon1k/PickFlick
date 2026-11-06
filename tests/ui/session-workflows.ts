@@ -51,7 +51,6 @@ export function sessionHub(token: string | undefined): IClubHub {
         permissions: settings.permissions,
         memberCount: 3,
         sessionCount: sessions.filter(({ phase }) => phase !== 'CANCELLED').length,
-        completedSessionCount: 0,
         memberLimit: 8,
         members: settings.members,
         statistics: {
@@ -66,6 +65,7 @@ export function sessionHub(token: string | undefined): IClubHub {
         recentSessions: sessions.map(row),
         ratingSessions: [],
         historySessions: sessions.filter(({ phase }) => phase === 'CANCELLED').map(row),
+        historyNextCursor: null,
         activeSession: sessions.map(row).find(({ phase }) => phase !== 'CANCELLED'),
     };
 }
@@ -116,9 +116,10 @@ export function handleSessionWorkflow(
                 nominations: null,
                 selection: null,
                 selectionOutcome: null,
+                selectionScores: null,
+                nominationAuthors: null,
                 rating: null,
-                canEdit: true,
-                canCancel: true,
+                canManage: true,
                 topic: input.topic ?? null,
                 notes: input.notes ?? null,
             };
@@ -129,8 +130,7 @@ export function handleSessionWorkflow(
                 ? {
                       ...session,
                       phase: 'CANCELLED',
-                      canEdit: false,
-                      canCancel: false,
+                      canManage: false,
                       version: session.version + 1,
                   }
                 : { ...session, ...input, version: session.version + 1 };

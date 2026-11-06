@@ -1,6 +1,7 @@
 import type { TMovieExternalId, TMovieSearch } from '@pickflick/contracts';
 
 import {
+    canUseStale,
     createEmptyMetadata,
     type IMovieLookup,
     type IMovieProvider,
@@ -35,7 +36,12 @@ export class CompositeMovieProvider implements IMovieProvider {
         const ids = combineIds(input.externalIds, primary.record?.externalIds ?? []);
         const enrichment = await load(() => this.thetvdb.fetchDetails(ids));
         if (!primary.record && !enrichment.record) {
-            throw primary.error ?? enrichment.error ?? new MovieProviderError('NOT_FOUND');
+            // A TheTVDB outage must not turn a PoiskKino 404 into "unavailable": a stale cache still serves.
+            const outage =
+                enrichment.error && canUseStale(enrichment.error.reason) ? enrichment.error : null;
+            throw (
+                outage ?? primary.error ?? enrichment.error ?? new MovieProviderError('NOT_FOUND')
+            );
         }
         return parseProviderRecord({
             externalIds: combineIds(

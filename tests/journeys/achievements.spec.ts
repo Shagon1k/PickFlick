@@ -3,17 +3,13 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import {
-    createDatabaseClient,
-    snapshotSessionSettings,
-} from '../../packages/database/src/index.ts';
+import { openVisitor } from './visitors';
 
 test('Achievement shelves retain earned history and isolate owners through the real API', async ({
     browser,
 }) => {
     const backend = await connectJourneyBackend();
-    const prisma = createDatabaseClient(loadRuntimeEnvironment().databaseUrl);
+    const { prisma } = backend;
     const users = await Promise.all([
         backend.createUser('Achievement owner'),
         backend.createUser('Other owner'),
@@ -22,7 +18,9 @@ test('Achievement shelves retain earned history and isolate owners through the r
     const movies = await prisma.movie.createManyAndReturn({
         data: Array.from({ length: 10 }, (_, index) => ({ title: `Achievement film ${index}` })),
     });
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const context = await openVisitor(browser, backend, users[0], {
+        viewport: { width: 1440, height: 900 },
+    });
     try {
         await prisma.personalMovieRating.createMany({
             data: movies.map((movie) => ({
@@ -33,36 +31,28 @@ test('Achievement shelves retain earned history and isolate owners through the r
             })),
         });
         await prisma.club.create({ data: { id: clubId, name: 'Achievement Club' } });
-        const member = await prisma.membership.create({
-            data: { id: randomUUID(), userId: users[0], clubId, role: 'ADMIN' },
-        });
-        const session = await prisma.session.create({
-            data: {
-                ...(await snapshotSessionSettings(prisma, clubId)),
-                id: randomUUID(),
-                clubId,
-                type: 'PAST',
-                phase: 'COMPLETED',
-                movieId: movies[0]!.id,
-                scheduledAt: new Date(),
-            },
+        const memberId = await backend.addMember(clubId, users[0], 'ADMIN');
+        const session = await backend.createSession(clubId, {
+            type: 'PAST',
+            phase: 'COMPLETED',
+            movieId: movies[0]!.id,
+            scheduledAt: new Date(),
         });
         await prisma.sessionParticipant.create({
             data: {
                 clubId,
-                membershipId: member.id,
+                membershipId: memberId,
                 sessionId: session.id,
                 status: 'ACCEPTED',
                 attended: true,
             },
         });
-        await context.addCookies(await backend.cookiesFor(users[0], '127.0.0.1'));
         const page = await context.newPage();
         await page.goto('/library?tab=achievements');
         const archivist = page.getByRole('article', { name: 'Archivist', exact: true });
         await expect(page.getByRole('article')).toHaveCount(14);
         await expect(archivist.getByText('Unlocked', { exact: true })).toBeVisible();
-        await expect(archivist.getByRole('progressbar')).toHaveAttribute('value', '10');
+        await expect(archivist.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '10');
         const before = await prisma.achievementAward.findFirstOrThrow({
             where: { userId: users[0], key: 'archivist' },
         });
@@ -83,18 +73,13 @@ test('Achievement shelves retain earned history and isolate owners through the r
         await context.addCookies(await backend.cookiesFor(users[1], '127.0.0.1'));
         await page.goto('/library?tab=achievements');
         await expect(archivist.getByText('Not started', { exact: true })).toBeVisible();
-        await expect(archivist.getByRole('progressbar')).toHaveAttribute('value', '0');
+        await expect(archivist.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
         await page.goto(`/clubs/${clubId}/achievements`);
         await expect(page.getByRole('heading', { name: 'Club access unavailable' })).toBeVisible();
     } finally {
         await context.close();
-        await prisma.sessionParticipant.deleteMany({ where: { clubId } });
-        await prisma.session.deleteMany({ where: { clubId } });
-        await prisma.membership.deleteMany({ where: { clubId } });
-        await prisma.club.deleteMany({ where: { id: clubId } });
-        await prisma.user.deleteMany({ where: { id: { in: users } } });
-        await prisma.movie.deleteMany({ where: { id: { in: movies.map((movie) => movie.id) } } });
-        await prisma.$disconnect();
+        await backend.removeUsers(users);
+        await backend.removeMovies(movies.map((movie) => movie.id));
         await backend.close();
     }
 });

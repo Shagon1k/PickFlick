@@ -29,7 +29,7 @@ describe('selectClubAction', () => {
     });
 
     it('should save the preference and open a Club after Hub authorization', async () => {
-        await expect(selectClubAction(selection())).rejects.toThrow(`Redirect: /clubs/${CLUB_ID}`);
+        await expect(selectClubAction(selection())).resolves.toBe(`/clubs/${CLUB_ID}`);
 
         expect(api.getClubHub).toHaveBeenCalledWith(CLUB_ID);
         expect(preference.set).toHaveBeenCalledWith('pickflick.last_club', CLUB_ID, {

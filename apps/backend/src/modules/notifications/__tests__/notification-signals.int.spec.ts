@@ -7,9 +7,9 @@ import {
     createUser,
     type ITestApi,
     loadIntegrationEnvironment,
-    removeUsers,
     startTestApi,
 } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { recordNotification } from '../notification-store.js';
 
 async function openStream(api: ITestApi, recipient: string) {
@@ -73,7 +73,7 @@ describe('NotificationSignals', () => {
     });
 
     const record = (recipientId = users[0]!, sourceId = randomUUID()) =>
-        first.notifications.run((tx) =>
+        first.transactions.write((tx) =>
             recordNotification(tx, { recipientId, sourceId, event: 'BILLING_SERVICE' }),
         );
 
@@ -93,15 +93,11 @@ describe('NotificationSignals', () => {
             }
             expect(foreign).not.toHaveBeenCalled();
             const readUpdates = tabs.map((tab) => tab.nextRefresh());
-            expect(
-                (
-                    await first.request(`/notifications/${row.id}/read`, {
-                        userId: users[0],
-                        method: 'POST',
-                        json: {},
-                    })
-                ).status,
-            ).toBe(204);
+            await first.expectStatus(204, `/notifications/${row.id}/read`, {
+                userId: users[0],
+                method: 'POST',
+                json: {},
+            });
             await Promise.all(readUpdates);
             const state = await second.request('/notifications', { userId: users[0] });
             expect(await state.json()).toMatchObject({ unreadCount: 0 });
@@ -109,15 +105,11 @@ describe('NotificationSignals', () => {
             await record();
             await Promise.all(createdUpdates);
             const allReadUpdates = tabs.map((tab) => tab.nextRefresh());
-            expect(
-                (
-                    await first.request('/notifications/read', {
-                        userId: users[0],
-                        method: 'POST',
-                        json: {},
-                    })
-                ).status,
-            ).toBe(204);
+            await first.expectStatus(204, '/notifications/read', {
+                userId: users[0],
+                method: 'POST',
+                json: {},
+            });
             await Promise.all(allReadUpdates);
             const afterAllRead = await second.request('/notifications', { userId: users[0] });
             expect(await afterAllRead.json()).toMatchObject({ unreadCount: 0 });
@@ -133,7 +125,7 @@ describe('NotificationSignals', () => {
         const sourceId = randomUUID();
         try {
             await expect(
-                first.notifications.run(async (tx) => {
+                first.transactions.write(async (tx) => {
                     await recordNotification(tx, {
                         recipientId: users[0]!,
                         sourceId,
@@ -149,7 +141,7 @@ describe('NotificationSignals', () => {
                 expect([...recipients]).toEqual([users[0]]);
                 expect(await second.prisma.notification.count({ where: { sourceId } })).toBe(2);
             });
-            await first.notifications.run(async (tx) => {
+            await first.transactions.write(async (tx) => {
                 for (const occurrence of [1, 2]) {
                     await recordNotification(tx, {
                         recipientId: users[0]!,

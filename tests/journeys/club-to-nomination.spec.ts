@@ -6,7 +6,9 @@ import {
     connectJourneyBackend,
     type IJourneyBackend,
 } from '../../apps/backend/src/testing/journeys.ts';
-import { acceptedParticipants } from '../ui/session-facts';
+import { acceptedParticipants, expectSessionPhase } from '../ui/session-facts';
+import { settle } from '../ui/settle';
+import { openVisitor } from './visitors';
 
 let backend: IJourneyBackend;
 
@@ -18,19 +20,9 @@ test.afterAll(async () => {
     await backend.close();
 });
 
-// Better Auth limits each client address (an IPv6 /64) per minute and keeps the counts in the
-// database, so every visitor of every run gets its own documentation-range network.
-const runNetwork = randomUUID().slice(0, 4);
-let visitors = 0;
-
 async function signedInPage(browser: Browser, displayName: string): Promise<Page> {
     const userId = await backend.createUser(displayName);
-    visitors += 1;
-    const context = await browser.newContext({
-        extraHTTPHeaders: { 'x-forwarded-for': `2001:db8:${runNetwork}:${visitors}::1` },
-    });
-    await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
-    return context.newPage();
+    return (await openVisitor(browser, backend, userId)).newPage();
 }
 
 /** A date 30 days ahead in the `YYYY-MM-DD` form the date input accepts. */
@@ -61,7 +53,8 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
     await test.step('a User joins through a Club invitation link', async () => {
         await admin.goto(`${clubPath}/settings`);
         await admin.getByRole('button', { name: 'Invite members' }).click();
-        await admin.getByRole('button', { name: 'Create invitation' }).click();
+        // Opening the dialog tears off a fresh link.
+        await expect(admin.getByLabel('Invitation link')).toHaveValue(/\/invite\/club\//u);
         const link = await admin.getByLabel('Invitation link').inputValue();
         await member.goto(link);
         await member.getByRole('button', { name: 'Accept Invitation' }).click();
@@ -69,15 +62,16 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
     });
 
     await test.step('the member joins the shared Session link, which an outsider cannot use', async () => {
-        await admin.goto(clubPath);
-        await admin.getByRole('link', { name: 'Create Session', exact: true }).click();
+        await admin.goto(`${clubPath}/sessions`);
+        await admin.getByRole('link', { name: 'Schedule New', exact: true }).click();
         await admin.getByLabel('Date').fill(upcomingDate());
         await admin.getByLabel('Location').fill('Room A');
         await admin.getByLabel('Topic').fill('Journey night');
         await admin.getByRole('button', { name: 'Create Session', exact: true }).click();
-        await expect(admin.getByText('Session created. Nomination is open.')).toBeVisible();
-        await admin.getByRole('link', { name: 'Open Session' }).click();
         await expect(admin).toHaveURL(/\/sessions\/[0-9a-f-]+$/u);
+        await expect(
+            admin.getByRole('complementary', { name: 'Share this Session' }),
+        ).toBeVisible();
         const link = admin.url();
         await outsider.goto(link);
         await expect(outsider.getByText(clubName)).toHaveCount(0);
@@ -94,13 +88,25 @@ test('an Admin founds a Club, a member joins, and their nomination selects the S
         await expect(acceptedParticipants(member)).toHaveText('Jordan Member');
     });
 
-    await test.step('the sole participant nomination selects the Movie for Watching', async () => {
+    await test.step('the operator closes a single nomination early, selecting it for Watching', async () => {
         await member.getByRole('combobox', { name: 'Select a Movie' }).fill(query);
         await member.getByRole('option', { name: /The Night of the Hunter/u }).click();
-        await member.getByRole('button', { name: 'Nominate This' }).click();
+        await member.getByRole('button', { name: 'Nominate selected film' }).click();
+        await expect(
+            member
+                .getByRole('region', { name: 'Your nomination', exact: true })
+                .getByRole('link', { name: 'The Night of the Hunter (1955)', exact: true }),
+        ).toHaveAttribute('href', `/movies/${movie.id}`);
+        // One participant never closes Nomination by themselves; the operator does.
+        await admin.reload();
+        await settle(admin);
+        await admin.getByRole('button', { name: 'Session settings', exact: true }).click();
+        await admin.getByRole('menuitem', { name: 'Close nominations early', exact: true }).click();
+        await admin.getByLabel('Type CLOSE to confirm').fill('CLOSE');
+        await admin.getByRole('button', { name: 'Confirm close' }).click();
         for (const page of [member, admin]) {
             await page.reload();
-            await expect(page.getByText('watching', { exact: true })).toBeVisible();
+            await expectSessionPhase(page, 'Watching');
             await expect(page.getByRole('link', { name: 'View selected Movie' })).toHaveAttribute(
                 'href',
                 `/movies/${movie.id}`,

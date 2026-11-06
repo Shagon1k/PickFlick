@@ -16,8 +16,9 @@ export interface IFailureCopy {
 /** The recovery copy a server action shows for a failed API request. */
 export function getFailureMessage(error: unknown, copy: IFailureCopy): string {
     if (error instanceof ApiError) {
-        const byReason = error.reason ? copy.reasons?.[error.reason] : undefined;
-        if (byReason) return byReason;
+        // Own keys only: a reason such as `__proto__` must not reach Object.prototype.
+        if (error.reason && copy.reasons && Object.hasOwn(copy.reasons, error.reason))
+            return copy.reasons[error.reason]!;
         const byStatus = copy.statuses?.find(([statuses]) => statuses.includes(error.status));
         if (byStatus) return byStatus[1];
     }

@@ -1,69 +1,76 @@
 'use client';
 
-import { type IClubSettings } from '@pickflick/contracts';
-import { useActionState, useId } from 'react';
+import type { IClubSettings } from '@pickflick/contracts';
+import { useActionState } from 'react';
 
+import { initialClubActionState } from '#app/(product)/clubs/[clubId]/(hub)/club-action-state';
+import { updateClubSettingsAction } from '#app/(product)/clubs/[clubId]/(hub)/club-actions';
+import SelectionScaleField from '#components/clubs/SelectionScaleField/SelectionScaleField';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
-import Pill from '#components/ui/Pill/Pill';
+import Tabs from '#components/ui/Tabs/Tabs';
 
-import { initialClubActionState } from '../../action-state';
-import { updateClubSettingsAction } from '../../actions';
 import styles from '../../page.module.scss';
-import { isWritable, visibilityOptions } from './club-settings';
+import { visibilityOptions } from './club-settings';
 import SaveRow from './SaveRow';
-import StoredClubInfo from './StoredClubInfo';
 
 export default function VisibilityCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
     const [state, formAction, isPending] = useActionState(action, initialClubActionState);
-    const canEdit = isWritable(projection);
-    const areResultsLocked = projection.entitlements.voteResultVisibility !== 'ADMIN_CONFIGURABLE';
+    const canEdit = projection.permissions.manageSettings;
     return (
         <section aria-labelledby="club-visibility-title" className={styles.card}>
-            <h2 id="club-visibility-title">Settings</h2>
+            <div className={styles.cardTitle}>
+                <h2 id="club-visibility-title">Settings</h2>
+                <InfoTip label="About visibility settings">
+                    Saved rules apply to everyone and to all existing and future Sessions in this
+                    Club. Club rating averages stay visible.
+                </InfoTip>
+            </div>
             <form action={formAction} className={styles.cardForm}>
-                <StoredClubInfo projection={projection} />
-                <fieldset className={styles.checks} disabled={!canEdit}>
-                    <legend className="visually-hidden">Visibility and presentation</legend>
-                    {visibilityOptions.map(({ label, name }) => {
-                        if (name === 'showVoteResults' && areResultsLocked)
-                            return <LockedResultsOption key={name} label={label} />;
-                        return (
-                            <div key={name}>
-                                <label className={styles.check}>
-                                    <span>{label}</span>
-                                    <input
-                                        defaultChecked={projection.visibility[name]}
-                                        name={name}
-                                        type="checkbox"
-                                    />
-                                </label>
-                            </div>
-                        );
-                    })}
-                </fieldset>
+                {/* No control edits this rule yet, but the card saves every visibility flag. */}
+                {projection.visibility.showNominationsBeforeSubmit ? (
+                    <input type="hidden" name="showNominationsBeforeSubmit" value="on" />
+                ) : null}
+                <Tabs
+                    label="Session visibility"
+                    variant="neutral"
+                    items={(['during', 'after'] as const).map((period) => ({
+                        id: period,
+                        label: period === 'during' ? 'During Session' : 'After Session',
+                        content: (
+                            <fieldset className={styles.checks} disabled={!canEdit || isPending}>
+                                <legend className="visually-hidden">
+                                    {period === 'during'
+                                        ? 'During Session visibility'
+                                        : 'After Session visibility'}
+                                </legend>
+                                {visibilityOptions.map((option) => {
+                                    const name = option[period];
+                                    return (
+                                        <label className={styles.check} key={name}>
+                                            <span>{option.label}</span>
+                                            <input
+                                                type="checkbox"
+                                                name={name}
+                                                defaultChecked={projection.visibility[name]}
+                                            />
+                                        </label>
+                                    );
+                                })}
+                            </fieldset>
+                        ),
+                    }))}
+                />
+                <SelectionScaleField
+                    defaultMax={projection.club.selectionScaleMax}
+                    disabled={!canEdit || isPending}
+                    idPrefix="selection-scale"
+                    min={projection.club.selectionScaleMin}
+                />
                 {projection.permissions.manageSettings ? (
-                    <SaveRow disabled={!canEdit} pending={isPending} state={state} />
+                    <SaveRow isPending={isPending} state={state} />
                 ) : null}
             </form>
         </section>
-    );
-}
-
-/** A Pro capability reads as one, with the reason one tap away instead of a bare disabled box. */
-function LockedResultsOption({ label }: { label: string }) {
-    const labelId = useId();
-    return (
-        <div className={styles.check}>
-            <span className={styles.lockedLabel}>
-                <span id={labelId}>{label}</span>
-                <Pill tone="warm">Pro</Pill>
-                <InfoTip label="About Selection result visibility">
-                    Free Clubs keep individual Selection results hidden. On Pro, the Club Admin
-                    chooses whether members see them after Selection closes.
-                </InfoTip>
-            </span>
-            <input aria-labelledby={labelId} disabled type="checkbox" />
-        </div>
     );
 }

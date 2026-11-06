@@ -3,70 +3,49 @@ import { randomUUID } from 'node:crypto';
 import { type Browser, type BrowserContext, expect, test } from '@playwright/test';
 
 import { connectJourneyBackend } from '../../apps/backend/src/testing/journeys.ts';
-import { loadRuntimeEnvironment } from '../../packages/config/src/environment.ts';
-import {
-    createDatabaseClient,
-    snapshotSessionSettings,
-} from '../../packages/database/src/index.ts';
+import { expectSessionPhase } from '../ui/session-facts';
+import { openVisitor } from './visitors';
 
 async function createRatingJourney(browser: Browser) {
     const backend = await connectJourneyBackend();
-    const prisma = createDatabaseClient(loadRuntimeEnvironment().databaseUrl);
+    const { prisma } = backend;
     const clubId = randomUUID();
     const users: string[] = [];
     const contexts: BrowserContext[] = [];
     const movie = await prisma.movie.create({ data: { title: 'Rating journey screening' } });
     await prisma.club.create({ data: { id: clubId, name: 'Rating Journey' } });
-    const session = await prisma.session.create({
-        data: {
-            id: randomUUID(),
-            clubId,
-            type: 'PRE_SELECTED',
-            phase: 'RATING',
-            movieId: movie.id,
-            scheduledAt: new Date('2026-12-01T20:00:00Z'),
-            location: 'Screening room',
-            ...(await snapshotSessionSettings(prisma, clubId)),
-        },
+    const session = await backend.createSession(clubId, {
+        type: 'PRE_SELECTED',
+        phase: 'RATING',
+        movieId: movie.id,
+        scheduledAt: new Date('2026-12-01T20:00:00Z'),
+        location: 'Screening room',
     });
     async function cleanup() {
         for (const context of contexts) await context.close();
-        await prisma.clubAuditEvent.deleteMany({ where: { clubId } });
-        await prisma.sessionRating.deleteMany({ where: { sessionId: session.id } });
-        await prisma.sessionParticipant.deleteMany({ where: { clubId } });
-        await prisma.session.deleteMany({ where: { clubId } });
-        await prisma.membership.deleteMany({ where: { clubId } });
-        await prisma.club.delete({ where: { id: clubId } });
-        await prisma.movie.delete({ where: { id: movie.id } });
-        await prisma.user.deleteMany({ where: { id: { in: users } } });
-        await prisma.$disconnect();
+        await backend.removeUsers(users);
+        await backend.removeMovies([movie.id]);
         await backend.close();
     }
     try {
         for (const role of ['ADMIN', 'MODERATOR', 'MEMBER'] as const) {
             const userId = await backend.createUser(`Rating ${role}`);
             users.push(userId);
-            const membership = await prisma.membership.create({
-                data: { id: randomUUID(), clubId, userId, role },
-            });
+            const membershipId = await backend.addMember(clubId, userId, role);
             await prisma.sessionParticipant.create({
                 data: {
                     sessionId: session.id,
                     clubId,
-                    membershipId: membership.id,
+                    membershipId,
                     status: 'ACCEPTED',
                 },
             });
-            const context = await browser.newContext({
-                extraHTTPHeaders: { 'x-forwarded-for': `2001:db8:${randomUUID().slice(0, 4)}::1` },
-            });
-            contexts.push(context);
-            await context.addCookies(await backend.cookiesFor(userId, '127.0.0.1'));
+            contexts.push(await openVisitor(browser, backend, userId));
         }
         const pages = await Promise.all(contexts.map((context) => context.newPage()));
         for (const page of pages) {
             await page.goto(`/sessions/${session.id}`);
-            await expect(page.getByText('rating', { exact: true })).toBeVisible();
+            await expectSessionPhase(page, 'Rating');
         }
         return { session, prisma, contexts, pages, cleanup };
     } catch (error) {
@@ -86,8 +65,16 @@ test('Three participants submit once and all clients see automatic completion', 
         await memberPage.getByRole('radio', { name: '7 of 10' }).click();
         await memberPage.getByLabel('Comment').fill('Remember this screening.');
         await memberPage.getByRole('button', { name: 'Submit Rating' }).click();
-        await expect(memberPage.getByText('Your rating is saved')).toBeVisible();
-        await expect(pages[0]!.getByText(/Rating in progress — 1 of 3/)).toBeVisible({
+        await expect(
+            memberPage
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            pages[0]!.getByRole('status').filter({ hasText: /Rating in progress — 1 of 3/ }),
+        ).toBeVisible({
             timeout: 20000,
         });
         const duplicates = await Promise.all(
@@ -101,13 +88,21 @@ test('Three participants submit once and all clients see automatic completion', 
         for (const page of pages.slice(0, 2)) {
             await page.getByRole('radio', { name: '9 of 10' }).click();
             await page.getByRole('button', { name: 'Submit Rating' }).click();
-            await expect(page.getByText('Your rating is saved')).toBeVisible();
+            await expect(
+                page
+                    .getByRole('list', { name: 'Session ratings' })
+                    .getByRole('listitem')
+                    .first()
+                    .getByText('You', { exact: true }),
+            ).toBeVisible();
         }
         for (const page of pages) {
-            await expect(page.getByText('completed', { exact: true })).toBeVisible({
+            await expect(
+                page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible({
                 timeout: 20000,
             });
-            await expect(page.getByRole('heading', { name: 'Individual Ratings' })).toBeVisible();
+            await expect(page.getByRole('list', { name: 'Session ratings' })).toBeVisible();
             await expect(page.getByRole('button', { name: 'Submit Rating' })).toHaveCount(0);
         }
         await expect(pages[1]!.getByRole('heading', { level: 1 })).toBeFocused();
@@ -118,7 +113,13 @@ test('Three participants submit once and all clients see automatic completion', 
         expect(ratings).toHaveLength(3);
         expect(completions).toHaveLength(1);
         await memberPage.reload();
-        await expect(memberPage.getByText('Your rating is saved')).toBeVisible();
+        await expect(
+            memberPage
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
+        ).toBeVisible();
     } finally {
         await journey.cleanup();
     }
@@ -133,10 +134,18 @@ test('A Moderator completes partial Rating and every client keeps only received 
         const memberPage = pages[2]!;
         await memberPage.getByRole('radio', { name: '6 of 10' }).click();
         await memberPage.getByRole('button', { name: 'Submit Rating' }).click();
-        await expect(memberPage.getByText('Your rating is saved')).toBeVisible();
+        await expect(
+            memberPage
+                .getByRole('list', { name: 'Session ratings' })
+                .getByRole('listitem')
+                .first()
+                .getByText('You', { exact: true }),
+        ).toBeVisible();
         const before = await prisma.sessionRating.findMany({ where: { sessionId: session.id } });
         const operatorPage = pages[1]!;
-        await expect(operatorPage.getByText(/Rating in progress — 1 of 3/)).toBeVisible({
+        await expect(
+            operatorPage.getByRole('status').filter({ hasText: /Rating in progress — 1 of 3/ }),
+        ).toBeVisible({
             timeout: 20000,
         });
         await operatorPage.getByRole('button', { name: 'Session settings' }).click();
@@ -149,7 +158,9 @@ test('A Moderator completes partial Rating and every client keeps only received 
         await dialog.getByRole('button', { name: 'Complete Session' }).click();
         await expect(dialog).toHaveCount(0);
         for (const page of pages)
-            await expect(page.getByText('completed', { exact: true })).toBeVisible({
+            await expect(
+                page.getByText('Completed', { exact: true }).filter({ visible: true }).first(),
+            ).toBeVisible({
                 timeout: 20000,
             });
         const retry = await contexts[0]!.request.post(`/api/sessions/${session.id}/rating/close`, {
@@ -185,7 +196,7 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
                 data: {
                     type: 'PRE_SELECTED',
                     movieId: session.movieId,
-                    scheduledAt: '2026-12-02T00:00:00Z',
+                    scheduledAt: '2090-12-02T00:00:00Z',
                     location: 'Second screening room',
                     deadlineAt: null,
                 },
@@ -205,9 +216,11 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
         const blocking = (await blockingResponse.json()) as { id: string };
         expect((await create()).status()).toBe(409);
         await page.goto(`/clubs/${session.clubId}/sessions`);
-        const ratings = page.getByRole('region', { name: 'Active Ratings' });
-        await expect(ratings.getByRole('link')).toHaveCount(2);
-        await expect(ratings.getByRole('progressbar', { name: '0 of 3 rated' })).toBeVisible();
+        const active = page.getByRole('region', { name: 'Open Ratings', exact: true });
+        await expect(active.getByRole('listitem')).toHaveCount(2);
+        await expect(active.locator(`a[href="/sessions/${session.id}"]`)).toBeVisible();
+        await expect(active.locator(`a[href="/sessions/${second.id}"]`)).toBeVisible();
+        await expect(active.getByRole('progressbar', { name: '0 of 3 rated' })).toBeVisible();
         await expect(page.getByRole('link', { name: /^Open Session:/u })).toHaveAttribute(
             'href',
             `/sessions/${blocking.id}`,
@@ -220,11 +233,14 @@ test('Two open Rating Sessions coexist with one blocking screening and move inde
             ).status(),
         ).toBe(201);
         await page.reload();
-        await expect(ratings.getByRole('link')).toHaveCount(1);
+        await expect(active.getByRole('listitem')).toHaveCount(1);
+        await expect(active.locator(`a[href="/sessions/${session.id}"]`)).toHaveCount(0);
+        await expect(active.locator(`a[href="/sessions/${second.id}"]`)).toBeVisible();
         const history = page.getByRole('region', { name: 'History', exact: true });
-        await expect(history.getByRole('link')).toHaveAttribute('href', `/sessions/${session.id}`);
-        await history.getByRole('link').click();
-        await expect(page.getByText('completed', { exact: true })).toBeVisible();
+        const historySession = history.locator(`a[href="/sessions/${session.id}"]`);
+        await expect(historySession).toBeVisible();
+        await historySession.click();
+        await expectSessionPhase(page, 'Completed');
         await expect(page.getByText('No ratings were received.')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Session settings' })).toHaveCount(0);
     } finally {

@@ -9,8 +9,8 @@ export type TIconName =
     | 'document'
     | 'calendar'
     | 'pin'
+    | 'play'
     | 'info'
-    | 'refresh'
     | 'film-reel'
     | 'clapperboard'
     | 'star-circle'
@@ -30,13 +30,14 @@ export type TIconName =
     | 'catalog'
     | 'chart'
     | 'chat'
-    | 'chevron-right'
+    | 'chevron-down'
     | 'circle'
     | 'clock'
     | 'close'
     | 'club-building'
     | 'clubs'
     | 'contact'
+    | 'copy'
     | 'credit-card'
     | 'device'
     | 'edit'
@@ -50,13 +51,13 @@ export type TIconName =
     | 'pricing'
     | 'privacy'
     | 'profile'
-    | 'question'
     | 'pulse'
     | 'ratings'
     | 'search'
     | 'sessions'
     | 'settings'
     | 'sign-out'
+    | 'skip-forward'
     | 'user-plus'
     | 'user-x'
     | 'watchlist';
@@ -161,25 +162,23 @@ const glyphs: Record<TIconName, ReactNode> = {
             <path d="M10 18h4" />
         </>
     ),
+    // Google's mark in four ivory tones of the text colour; the inset keeps its curves uncropped.
     google: (
-        <>
+        <g fill="currentColor" stroke="none" transform="translate(1 1) scale(0.4583)">
+            <path d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
             <path
-                fill="currentColor"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32l3.57 2.76a12 12 0 0 0 3.27-8.09Z"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                fillOpacity={0.8}
             />
             <path
-                fill="currentColor"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76A6.95 6.95 0 0 1 12 19.14c-3.15 0-5.82-2.13-6.77-5L1.53 17A11.04 11.04 0 0 0 12 23Z"
+                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                fillOpacity={0.5}
             />
             <path
-                fill="currentColor"
-                d="M5.23 14.14a7.12 7.12 0 0 1 0-4.28L1.53 7A11.04 11.04 0 0 0 1 12c0 1.78.42 3.46 1.22 4.99l3.7-2.86Z"
+                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                fillOpacity={0.65}
             />
-            <path
-                fill="currentColor"
-                d="M12 4.86c1.6 0 3.04.55 4.17 1.63l3.12-3.12A11.04 11.04 0 0 0 12 1C8.1 1 4.68 2.83 2.53 5.7l3.7 2.86A7.13 7.13 0 0 1 12 4.86Z"
-            />
-        </>
+        </g>
     ),
     hub: (
         <>
@@ -234,11 +233,6 @@ const glyphs: Record<TIconName, ReactNode> = {
     pulse: (
         <>
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-        </>
-    ),
-    question: (
-        <>
-            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01" />
         </>
     ),
     ratings: (

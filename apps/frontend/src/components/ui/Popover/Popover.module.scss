@@ -17,7 +17,31 @@
     box-shadow: var(--shadow-overlay);
 }
 
+.popover.m-rating,
 .popover.m-watchlist {
     padding: var(--gap-xs);
-    background: var(--header-glass);
+}
+
+.popover.m-review {
+    --details-popover-width: min(400px, calc(100% - var(--gap-md) * 2));
+
+    padding: var(--gap-sm);
+}
+
+.popover.m-selection {
+    --details-popover-width: min(272px, calc(100% - var(--gap-md) * 2));
+
+    padding: var(--gap-sm);
+}
+
+.popover.m-participants {
+    max-height: min(320px, calc(100dvh - var(--gap-md) * 2));
+    padding: var(--gap-sm);
+}
+
+@media (width < 576px) {
+    .popover.m-review,
+    .popover.m-selection {
+        --details-popover-width: calc(100% - var(--gap-md) * 2);
+    }
 }

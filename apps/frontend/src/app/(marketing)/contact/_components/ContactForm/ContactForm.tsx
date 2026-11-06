@@ -83,7 +83,7 @@ export default function ContactForm() {
                 maxLength={CONTACT_MESSAGE_MAX_LENGTH}
                 placeholder="Tell us what's on your mind…"
                 required
-                showCount
+                shouldShowCount
                 size="large"
             />
             <TextInput

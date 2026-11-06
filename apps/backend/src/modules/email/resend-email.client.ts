@@ -17,12 +17,20 @@ export class EmailDeliveryError extends Error {
 }
 
 export class ResendEmailClient implements IEmailClient {
+    /** `localDelivery` marks a scoped local run: only its recipients, with a [LOCAL] subject. */
     constructor(
-        private readonly apiKey: string,
-        private readonly from: string,
+        private readonly options: {
+            apiKey: string;
+            from: string;
+            localDelivery?: { recipients: string[] } | null;
+        },
     ) {}
 
     async send(message: IEmailMessage): Promise<string> {
+        const { apiKey, from, localDelivery } = this.options;
+        if (localDelivery && !localDelivery.recipients.includes(message.to.trim().toLowerCase())) {
+            throw new EmailDeliveryError('local_recipient_not_allowed', false);
+        }
         // The SDK send method exposes no AbortSignal; bound the external request at this adapter.
         let response: Response;
         try {
@@ -31,16 +39,16 @@ export class ResendEmailClient implements IEmailClient {
                 redirect: 'error',
                 signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
                 headers: {
-                    Authorization: `Bearer ${this.apiKey}`,
+                    Authorization: `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
                     ...(message.idempotencyKey
                         ? { 'Idempotency-Key': message.idempotencyKey }
                         : {}),
                 },
                 body: JSON.stringify({
-                    from: this.from,
+                    from,
                     to: message.to,
-                    subject: message.subject,
+                    subject: localDelivery ? `[LOCAL] ${message.subject}` : message.subject,
                     text: message.text,
                     html: message.html,
                     reply_to: message.replyTo,

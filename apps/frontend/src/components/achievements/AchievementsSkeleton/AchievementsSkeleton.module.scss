@@ -1,0 +1,142 @@
+.achievementLayout {
+    display: grid;
+    gap: var(--gap-lg);
+    min-width: 0;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--gap-sm);
+}
+
+.filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-xs);
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 100px;
+    padding: 24px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.filterValue {
+    display: grid;
+    align-items: center;
+    width: 60%;
+    height: calc(var(--fs-app-title) * var(--lh-title));
+    border-radius: var(--radius);
+}
+
+.filterLabel {
+    display: grid;
+    align-items: center;
+    width: 70%;
+    height: 1lh;
+    font-size: var(--fs-body-sm);
+}
+
+.shelf {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gap-md);
+    margin-bottom: var(--gap-md);
+}
+
+.achievement {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    min-height: 300px;
+    padding: 22px 16px;
+    border: 1px solid var(--border-lit);
+    border-radius: var(--radius-lg);
+}
+
+.badge {
+    flex: 0 0 auto;
+    width: 80px;
+    height: 80px;
+    margin: 6px 0 24px;
+    border-radius: var(--radius-pill);
+}
+
+.achievementStatus {
+    width: 70px;
+    height: 1lh;
+    margin-bottom: 12px;
+    font-size: var(--fs-micro);
+    border-radius: var(--radius);
+}
+
+.achievementTitle {
+    display: grid;
+    align-items: center;
+    width: 100%;
+    height: calc(var(--fs-card-title) * var(--lh-title));
+    margin-bottom: 7px;
+    border-radius: var(--radius);
+}
+
+.description {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    gap: var(--gap-xs);
+    align-items: center;
+    width: 100%;
+    min-height: 3lh;
+    font: var(--fs-meta)/var(--lh-body) var(--font-body);
+}
+
+.achievementProgress {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    width: 100%;
+    max-width: 160px;
+    padding-top: var(--gap-sm);
+    margin-top: auto;
+}
+
+.achievementProgress > div:first-child {
+    width: 60%;
+    height: 1lh;
+    font: 700 var(--fs-meta)/normal var(--font-mono);
+}
+
+.bar {
+    width: 100%;
+    height: 5px;
+    border-radius: var(--radius-pill);
+}
+
+@media (width < 768px) {
+    .shelf {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--gap-sm);
+    }
+
+    .achievement {
+        min-height: 280px;
+        padding: 18px 12px;
+    }
+
+    .badge {
+        width: 64px;
+        height: 64px;
+    }
+
+    .achievementTitle {
+        height: calc(var(--fs-lead) * var(--lh-title));
+    }
+}
+
+@media (width < 576px) {
+    .filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

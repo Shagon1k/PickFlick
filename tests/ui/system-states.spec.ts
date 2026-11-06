@@ -181,10 +181,7 @@ for (const viewport of screenshotViewports) {
         async ({ page }) => {
             await openNotFound(page, viewport);
             await expect(page).toHaveScreenshot(`not-found-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );
@@ -195,10 +192,7 @@ for (const viewport of screenshotViewports) {
         async ({ page }) => {
             await openApplicationError(page, viewport);
             await expect(page).toHaveScreenshot(`application-error-${viewport.name}.png`, {
-                animations: 'disabled',
-                caret: 'hide',
                 fullPage: true,
-                scale: 'css',
             });
         },
     );

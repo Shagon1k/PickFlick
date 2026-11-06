@@ -1,0 +1,76 @@
+.member {
+    display: flex;
+    gap: var(--gap-md);
+    align-items: center;
+    justify-content: space-between;
+    min-height: 88px;
+    padding-block: 16px;
+}
+
+.member + .member {
+    border-top: 1px solid var(--border);
+}
+
+.identity {
+    display: flex;
+    flex: 1;
+    gap: var(--gap-md);
+    align-items: center;
+    min-width: 0;
+}
+
+.identityCopy {
+    flex: 1;
+    min-width: 0;
+}
+
+.memberName {
+    width: 60%;
+    height: 1lh;
+    font-size: var(--fs-body);
+}
+
+.memberRole {
+    width: 35%;
+    height: 1lh;
+    margin-top: 3px;
+    font: var(--fs-meta)/var(--lh-body) var(--font-mono);
+}
+
+.memberActions {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--gap-md);
+    align-items: center;
+}
+
+.sessionCount {
+    display: grid;
+    gap: 3px;
+    width: 48px;
+}
+
+.sessionCount > div {
+    height: calc(24px * var(--lh-ui));
+    border-radius: var(--radius);
+}
+
+.remove {
+    width: var(--hit);
+}
+
+@media (width < 576px) {
+    .member,
+    .identity,
+    .memberActions {
+        gap: var(--gap-xs);
+    }
+
+    .memberName {
+        font-size: var(--fs-body-sm);
+    }
+
+    .sessionCount > div {
+        height: calc(22px * var(--lh-ui));
+    }
+}

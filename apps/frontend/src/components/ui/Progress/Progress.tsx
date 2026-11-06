@@ -4,14 +4,14 @@ export interface IProgressProps {
     label: string;
     value: number;
     max: number;
-    compact?: boolean;
+    isCompact?: boolean;
 }
 
-export default function Progress({ compact = false, label, max, value }: IProgressProps) {
+export default function Progress({ isCompact = false, label, max, value }: IProgressProps) {
     const safeMax = Math.max(1, max);
     const safeValue = Math.min(Math.max(0, value), safeMax);
     return (
-        <div className={styles.progress} data-compact={compact || undefined}>
+        <div className={styles.progress} data-compact={isCompact || undefined}>
             <div className={styles.progress__copy}>
                 <span>{label}</span>
                 <strong>

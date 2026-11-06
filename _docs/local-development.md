@@ -49,8 +49,24 @@ corepack enable
 
 `pnpm dev` builds the shared packages, then runs the frontend on port 3000, the backend on port 3001 and the deadline and email workers without ports. The backend rebuilds with `tsc` and restarts under `nodemon` when its code, the root `.env`,
 or a shared package changes. The worker watches that compiled output. Apply migrations before starting
-the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email dispatch remains disabled locally.
+the worker; the deadline worker applies overdue Nomination deadlines every five seconds. Email
+dispatch is disabled locally by default.
 Generate synthetic templates with `pnpm email:preview`; see [Email delivery operations](email-delivery.md).
+
+For an owner-approved real-email test, follow [Verify real email locally](email-delivery.md#verify-real-email-locally).
+The opt-in requires approved recipients and a fresh activation cutoff, prefixes subjects with
+`[LOCAL]`, leaves older notification backlog untouched and skips operator email alerts. Test and
+preview environments still never send. Restore disabled delivery when the local test ends.
+
+After pulling a schema change, run `pnpm install` again; it regenerates the Prisma Client. Then restart
+your editor's ESLint and TypeScript servers. Editors that keep the old client report
+`@typescript-eslint/no-unsafe-*` errors that `pnpm lint` does not.
+
+The running API imports the database package's built client from `dist`. After applying a schema
+migration, restart `pnpm dev` so its shared-package build updates that runtime client. If dev stays
+running, use `pnpm --filter @pickflick/database build`; the existing watcher restarts the API and
+workers. `prisma generate` alone updates the source client, which can leave readiness healthy while
+real API reads fail with unknown-field errors.
 
 ## Enable the movie catalog
 
@@ -99,7 +115,7 @@ loopback host, or `test` with `pickflick_test`. To change the schema, follow
 | Full Playwright behavior checks             | `pnpm test:ui:contract` |
 | Playwright screenshot comparisons           | `pnpm test:ui:visual`   |
 | Both Playwright selections                  | `pnpm test:ui`          |
-| Smoke the built deadline worker             | `pnpm test:worker`      |
+| Smoke the built deadline and email workers  | `pnpm test:worker`      |
 | Smoke the built frontend and backend        | `pnpm test:e2e`         |
 
 `pnpm test:integration` needs the local services running. Run it and `pnpm test:journeys` against
@@ -132,6 +148,9 @@ Stylelint and ESLint can. Commit messages follow Conventional Commits.
 
 ## Common problems
 
+- **A CSS change still looks old after Fast Refresh.** Reload the page fully before checking the
+  result. A long dev session can retain older CSS chunks beside the updated sheet; local browser
+  inspection confirmed that full navigation cleared conflicting old rules.
 - **A port is in use.** Another project probably holds `15432` or `19000`. Stop it, or change
   `POSTGRES_PORT` or `MINIO_API_PORT` together with `DATABASE_URL` or `STORAGE_ENDPOINT` in `.env`.
 - **The backend exits at startup.** The log names every invalid variable; compare `.env` with
@@ -143,8 +162,8 @@ Stylelint and ESLint can. Commit messages follow Conventional Commits.
   `THETVDB_READ_TOKEN`. TheTVDB expects the bearer token returned as `data.token` by its
   `/v4/login` API; an API key must be exchanged there first, rather than copied into the token field.
 - **Contact succeeds but no email arrives locally.** Local email delivery is disabled by default;
-  the backend logs that delivery was skipped and stores no message body. Verify real delivery only
-  with an explicitly configured live sender and approved recipient.
+  the backend logs that delivery was skipped and stores no message body. Use the
+  [scoped local opt-in](email-delivery.md#verify-real-email-locally) for approved recipient tests.
 - **Seed or reset refuses to run.** Check `APP_ENV` and the database name in `DATABASE_URL`.
 - **`/ui-preview` or `/shell-preview` answers 404.** They are hidden only when
   `APP_ENV=production`.

@@ -26,14 +26,29 @@ describe('createPastSessionSchema', () => {
         ];
         const input = {
             ...minimal,
-            attendees: [{ membershipId }],
+            attendees: [{ membershipId }, { membershipId: randomUUID() }],
             nominations,
             scoreMatrix: [
                 { membershipId, scores: [{ movieId: nominations[0]!.movieId, score: 0 }] },
             ],
         };
         expect(createPastSessionSchema.parse(input)).toEqual(input);
-        expect(createPastSessionSchema.safeParse({ ...minimal, nominations }).success).toBe(true);
+        expect(createPastSessionSchema.safeParse({ ...input, scoreMatrix: [] }).success).toBe(true);
+    });
+    it('should cap nominations at the selected attendee count including the screened Movie', () => {
+        const input = {
+            ...minimal,
+            attendees: [{ membershipId: randomUUID() }],
+            nominations: [{ movieId: minimal.movieId }],
+        };
+        expect(createPastSessionSchema.safeParse(input).success).toBe(true);
+        expect(createPastSessionSchema.safeParse({ ...input, attendees: [] }).success).toBe(false);
+        expect(
+            createPastSessionSchema.safeParse({
+                ...input,
+                nominations: [...input.nominations, { movieId: randomUUID() }],
+            }).success,
+        ).toBe(false);
     });
     it('should reject duplicate Movies, malformed rows, foreign cells and fabricated provenance', () => {
         const membershipId = randomUUID();
@@ -79,6 +94,20 @@ describe('createPastSessionSchema', () => {
         expect(createPastSessionSchema.safeParse({ ...minimal, topic: 'one\ntwo' }).success).toBe(
             false,
         );
+    });
+    it('should let each attendee nominate only one Movie', () => {
+        const membershipId = randomUUID();
+        const result = createPastSessionSchema.safeParse({
+            ...minimal,
+            attendees: [{ membershipId }, { membershipId: randomUUID() }],
+            nominations: [
+                { movieId: randomUUID(), nominatorMembershipId: membershipId },
+                { movieId: randomUUID(), nominatorMembershipId: membershipId },
+            ],
+        });
+        expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+            'Choose each nominator for one Movie only.',
+        ]);
     });
     it('should reject future dates, missing Movies, repeated attendees and invented phases', () => {
         const attendee = { membershipId: randomUUID() };

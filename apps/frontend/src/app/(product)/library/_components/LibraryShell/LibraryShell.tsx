@@ -1,11 +1,15 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 import { getLibraryStatistics } from '#api/library.server';
 import ControlShell from '#components/shells/ControlShell/ControlShell';
+import StatisticsSkeleton from '#components/statistics/StatisticsSkeleton/StatisticsSkeleton';
 import Alert from '#components/ui/Alert/Alert';
 import ButtonLink from '#components/ui/Button/ButtonLink';
+import LoadingState from '#components/ui/LoadingState/LoadingState';
 
+import { getLibraryTabItems } from '../../library-tabs';
 import { loadLibraryRead } from '../../load-library-read';
+import styles from '../../page.module.scss';
 import LibraryStatistics from '../LibraryStatistics/LibraryStatistics';
 
 async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) {
@@ -13,7 +17,7 @@ async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) 
     return statistics ? (
         <LibraryStatistics statistics={statistics} />
     ) : (
-        <section aria-label="Personal statistics unavailable">
+        <section className={styles.recovery} aria-label="Personal statistics unavailable">
             <Alert tone="warning">Your statistics are temporarily unavailable.</Alert>
             <ButtonLink href={returnPath}>Retry statistics</ButtonLink>
         </section>
@@ -23,38 +27,33 @@ async function LibraryStatisticsSummary({ returnPath }: { returnPath: string }) 
 export default function LibraryShell({
     current,
     returnPath,
-    showStatistics,
+    shouldShowStatistics,
     children,
 }: {
     current: 'my-ratings' | 'watchlist' | 'achievements';
     returnPath: string;
-    showStatistics: boolean;
+    shouldShowStatistics: boolean;
     children: ReactNode;
 }) {
     return (
         <ControlShell
             title="My Library"
-            description="Your ratings and films to watch, at your own pace."
             currentArea="library"
             clubItems={[]}
-            summary={showStatistics && <LibraryStatisticsSummary returnPath={returnPath} />}
-            items={[
-                {
-                    label: 'My Ratings',
-                    href: '/library?tab=my-ratings',
-                    current: current === 'my-ratings',
-                },
-                {
-                    label: 'Watchlist',
-                    href: '/library?tab=watchlist',
-                    current: current === 'watchlist',
-                },
-                {
-                    label: 'Achievements',
-                    href: '/library?tab=achievements',
-                    current: current === 'achievements',
-                },
-            ]}
+            summary={
+                shouldShowStatistics && (
+                    <Suspense
+                        fallback={
+                            <LoadingState label="Loading personal statistics…">
+                                <StatisticsSkeleton />
+                            </LoadingState>
+                        }
+                    >
+                        <LibraryStatisticsSummary returnPath={returnPath} />
+                    </Suspense>
+                )
+            }
+            items={getLibraryTabItems(current)}
         >
             {children}
         </ControlShell>

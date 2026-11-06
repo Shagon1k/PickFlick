@@ -7,11 +7,8 @@ import { testUtils } from 'better-auth/plugins';
 import { RuntimeModule } from '../../../config/runtime.module.js';
 import { DatabaseModule } from '../../../database/database.module.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import {
-    createUser,
-    loadIntegrationEnvironment,
-    removeUsers,
-} from '../../../testing/integration.js';
+import { createUser, loadIntegrationEnvironment } from '../../../testing/integration.js';
+import { removeUsers } from '../../../testing/remove-users.js';
 import { AUTH_PLUGINS, AuthService } from '../auth.service.js';
 
 interface ITestLogin {
@@ -136,8 +133,47 @@ describe('AuthService', () => {
         it('should refuse to create a session for a suspended User', async () => {
             const userId = await user('SUSPENDED');
 
-            await expect(login(userId)).rejects.toThrow();
+            await expect(login(userId)).rejects.toMatchObject({
+                body: { code: 'ACCOUNT_INACTIVE' },
+            });
             expect(await prisma.authSession.count({ where: { userId } })).toBe(0);
+        });
+    });
+
+    describe('when writing provider sign-in records', () => {
+        it('should refuse to create a User whose provider has not verified the email', async () => {
+            const { internalAdapter } = await service.auth.$context;
+            const email = `unverified-${crypto.randomUUID()}@example.test`;
+
+            await expect(
+                internalAdapter.createUser(
+                    { email, name: 'Unverified', emailVerified: false },
+                    { method: 'oauth', oauth: { providerId: 'google' } },
+                ),
+            ).rejects.toMatchObject({ body: { code: 'EMAIL_NOT_VERIFIED' } });
+            expect(await prisma.user.count({ where: { email } })).toBe(0);
+        });
+
+        it('should store a provider account without its tokens on create and update', async () => {
+            const { internalAdapter } = await service.auth.$context;
+            const userId = await user();
+            const tokens = {
+                accessToken: 'access',
+                refreshToken: 'refresh',
+                idToken: 'id',
+                scope: 'email',
+            };
+            const account = await internalAdapter.createAccount({
+                userId,
+                providerId: 'google',
+                accountId: crypto.randomUUID(),
+                ...tokens,
+            });
+            await internalAdapter.updateAccount(account.id, tokens);
+
+            expect(
+                await prisma.providerAccount.findUniqueOrThrow({ where: { id: account.id } }),
+            ).toMatchObject({ accessToken: null, refreshToken: null, idToken: null, scope: null });
         });
     });
 

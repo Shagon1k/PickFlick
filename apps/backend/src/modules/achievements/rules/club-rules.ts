@@ -1,15 +1,16 @@
-import { snapshotSchema } from '../../sessions/selection/selection-outcome.js';
+import { selectionResultSchema } from '../../sessions/selection/selection-result.js';
+import type { TClubAchievementKey } from './rule-catalog.js';
 import {
     getAverage,
     getLargestBucket,
     getLongestRun,
     getMembersAtScreening,
     readDetails,
+    toUtcDayKey,
+    toUtcMonthKey,
 } from './rule-helpers.js';
-import type { TAchievementSession } from './rule-sources.js';
+import { hasAttended, type TAchievementSession } from './rule-sources.js';
 
-const DATE_LENGTH = 10;
-const MONTH_LENGTH = 7;
 const EVENING_HOUR = 18;
 const DECADE = 10;
 const COMEBACK_MS = 30 * 24 * 60 * 60 * 1000;
@@ -30,7 +31,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
             date: session.scheduledAt?.toISOString() ?? null,
             members: getMembersAtScreening(session).map((member) => member.id),
             accepted: session.participants
-                .filter((participant) => participant.attended === true)
+                .filter((participant) => hasAttended(session, participant))
                 .map((participant) => participant.membershipId),
             ratings: session.ratings.map((rating) => ({
                 id: rating.id,
@@ -44,7 +45,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
         })),
     };
     const hasFullHouse = completed.some((session) =>
-        everyMemberAtScreening(session, (participant) => participant.attended === true),
+        everyMemberAtScreening(session, (participant) => hasAttended(session, participant)),
     );
     const hasCriticsCircle = completed.some((session) =>
         everyMemberAtScreening(session, (participant) =>
@@ -56,19 +57,19 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     );
     const double = getLargestBucket(
         evenings.map(({ session }) => ({
-            bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
+            bucket: toUtcDayKey(session.scheduledAt!),
             value: 1,
         })),
     );
     const runtime = getLargestBucket(
         evenings.map(({ session, details }) => ({
-            bucket: session.scheduledAt!.toISOString().slice(0, DATE_LENGTH),
+            bucket: toUtcDayKey(session.scheduledAt!),
             value: details?.runtime ?? 0,
         })),
     );
     const month = getLargestBucket(
         dated.map((session) => ({
-            bucket: session.scheduledAt!.toISOString().slice(0, MONTH_LENGTH),
+            bucket: toUtcMonthKey(session.scheduledAt!),
             value: 1,
         })),
     );
@@ -79,9 +80,10 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     );
     const genres = new Set(screenings.flatMap(({ details }) => details?.genres ?? []));
     const selections = sessions.flatMap((session) => {
-        if (session.type !== 'FULL_CYCLE') return [];
-        const parsed = snapshotSchema.safeParse(session.selectionResult);
-        return parsed.success ? [{ id: session.id, ranking: parsed.data.ranking }] : [];
+        if (session.type !== 'FULL_CYCLE' || session.selectionResult === null) return [];
+        // Our own Selection closure writes this snapshot, so a malformed one is corrupt data.
+        const { ranking } = selectionResultSchema.parse(session.selectionResult);
+        return [{ id: session.id, ranking }];
     });
     const hasMargin = selections.some(
         ({ ranking }) => ranking.length > 1 && ranking[0]!.total - ranking[1]!.total === 1,
@@ -89,7 +91,7 @@ export function buildClubAchievements(sessions: TAchievementSession[]) {
     const countries = new Set(
         screenings.flatMap(({ details }) => details?.productionCountries ?? []),
     );
-    const metrics: Record<string, number> = {
+    const metrics: Record<TClubAchievementKey, number> = {
         'first-screening': completed.length,
         'full-house': Number(hasFullHouse),
         'critics-circle': Number(hasCriticsCircle),

@@ -51,6 +51,7 @@ export function handleMovieSearch(
                 },
             ],
         });
+        const title = query === 'slow' ? 'Old film' : '<script>alert(1)</script> & Film';
         const data: TMovieSearchResults = {
             movies:
                 query === 'empty'
@@ -60,9 +61,12 @@ export function handleMovieSearch(
                               query === 'posters-broken'
                                   ? '10000000-0000-4000-8000-000000000039'
                                   : '10000000-0000-4000-8000-000000000037',
-                              query === 'slow' ? 'Old film' : '<script>alert(1)</script> & Film',
+                              query === 'remembered' ? 'A remembered film' : title,
                           ),
-                          buildMovie('10000000-0000-4000-8000-000000000038', 'Second Film'),
+                          buildMovie(
+                              '10000000-0000-4000-8000-000000000038',
+                              query === 'remembered' ? 'A remembered rival' : 'Second Film',
+                          ),
                       ],
             page: 1,
             totalPages: 1,

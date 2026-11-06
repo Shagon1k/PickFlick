@@ -1,0 +1,55 @@
+.avatar {
+    display: inline-flex;
+    flex: 0 0 32px;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    font: 600 var(--fs-caption)/1 var(--font-body);
+    color: var(--fg-secondary);
+    background: var(--surface-lit);
+    border: 1.5px solid var(--bg);
+    border-radius: var(--radius-pill);
+}
+
+.avatar.m-small {
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
+    font-size: var(--fs-micro);
+    font-weight: 700;
+}
+
+.avatar.m-large {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+}
+
+.avatar.m-extra-large {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+    font-size: var(--fs-body-sm);
+}
+
+.avatar__placeholder {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.avatar__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Without ColorReveal, a parent restores the colour by setting --avatar-filter. */
+.avatar[data-without-reveal] .avatar__image {
+    filter: var(--avatar-filter, grayscale(1));
+    transition: filter var(--motion-local) var(--ease-standard);
+}

@@ -99,7 +99,7 @@
     }
 }
 
-@media (width <= 575px) {
+@media (width < 576px) {
     .page {
         width: calc(100% - 32px);
     }

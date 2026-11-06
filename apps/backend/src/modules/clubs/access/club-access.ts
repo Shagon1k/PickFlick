@@ -3,7 +3,7 @@ import type { IClubAccess, TClubLifecycle } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
 import { recordAuditNotifications } from '../../notifications/notification-producers.js';
-import { getClubEntitlements } from './club-tiers.js';
+import { getClubEntitlements, getTierEntitlements } from './club-tiers.js';
 
 const clubColumns = {
     id: true,
@@ -14,11 +14,13 @@ const clubColumns = {
     lifecycle: true,
     selectionScaleMin: true,
     selectionScaleMax: true,
-    showNominationAuthors: true,
     showNominationsBeforeSubmit: true,
-    showVoteResults: true,
-    showRatingResults: true,
-    useMonochromeMedia: true,
+    showNominationAuthorsDuring: true,
+    showNominationAuthorsAfter: true,
+    showSelectionScoresDuring: true,
+    showSelectionScoresAfter: true,
+    showRatingsDuring: true,
+    showRatingsAfter: true,
 } as const;
 
 /**
@@ -32,7 +34,13 @@ export async function findMembership(
 ) {
     const membership = await database.membership.findFirst({
         where: { userId, clubId, status: 'ACTIVE', club: { deletedAt: null } },
-        select: { id: true, role: true, club: { select: clubColumns } },
+        select: {
+            id: true,
+            userId: true,
+            role: true,
+            joinedAt: true,
+            club: { select: clubColumns },
+        },
     });
     if (!membership) {
         throw new NotFoundException();
@@ -86,7 +94,17 @@ export function getClubAccess(
     if (lifecycle === 'ARCHIVED') reasons.push('ARCHIVED');
     if (!hasAdmin) reasons.push('ADMINLESS');
     if (memberCount > memberLimit) reasons.push('MEMBER_LIMIT');
-    return { adminless: !hasAdmin, newWorkAllowed: reasons.length === 0, reasons };
+    return {
+        adminless: !hasAdmin,
+        newWorkAllowed: reasons.length === 0,
+        isAtCapacity: memberCount >= memberLimit,
+        reasons,
+    };
+}
+
+/** Members who count toward the Club's limit and its Nomination denominator. */
+export function countActiveMembers(database: Prisma.TransactionClient, clubId: string) {
+    return database.membership.count({ where: { clubId, status: 'ACTIVE' } });
 }
 
 /** Counts active members and checks for an active Admin, then derives the Club's access state. */
@@ -99,11 +117,33 @@ export async function loadClubAccess(
             where: { clubId: club.id, role: 'ADMIN', status: 'ACTIVE' },
             select: { id: true },
         }),
-        database.membership.count({ where: { clubId: club.id, status: 'ACTIVE' } }),
+        countActiveMembers(database, club.id),
     ]);
     const { memberLimit } = getClubEntitlements(club.id);
     return {
         access: getClubAccess(club.lifecycle, Boolean(admin), memberCount, memberLimit),
         memberCount,
     };
+}
+
+/**
+ * The administered-Club limit belongs to the Admin, so creation and reactivation count the same way.
+ * Callers take the `club-admin:<userId>` lock first so concurrent requests count each other.
+ * shortcut: every Admin is on the Free limit until billing (Phase 20) gives Users a plan.
+ */
+export async function assertBelowAdminLimit(
+    transaction: Prisma.TransactionClient,
+    userId: string,
+): Promise<void> {
+    const administered = await transaction.membership.count({
+        where: {
+            userId,
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            club: { lifecycle: 'ACTIVE', deletedAt: null },
+        },
+    });
+    if (administered >= getTierEntitlements('FREE').adminClubLimit) {
+        throw new ConflictException({ reason: 'ADMIN_CLUB_LIMIT_REACHED' });
+    }
 }

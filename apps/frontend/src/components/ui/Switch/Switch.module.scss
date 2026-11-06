@@ -37,6 +37,8 @@
 }
 
 .switch__track {
+    --action-scale: var(--action-scale-small);
+
     position: relative;
     flex: 0 0 auto;
     width: 48px;
@@ -72,6 +74,16 @@
     transform: translateX(20px);
 }
 
+.switch:hover .switch__input:not(:disabled) + .switch__track {
+    background: var(--surface-lit);
+    border-color: var(--fg-secondary);
+}
+
+.switch:hover .switch__input:checked:not(:disabled) + .switch__track {
+    background: var(--gold-glow);
+    border-color: var(--gold);
+}
+
 .switch__input:focus-visible + .switch__track {
     outline: 2px solid var(--gold);
     outline-offset: 3px;
@@ -80,11 +92,4 @@
 .switch:has(.switch__input:disabled) {
     cursor: not-allowed;
     opacity: 0.5;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .switch__track,
-    .switch__thumb {
-        transition-duration: 0.01ms;
-    }
 }

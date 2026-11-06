@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
+import { configureApplication } from '../../../config/configure-application.js';
 import { buildCanonicalDetails, MOVIE_ID } from '../../../testing/movie-fixtures.js';
 import { AuthGuard } from '../../auth/auth.guard.js';
 import { AuthService } from '../../auth/auth.service.js';
@@ -18,6 +19,7 @@ describe('MoviesController', () => {
     const storeMedia = vi.fn<MovieImagesService['storeMedia']>();
     const search = vi.fn<MoviesService['search']>();
     const getCachedPoster = vi.fn<MoviesService['getCachedPoster']>();
+    const getCachedMetadata = vi.fn<MoviesService['getCachedMetadata']>();
 
     beforeAll(async () => {
         const module = await Test.createTestingModule({
@@ -27,18 +29,24 @@ describe('MoviesController', () => {
                 { provide: MovieImagesService, useValue: { get: getImage, storeMedia } },
                 {
                     provide: MoviesService,
-                    useValue: { search, getDetailsResponse, getCachedPoster },
+                    useValue: { search, getDetailsResponse, getCachedPoster, getCachedMetadata },
                 },
                 {
                     provide: AuthService,
                     useValue: {
                         resolveUser: (headers: Record<string, unknown>) =>
                             headers['x-test-user'] ? { id: 'user' } : null,
+                        handler: vi.fn(),
                     },
                 },
             ],
         }).compile();
-        app = module.createNestApplication<NestExpressApplication>({ logger: false });
+        app = module.createNestApplication<NestExpressApplication>({
+            bodyParser: false,
+            logger: false,
+        });
+        // The shared configuration owns the default Cache-Control the poster route overrides.
+        configureApplication(app);
         app.useGlobalGuards(app.get(AuthGuard));
         await app.listen(0, '127.0.0.1');
         url = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}/movies/search`;
@@ -49,6 +57,7 @@ describe('MoviesController', () => {
         storeMedia.mockReset();
         getDetailsResponse.mockReset();
         getCachedPoster.mockReset();
+        getCachedMetadata.mockReset().mockResolvedValue(new Map());
     });
     afterAll(() => app.close());
 
@@ -173,12 +182,30 @@ describe('MoviesController', () => {
             redirect: 'manual',
         });
         expect(response.status).toBe(302);
-        expect(response.headers.get('cache-control')).toBe('private, no-store');
+        expect(response.headers.get('cache-control')).toBe('private, max-age=86400');
         expect(response.headers.get('location')).toBe(`/api/movies/images/${'a'.repeat(64)}`);
         expect(storeMedia).toHaveBeenCalledWith({
             posterUrl: 'https://image.tmdb.org/t/p/original/poster.jpg',
             backdropUrl: null,
         });
+    });
+
+    it('should enrich missing search genres from cached metadata without ingesting images', async () => {
+        const data = buildCanonicalDetails();
+        search.mockResolvedValue({
+            state: 'fresh',
+            data: { movies: [{ ...data, genres: [] }], page: 1, totalPages: 1, totalResults: 1 },
+            fetchedAt: '2026-10-10T12:00:00.000Z',
+        });
+        getCachedMetadata.mockResolvedValue(new Map([[data.id, { ...data, genres: ['Drama'] }]]));
+        const response = await request({ query: 'Film' });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            data: { movies: [{ id: data.id, genres: ['Drama'] }] },
+        });
+        expect(getCachedMetadata).toHaveBeenCalledWith([data.id]);
+        expect(getDetailsResponse).not.toHaveBeenCalled();
+        expect(storeMedia).not.toHaveBeenCalled();
     });
 
     it('should return an eight-second search within its deadline despite three-second image ingestion', async () => {
@@ -254,6 +281,9 @@ describe('MoviesController', () => {
         expect(response.status).toBe(200);
         expect(response.headers.get('cache-control')).toBe('private, no-store');
         expect(await response.json()).toEqual({ state: 'unavailable', reason: 'RATE_LIMITED' });
-        expect(search).toHaveBeenCalledWith({ query: 'Film', page: 1, locale: 'en-US' }, true);
+        expect(search).toHaveBeenCalledWith(
+            { query: 'Film', page: 1, locale: 'en-US' },
+            { allowStale: true },
+        );
     });
 });
