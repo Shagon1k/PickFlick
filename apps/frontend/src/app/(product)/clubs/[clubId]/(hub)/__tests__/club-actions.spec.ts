@@ -48,15 +48,10 @@ function formData(values: Record<string, string | File>): FormData {
 }
 
 const settingsForm = () =>
-    formData({
-        name: 'Midnight Society',
-        selectionScaleMin: '0',
-        selectionScaleMax: '7',
-        showSelectionScoresAfter: 'on',
-    });
+    formData({ selectionScaleMin: '0', selectionScaleMax: '7', showSelectionScoresAfter: 'on' });
 
 const avatarForm = () => {
-    const form = settingsForm();
+    const form = formData({ name: 'Midnight Society', description: '' });
     form.set(
         'avatar',
         new File([new Uint8Array([137, 80, 78, 71])], 'avatar.png', { type: 'image/png' }),
@@ -79,7 +74,6 @@ describe('Club settings actions', () => {
             status: 'success',
         });
         expect(api.updateClubSettings).toHaveBeenCalledWith(CLUB_ID, {
-            name: 'Midnight Society',
             selectionScaleMin: 0,
             selectionScaleMax: 7,
             showNominationAuthorsDuring: false,
@@ -108,7 +102,7 @@ describe('Club settings actions', () => {
             revision: 4,
             status: 'success',
         });
-        expect(api.updateClubSettings).toHaveBeenCalledOnce();
+        expect(api.updateClubSettings).toHaveBeenCalledWith(CLUB_ID, { name: 'Midnight Society' });
         expect(api.replaceClubAvatar).toHaveBeenCalledWith(CLUB_ID, expect.any(File));
     });
 

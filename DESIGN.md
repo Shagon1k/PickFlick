@@ -354,8 +354,8 @@ here.
   and Save Changes uploads it with the other fields. The heading tooltip contains image formats,
   size/private-storage requirements and upload instructions; there is no separate Avatar caption.
   Settings owns the Selection score range below its visibility tabs, before Save Changes. The slider keeps its numeric
-  value and accessible value text without a repeated Members score nominations caption. Both forms
-  submit exactly one saved/edited scale pair and retain the other card's stored fields.
+  value and accessible value text without a repeated Members score nominations caption. Each form
+  sends only its own fields, so saving one card never resets the other.
   Settings uses neutral
   During Session/After Session tabs with three visibility checkboxes in each. Both panels stay
   mounted so saving either tab retains all six values. Appearance is not a Club-level control.

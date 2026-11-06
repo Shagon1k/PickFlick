@@ -35,18 +35,33 @@ export const createClubSchema = z
     .strictObject(clubDetailsShape)
     .refine(scaleIsIncreasing.check, scaleIsIncreasing.issue);
 
-export const updateClubSettingsSchema = z
+export const clubVisibilityShape = {
+    showNominationAuthorsDuring: z.boolean(),
+    showNominationAuthorsAfter: z.boolean(),
+    showSelectionScoresDuring: z.boolean(),
+    showSelectionScoresAfter: z.boolean(),
+    showRatingsDuring: z.boolean(),
+    showRatingsAfter: z.boolean(),
+    showNominationsBeforeSubmit: z.boolean(),
+};
+
+/** Club Info saves the name and description; the avatar has its own endpoint. */
+export const updateClubInfoSchema = z.strictObject({
+    name: clubDetailsShape.name,
+    description: clubDetailsShape.description,
+});
+
+/** Club Settings save the Selection scale and every visibility flag together. */
+export const updateClubRulesSchema = z
     .strictObject({
-        ...clubDetailsShape,
-        showNominationAuthorsDuring: z.boolean(),
-        showNominationAuthorsAfter: z.boolean(),
-        showSelectionScoresDuring: z.boolean(),
-        showSelectionScoresAfter: z.boolean(),
-        showRatingsDuring: z.boolean(),
-        showRatingsAfter: z.boolean(),
-        showNominationsBeforeSubmit: z.boolean(),
+        selectionScaleMin: clubDetailsShape.selectionScaleMin,
+        selectionScaleMax: clubDetailsShape.selectionScaleMax,
+        ...clubVisibilityShape,
     })
     .refine(scaleIsIncreasing.check, scaleIsIncreasing.issue);
+
+/** Each settings card sends only its own fields, so one card's save never resets the other's. */
+export const updateClubSettingsSchema = z.union([updateClubInfoSchema, updateClubRulesSchema]);
 
 export const changeMemberRoleSchema = z.strictObject({
     role: z.enum(['MODERATOR', 'MEMBER']),
@@ -59,5 +74,6 @@ export const confirmClubActionSchema = z.strictObject({
 
 export type TCreateClubRequest = z.infer<typeof createClubSchema>;
 export type TUpdateClubSettingsRequest = z.infer<typeof updateClubSettingsSchema>;
+export type TUpdateClubRulesRequest = z.infer<typeof updateClubRulesSchema>;
 export type TChangeMemberRoleRequest = z.infer<typeof changeMemberRoleSchema>;
 export type TConfirmClubActionRequest = z.infer<typeof confirmClubActionSchema>;

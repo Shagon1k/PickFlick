@@ -104,7 +104,6 @@ describe('ClubsController', () => {
 
     describe('when updating settings', () => {
         const settings = {
-            name: 'Midnight Society Updated',
             selectionScaleMin: 0,
             selectionScaleMax: 7,
             showNominationAuthorsDuring: true,
@@ -116,16 +115,34 @@ describe('ClubsController', () => {
             showNominationsBeforeSubmit: true,
         };
 
-        it('should let the Admin save and record an audit event', async () => {
-            const response = await api.request(`/clubs/${club.id}/settings`, {
+        it('should let the Admin save each card without resetting the other and record audits', async () => {
+            const rules = (await (
+                await api.request(`/clubs/${club.id}/settings`, {
+                    method: 'PATCH',
+                    userId: admin,
+                    json: settings,
+                })
+            ).json()) as IClubSettings;
+            expect(rules.visibility.showRatingsAfter).toBe(false);
+            const info = (await (
+                await api.request(`/clubs/${club.id}/settings`, {
+                    method: 'PATCH',
+                    userId: admin,
+                    json: { name: 'Midnight Society Updated' },
+                })
+            ).json()) as IClubSettings;
+            expect(info.club).toMatchObject({
+                name: 'Midnight Society Updated',
+                selectionScaleMax: 7,
+            });
+            expect(info.club.description).toBeUndefined();
+            expect(info.visibility.showRatingsAfter).toBe(false);
+            // One request carries one card's fields, never a mix of both.
+            await api.expectStatus(400, `/clubs/${club.id}/settings`, {
                 method: 'PATCH',
                 userId: admin,
-                json: settings,
+                json: { ...settings, name: 'Mixed' },
             });
-            const saved = (await response.json()) as IClubSettings;
-
-            expect(saved.club.name).toBe('Midnight Society Updated');
-            expect(saved.visibility.showRatingsAfter).toBe(false);
             expect(
                 await api.prisma.clubAuditEvent.findFirst({
                     where: { clubId: club.id, action: 'CLUB_SETTINGS_UPDATED' },

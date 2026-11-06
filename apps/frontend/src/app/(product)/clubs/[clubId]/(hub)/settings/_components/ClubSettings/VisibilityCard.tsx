@@ -12,7 +12,6 @@ import Tabs from '#components/ui/Tabs/Tabs';
 import styles from '../../page.module.scss';
 import { visibilityOptions } from './club-settings';
 import SaveRow from './SaveRow';
-import StoredClubInfo from './StoredClubInfo';
 
 export default function VisibilityCard({ projection }: { projection: IClubSettings }) {
     const action = updateClubSettingsAction.bind(null, projection.club.id);
@@ -28,7 +27,7 @@ export default function VisibilityCard({ projection }: { projection: IClubSettin
                 </InfoTip>
             </div>
             <form action={formAction} className={styles.cardForm}>
-                <StoredClubInfo projection={projection} />
+                {/* No control edits this rule yet, but the card saves every visibility flag. */}
                 {projection.visibility.showNominationsBeforeSubmit ? (
                     <input type="hidden" name="showNominationsBeforeSubmit" value="on" />
                 ) : null}

@@ -4,7 +4,7 @@ import {
     clubRatingsSchema,
     type IClubSettings,
     sessionSchema,
-    type TUpdateClubSettingsRequest,
+    type TUpdateClubRulesRequest,
 } from '@pickflick/contracts';
 
 import {
@@ -23,7 +23,7 @@ describe('Live Club visibility', () => {
     let clubId: string;
     let movieId: string;
     let sessionIds: string[];
-    let settings: TUpdateClubSettingsRequest;
+    let settings: TUpdateClubRulesRequest;
 
     beforeAll(async () => {
         api = await startTestApi();
@@ -39,7 +39,6 @@ describe('Live Club visibility', () => {
         }
         await api.prisma.movie.create({ data: { id: movieId, title: 'Visibility film' } });
         settings = {
-            name: 'Global visibility',
             selectionScaleMin: 0,
             selectionScaleMax: 10,
             showNominationAuthorsDuring: false,

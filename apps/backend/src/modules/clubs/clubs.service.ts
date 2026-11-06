@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { ConflictException, Injectable } from '@nestjs/common';
 import {
+    clubVisibilityShape,
     getPosterPath,
     type IClubHub,
     type IClubSessionHistoryPage,
@@ -33,15 +34,7 @@ import { findActiveMembers, toClubMember } from './club-members.js';
 import { readClubSessionHistory } from './club-session-history.js';
 import { buildClubStatistics } from './statistics/club-statistics.js';
 
-const VISIBILITY_FIELDS = [
-    'showNominationAuthorsDuring',
-    'showNominationAuthorsAfter',
-    'showSelectionScoresDuring',
-    'showSelectionScoresAfter',
-    'showRatingsDuring',
-    'showRatingsAfter',
-    'showNominationsBeforeSubmit',
-] as const;
+const VISIBILITY_FIELDS = Object.keys(clubVisibilityShape) as (keyof typeof clubVisibilityShape)[];
 
 @Injectable()
 export class ClubsService {
@@ -161,14 +154,14 @@ export class ClubsService {
             const membership = await findMembership(transaction, userId, clubId);
             assertAdmin(membership);
             assertActive(membership);
-            await transaction.club.update({
-                where: { id: clubId },
-                data: {
-                    ...input,
-                    description: input.description ?? null,
-                },
-            });
-            if (VISIBILITY_FIELDS.some((field) => input[field] !== membership.club[field])) {
+            // Club Info clears an omitted description; Club Settings never sends one.
+            const data =
+                'name' in input ? { ...input, description: input.description ?? null } : input;
+            await transaction.club.update({ where: { id: clubId }, data });
+            const isVisibilityChanged =
+                !('name' in input) &&
+                VISIBILITY_FIELDS.some((field) => input[field] !== membership.club[field]);
+            if (isVisibilityChanged) {
                 // Refresh open Session pages without changing history order or emitting phase events.
                 await transaction.$executeRaw`
                     UPDATE "Session" SET "progressVersion" = "progressVersion" + 1

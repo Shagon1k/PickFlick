@@ -40,20 +40,18 @@ describe('updateClubSettingsSchema', () => {
         showNominationsBeforeSubmit: true,
     };
 
-    it('should accept Club details with every visibility flag', () => {
-        expect(updateClubSettingsSchema.safeParse({ ...validClub, ...visibility }).success).toBe(
-            true,
-        );
+    const rules = { selectionScaleMin: 0, selectionScaleMax: 7, ...visibility };
+
+    it('should accept either card on its own', () => {
+        expect(updateClubSettingsSchema.safeParse({ name: 'Midnight Society' }).success).toBe(true);
+        expect(updateClubSettingsSchema.safeParse(rules).success).toBe(true);
     });
 
-    it('should keep the increasing-scale rule', () => {
-        const result = updateClubSettingsSchema.safeParse({
-            ...validClub,
-            ...visibility,
-            selectionScaleMin: 1,
-            selectionScaleMax: 1,
-        });
-
-        expect(result.success).toBe(false);
+    it.each([
+        { ...rules, name: 'Midnight Society' },
+        { ...rules, showRatingsAfter: undefined },
+        { ...rules, selectionScaleMin: 1, selectionScaleMax: 1 },
+    ])('should reject %o', (input) => {
+        expect(updateClubSettingsSchema.safeParse(input).success).toBe(false);
     });
 });

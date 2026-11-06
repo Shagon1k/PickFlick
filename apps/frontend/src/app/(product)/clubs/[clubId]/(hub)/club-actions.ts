@@ -4,7 +4,9 @@ import {
     changeMemberRoleSchema,
     CLUB_AVATAR_MAX_BYTES,
     CLUB_AVATAR_MEDIA_TYPES,
-    updateClubSettingsSchema,
+    type TUpdateClubSettingsRequest,
+    updateClubInfoSchema,
+    updateClubRulesSchema,
 } from '@pickflick/contracts';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -20,7 +22,6 @@ import {
     type TClubLifecycleAction,
     updateClubSettings,
 } from '#api/clubs.server';
-import { readClubValues } from '#components/clubs/club-form.validation';
 import { getFailureMessage } from '#lib/action-failure';
 import { readFormText } from '#lib/form-data';
 
@@ -58,30 +59,38 @@ async function run(
 
 const isChecked = (formData: FormData, name: string): boolean => formData.get(name) === 'on';
 
-export async function updateClubSettingsAction(
+/** Saves one settings card; the Club Hub list and Session pages show what either card holds. */
+async function saveSettings(
     clubId: string,
     previous: IClubActionState,
-    formData: FormData,
+    input: TUpdateClubSettingsRequest,
 ): Promise<IClubActionState> {
-    const values = readClubValues(formData);
-    const parsed = updateClubSettingsSchema.safeParse({
-        ...values,
-        selectionScaleMin: Number(values.selectionScaleMin),
-        selectionScaleMax: Number(values.selectionScaleMax),
-        ...Object.fromEntries(visibilityNames.map((name) => [name, isChecked(formData, name)])),
-    });
-    if (!parsed.success) {
-        return next(previous, 'error', 'Review the Club name, description, and Selection scale.');
-    }
     const result = await run(
         clubId,
         previous,
-        () => updateClubSettings(clubId, parsed.data),
+        () => updateClubSettings(clubId, input),
         'Club settings saved.',
     );
     revalidatePath('/app');
     revalidatePath('/sessions/[sessionId]', 'page');
     return result;
+}
+
+/** The Settings card saves the Selection scale and every visibility flag. */
+export async function updateClubSettingsAction(
+    clubId: string,
+    previous: IClubActionState,
+    formData: FormData,
+): Promise<IClubActionState> {
+    const parsed = updateClubRulesSchema.safeParse({
+        selectionScaleMin: Number(readFormText(formData, 'selectionScaleMin')),
+        selectionScaleMax: Number(readFormText(formData, 'selectionScaleMax')),
+        ...Object.fromEntries(visibilityNames.map((name) => [name, isChecked(formData, name)])),
+    });
+    if (!parsed.success) {
+        return next(previous, 'error', 'Review the Selection scale.');
+    }
+    return saveSettings(clubId, previous, parsed.data);
 }
 
 const ROLE_FIELD = 'role:';
@@ -148,7 +157,14 @@ export async function saveClubInfoAction(
     if (avatar && !isValidAvatar(avatar)) {
         return next(previous, 'error', 'Choose a PNG, JPEG, or WebP image no larger than 512 KiB.');
     }
-    const saved = await updateClubSettingsAction(clubId, previous, formData);
+    const parsed = updateClubInfoSchema.safeParse({
+        name: readFormText(formData, 'name'),
+        description: readFormText(formData, 'description'),
+    });
+    if (!parsed.success) {
+        return next(previous, 'error', 'Review the Club name and description.');
+    }
+    const saved = await saveSettings(clubId, previous, parsed.data);
     if (!avatar || saved.status !== 'success') return saved;
     return run(
         clubId,

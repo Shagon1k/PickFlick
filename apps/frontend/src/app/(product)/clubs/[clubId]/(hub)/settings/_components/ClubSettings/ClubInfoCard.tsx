@@ -20,7 +20,6 @@ import TextInput from '#components/ui/TextInput/TextInput';
 import styles from '../../page.module.scss';
 import ClubAvatarField from './ClubAvatarField';
 import SaveRow from './SaveRow';
-import StoredVisibility from './StoredVisibility';
 
 const DESCRIPTION_ROWS = 3;
 
@@ -40,17 +39,6 @@ export default function ClubInfoCard({ projection }: { projection: IClubSettings
                 </InfoTip>
             </div>
             <form action={formAction} className={styles.cardForm}>
-                <StoredVisibility projection={projection} />
-                <input
-                    type="hidden"
-                    name="selectionScaleMin"
-                    value={projection.club.selectionScaleMin}
-                />
-                <input
-                    type="hidden"
-                    name="selectionScaleMax"
-                    value={projection.club.selectionScaleMax}
-                />
                 <ClubAvatarField
                     // A saved or removed avatar clears the local preview.
                     key={`${saveState.revision}-${removeState.revision}`}
