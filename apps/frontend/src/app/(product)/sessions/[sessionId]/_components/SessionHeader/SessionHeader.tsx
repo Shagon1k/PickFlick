@@ -6,9 +6,6 @@ import type { ReactNode, RefObject } from 'react';
 import ticket from '#components/movies/film-ticket.module.scss';
 import FilmMeta from '#components/movies/FilmMeta/FilmMeta';
 import TicketPoster from '#components/movies/TicketPoster/TicketPoster';
-import SessionLink from '#components/sessions/SessionLink/SessionLink';
-import SessionRatingSummary from '#components/sessions/SessionRatingSummary/SessionRatingSummary';
-import SessionStatus from '#components/sessions/SessionStatus/SessionStatus';
 import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
@@ -16,6 +13,9 @@ import Icon from '#components/ui/Icon/Icon';
 
 import styles from '../../page.module.scss';
 import NominationDeadline from '../NominationDeadline/NominationDeadline';
+import SessionLink from '../SessionLink/SessionLink';
+import SessionRatingSummary from '../SessionRatingSummary/SessionRatingSummary';
+import SessionStatus from '../SessionStatus/SessionStatus';
 
 export default function SessionHeader({
     session,

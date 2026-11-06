@@ -1,10 +1,10 @@
 import type { TSessionPhase } from '@pickflick/contracts';
 import clsx from 'clsx';
 
+import { SESSION_PHASE_LABELS } from '#components/sessions/club-session-text';
 import Icon, { type TIconName } from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 
-import { SESSION_PHASE_LABELS } from '../club-session-text';
 import styles from './SessionStatus.module.scss';
 
 const PHASE_ICONS: Record<TSessionPhase, TIconName> = {

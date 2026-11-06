@@ -1,11 +1,11 @@
 import type { TImportedSelectionOutcome } from '@pickflick/contracts';
 
-import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
-import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatCount } from '#lib/format';
 
+import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
+import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import styles from './NominationRivals.module.scss';
 
 /** Partial recorded totals never imply a complete ballot, ranking or computed winner. */

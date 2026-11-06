@@ -1,8 +1,7 @@
 import type { TSessionNominationAuthors } from '@pickflick/contracts';
 
-import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
-import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
-
+import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
+import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import styles from './NominationRivals.module.scss';
 
 /** Author visibility is independent from the Selection score breakdown. */

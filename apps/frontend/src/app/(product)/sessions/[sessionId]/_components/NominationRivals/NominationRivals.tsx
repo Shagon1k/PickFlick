@@ -3,8 +3,6 @@
 import { type TLiveSelectionOutcome, type TSelectionReason } from '@pickflick/contracts';
 import { useId, useState } from 'react';
 
-import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
-import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Icon from '#components/ui/Icon/Icon';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
@@ -13,6 +11,8 @@ import Popover from '#components/ui/Popover/Popover';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import { formatAverage, formatCount } from '#lib/format';
 
+import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
+import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import styles from './NominationRivals.module.scss';
 
 type TBreakdown = NonNullable<TLiveSelectionOutcome['breakdown']>;

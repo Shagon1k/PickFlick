@@ -17,7 +17,6 @@ import RatingClose from '#components/sessions/RatingClose/RatingClose';
 import SelectionClose from '#components/sessions/SelectionClose/SelectionClose';
 import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
-import SessionStatus from '#components/sessions/SessionStatus/SessionStatus';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
 
@@ -27,6 +26,7 @@ import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import YourRating from '../Rating/YourRating';
 import Selection from '../Selection/Selection';
 import SessionHeader from '../SessionHeader/SessionHeader';
+import SessionStatus from '../SessionStatus/SessionStatus';
 import DetailsSection from './DetailsSection';
 
 export default function SessionDetails({

@@ -6,14 +6,14 @@ import { type ReactNode, useRef, useState } from 'react';
 
 import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import { nominateAction } from '#components/sessions/nomination-actions';
-import NominationMovieCard from '#components/sessions/NominationMovieCard/NominationMovieCard';
-import NominationMovieList from '#components/sessions/NominationMovieList/NominationMovieList';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
 import { useActionStatus } from '#lib/use-action-status';
 
+import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
+import NominationMovieList from '../NominationMovieList/NominationMovieList';
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
 import styles from './Nomination.module.scss';
 import NominationSuggestions from './NominationSuggestions';
