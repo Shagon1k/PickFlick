@@ -208,8 +208,8 @@ serialize on the Club row. Manager lists identify each invitation by a short rec
 older links accessible even if they exceed the creation limit. The pending-invite
 ticket lists only eligible invitations targeted to the signed-in User; shareable links stay in their
 link flow. Invalid, expired,
-revoked, wrong-target, full, and unavailable states reveal no Club details. Session invitations remain
-a separate member-only flow.
+revoked, wrong-target, full, and unavailable states reveal no Club details. Club members join a
+Session from the Session itself; there are no personal Session invitation links.
 
 Every active Club member can open a Session and join without a personal invitation. Creation and
 Session detail expose the same shareable `/sessions/:sessionId` link. Joining and declining update
@@ -476,7 +476,6 @@ again, while their other metadata remains usable. Silent Era requires a known re
 | ClubInvite             | token digest, Club, inviter, expiry, state                                                  | Inspectable only within the privacy-safe invitation contract.                   |
 | Session                | Club, type, phase, date, location, topic, notes, selected Movie, deadline, closure metadata | Type is Full Cycle, Pre-selected, or Past; the phase decides whether it blocks. |
 | SessionParticipant     | Session, Membership, invitation and attendance state                                        | Owns the phase denominator and the attendance snapshot.                         |
-| SessionInvite          | token digest, Session, invited Membership, expiry, state                                    | Valid only for an existing member.                                              |
 | Movie                  | UUID, external-source mappings, normalized metadata, media, source freshness                | Canonical UUID; source IDs are separately unique external mappings.             |
 | Nomination             | Session, participant, Movie, submitted time, provenance                                     | One per participant; imported past data is marked.                              |
 | SelectionBallot        | Session, participant, submitted time                                                        | Immutable after submission.                                                     |
@@ -533,7 +532,6 @@ hidden from normal history unless product copy exposes it.
 | `/login`                            | Provider sign-in and legal links; signed-in Users continue to `/app`. Google is shown; dormant Apple is not.                                                     |
 | `/legal/privacy`, `/legal/terms`    | Launch-required legal pages; final copy needs review.                                                                                                            |
 | `/invite/club/[token]`              | Club invitation preview, sign-in continuation, accept/decline, expired state.                                                                                    |
-| `/invite/session/[token]`           | Member-only Session invitation; a generic error for non-members or invalid access.                                                                               |
 | `/app`                              | Authenticated landing: the last Club Hub or the no-Clubs state.                                                                                                  |
 | `/clubs/new`                        | Create a Club and set its Selection scale.                                                                                                                       |
 | `/clubs/[clubId]`                   | Club Hub: Overview, Sessions, Ratings, Members, Achievements, and Manage Club.                                                                                   |

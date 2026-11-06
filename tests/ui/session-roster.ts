@@ -1,9 +1,8 @@
 import type {
-    ICreatedInvitation,
     IPendingSessionInvitation,
     ISessionRoster,
     TSession,
-    TSessionInvitationPreview,
+    TSessionParticipationResult,
 } from '@pickflick/contracts';
 
 import {
@@ -17,16 +16,13 @@ import {
 type TParticipant = ISessionRoster['participants'][number];
 interface IRosterState {
     status: TParticipant['status'];
-    invite: NonNullable<TParticipant['invitation']>['state'];
 }
 
 const SESSION_ID = '30000000-0000-4000-8000-000000000041';
 const CLUB_ID = '10000000-0000-4000-8000-000000000031';
 const PARTICIPANT_ID = '40000000-0000-4000-8000-000000000041';
 const MEMBERSHIP_ID = '50000000-0000-4000-8000-000000000041';
-const INVITE_ID = '60000000-0000-4000-8000-000000000041';
 const states = new Map<string, IRosterState>();
-const EXPIRES_AT = '2026-12-01T12:00:00.000Z';
 const session: Omit<TSession, 'canManage'> = {
     id: SESSION_ID,
     clubId: CLUB_ID,
@@ -52,7 +48,6 @@ const session: Omit<TSession, 'canManage'> = {
 function stateFor(token: string): IRosterState {
     const state = states.get(token) ?? {
         status: token.includes('accepted') ? 'ACCEPTED' : 'INVITED',
-        invite: 'pending',
     };
     states.set(token, state);
     return state;
@@ -75,26 +70,9 @@ function rosterProjection(token: string, state: IRosterState): ISessionRoster {
                       displayName: 'Jordan Member',
                       status: state.status,
                       canRemove: isManager && ['ACCEPTED', 'INVITED'].includes(state.status),
-                      invitation: isManager
-                          ? { id: INVITE_ID, expiresAt: EXPIRES_AT, state: state.invite }
-                          : null,
                   },
               ]
             : [],
-    };
-}
-function previewProjection(token: string, state: IRosterState): TSessionInvitationPreview {
-    if (token.includes('outsider') || token.includes('invalid')) return { state: 'unavailable' };
-    if (state.status === 'ACCEPTED')
-        return { state: 'accepted', sessionId: SESSION_ID, clubId: CLUB_ID };
-    return {
-        state: 'valid',
-        clubName: session.clubName,
-        topic: session.topic,
-        scheduledAt: session.scheduledAt,
-        location: session.location,
-        inviterName: 'Avery Admin',
-        expiresAt: EXPIRES_AT,
     };
 }
 function mutate(
@@ -104,40 +82,18 @@ function mutate(
     token: string,
     state: IRosterState,
 ): void {
-    if (pathname.endsWith('/revoke')) {
-        state.invite = 'revoked';
-        response.writeHead(204);
-        response.end();
-        return;
-    }
     readJson<{ decision?: 'accept' | 'decline' }>(request, (input) => {
         if (token.includes('failure')) {
             sendError(response, 503, 'SERVICE_UNAVAILABLE', 'roster-failure');
             return;
         }
-        if (pathname.endsWith('/respond') || pathname.endsWith('/participation')) {
-            if (token.includes('outsider')) {
-                sendPreview(response, { state: 'unavailable' });
-                return;
-            }
+        if (pathname.endsWith('/participation')) {
             state.status = input.decision === 'accept' ? 'ACCEPTED' : 'DECLINED';
-            sendPreview(
-                response,
+            const result: TSessionParticipationResult =
                 input.decision === 'accept'
                     ? { state: 'accepted', sessionId: SESSION_ID, clubId: CLUB_ID }
-                    : { state: 'declined' },
-            );
-            return;
-        }
-        if (pathname.endsWith('/invitations')) {
-            state.status = 'INVITED';
-            state.invite = 'pending';
-            const created: ICreatedInvitation = {
-                id: INVITE_ID,
-                token: 's'.repeat(43),
-                expiresAt: EXPIRES_AT,
-            };
-            sendJson(response, 201, created);
+                    : { state: 'declined' };
+            sendJson(response, 200, result);
             return;
         }
         if (pathname.endsWith('/leave')) state.status = 'LEFT';
@@ -146,23 +102,19 @@ function mutate(
         response.end();
     });
 }
-function sendPreview(response: TMockResponse, preview: TSessionInvitationPreview): void {
-    sendJson(response, 200, preview);
-}
 export function handleSessionRoster(
     request: TMockRequest,
     response: TMockResponse,
     pathname: string,
     token: string | undefined,
 ): boolean {
-    const isInvitationRoute = pathname.startsWith('/session-invitations/');
-    const isRosterRoute =
-        /^\/sessions\/[^/]+\/(?:roster|invitations|participants|participation|leave)/u.test(
-            pathname,
-        );
+    const isPendingRoute = pathname === '/session-invitations/pending';
+    const isRosterRoute = /^\/sessions\/[^/]+\/(?:roster|participants|participation|leave)/u.test(
+        pathname,
+    );
     const isDetailRoute =
         pathname === `/sessions/${SESSION_ID}` && token?.includes('session-roster');
-    if (!isInvitationRoute && !isRosterRoute && !isDetailRoute) return false;
+    if (!isPendingRoute && !isRosterRoute && !isDetailRoute) return false;
     if (!token?.startsWith('valid')) {
         sendError(response, 401, 'UNAUTHORIZED', 'roster-auth');
         return true;
@@ -172,11 +124,8 @@ export function handleSessionRoster(
         const isManager = !token.includes('member');
         const projection: TSession = { ...session, canManage: isManager };
         sendJson(response, 200, projection);
-    } else if (pathname === '/session-invitations/pending') {
-        const isPending =
-            token.includes('session-roster-pending') &&
-            state.status === 'INVITED' &&
-            state.invite === 'pending';
+    } else if (isPendingRoute) {
+        const isPending = token.includes('session-roster-pending') && state.status === 'INVITED';
         const invitations: IPendingSessionInvitation[] = isPending
             ? [
                   {
@@ -190,8 +139,6 @@ export function handleSessionRoster(
         sendJson(response, 200, invitations);
     } else if (pathname.endsWith('/roster')) {
         sendJson(response, 200, rosterProjection(token, state));
-    } else if (pathname.endsWith('/preview')) {
-        sendPreview(response, previewProjection(token, state));
     } else {
         mutate(request, response, pathname, token, state);
     }

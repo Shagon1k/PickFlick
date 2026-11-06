@@ -54,7 +54,6 @@ export function handleWatching(
                     displayName: 'Jordan Member',
                     status: 'ACCEPTED',
                     canRemove: canManage,
-                    invitation: null,
                 },
             ],
         };

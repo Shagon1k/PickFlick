@@ -1,32 +1,22 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type BrowserContext, expect, test } from '@playwright/test';
 
+import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { acceptedParticipants } from './session-facts';
 import { settle } from './settle';
 import { canonicalViewports } from './viewports';
 
 const SESSION_ID = '30000000-0000-4000-8000-000000000041';
-const INVITATION_PATH = `/invite/session/${'s'.repeat(43)}`;
 async function authenticate(context: BrowserContext, scenario: string) {
     await signInMock(context, `valid-session-roster-${scenario}-${crypto.randomUUID()}`);
 }
 
 test(
-    'Session invite sign-in continuation and private denial',
+    "A Session outside the viewer's Clubs shows Members Only without its details",
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await page.goto(INVITATION_PATH);
-        await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveAttribute(
-            'href',
-            `/login?returnTo=${encodeURIComponent(INVITATION_PATH)}`,
-        );
         await authenticate(context, 'outsider');
-        await page.reload();
-        await expect(page.getByText(/Only members of the Club can join/)).toBeVisible();
-        await expect(page.getByText('Private noir night')).toHaveCount(0);
-        await expect(page.getByText('Midnight Society')).toHaveCount(0);
-        await expect(page.getByRole('button', { name: 'Accept invitation' })).toHaveCount(0);
         // The API answers 404 for Sessions outside the viewer's Clubs, as for missing ones.
         await page.goto('/sessions/30000000-0000-4000-8000-0000000000ff');
         await expect(page.getByRole('heading', { level: 1 })).toHaveText('Members Only');
@@ -36,18 +26,12 @@ test(
 );
 
 test(
-    'Session invitation acceptance, roster projection and confirmed leave',
+    'Session roster projection and confirmed leave',
     { tag: '@smoke' },
     async ({ context, page }) => {
-        await authenticate(context, 'member');
-        await page.goto(INVITATION_PATH);
-        await page.getByRole('button', { name: 'Accept invitation' }).click();
-        await expect(page.getByText('Your participation is confirmed.')).toBeVisible();
-        await page.getByRole('link', { name: 'Open Session' }).click();
+        await authenticate(context, 'member-accepted');
+        await page.goto(`/sessions/${SESSION_ID}`);
         await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
-        await expect(page.getByRole('button', { name: 'Create Session invitation' })).toHaveCount(
-            0,
-        );
         await page.getByRole('button', { name: 'Leave Session', exact: true }).click();
         await expect(page.getByRole('button', { name: 'Confirm leaving' })).toBeDisabled();
         await page.getByLabel('Type LEAVE to confirm').fill('LEAVE');
@@ -72,8 +56,6 @@ test(
         await settle(page);
         await page.getByRole('menuitem', { name: 'Kick', exact: true }).click();
         const kickDialog = page.getByRole('dialog', { name: 'Kick participants' });
-        await kickDialog.getByRole('button', { name: 'Revoke invite for Jordan Member' }).click();
-        await expect(kickDialog.getByText('Invited · invite revoked')).toBeVisible();
         await kickDialog.getByRole('button', { name: 'Remove Jordan Member' }).click();
         const removalDialog = page.getByRole('dialog', { name: 'Remove participant' });
         await expect(removalDialog.getByLabel('Type REMOVE to confirm')).toBeFocused();
@@ -115,41 +97,13 @@ test('Pending Session row opens its accepted Session', async ({ context, page })
     await expect(acceptedParticipants(page)).toHaveText('Jordan Member');
 });
 
-test('Invitation failures retain preview and offline decline explains recovery', async ({
-    context,
-    page,
-}) => {
-    await authenticate(context, 'failure');
-    await page.goto(INVITATION_PATH);
-    await page.getByRole('button', { name: 'Accept invitation' }).click();
-    await expect(
-        page.getByText('We could not confirm your response. Check your connection and retry.'),
-    ).toBeVisible();
-    await expect(page.getByText('Private noir night')).toBeVisible();
-    await context.setOffline(true);
-    await page.getByRole('button', { name: 'Decline invitation' }).click();
-    await expect(
-        page.getByText(
-            'You appear to be offline. Reconnect, then try again; nothing you entered is lost.',
-        ),
-    ).toBeVisible();
-});
-
 for (const viewport of canonicalViewports) {
-    test(`Session invitation and roster accessibility at ${viewport.name}`, async ({
-        context,
-        page,
-    }) => {
+    test(`Session roster accessibility at ${viewport.name}`, async ({ context, page }) => {
         await authenticate(context, 'admin');
         await page.setViewportSize(viewport);
-        await page.goto(INVITATION_PATH, { waitUntil: 'load' });
-        await settle(page);
-        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
         await page.goto(`/sessions/${SESSION_ID}`, { waitUntil: 'load' });
         await settle(page);
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-        expect(
-            await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-        ).toBe(true);
+        await expectNoPageOverflow(page);
     });
 }

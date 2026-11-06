@@ -4,15 +4,12 @@ import type { IManagedInvitation } from '@pickflick/contracts';
 
 const TOKEN_BYTES = 32;
 
-const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** Club and Session invitations store only this digest; the raw token lives in the link. */
+/** Club invitations store only this digest; the raw token lives in the link. */
 export function digestInviteToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
 }
 
-/** Session tokens keep the default lifetime; Club links supply their shorter lifetime. */
-export function createInviteToken(lifetimeMs = INVITE_LIFETIME_MS) {
+export function createInviteToken(lifetimeMs: number) {
     const token = randomBytes(TOKEN_BYTES).toString('base64url');
     return {
         token,

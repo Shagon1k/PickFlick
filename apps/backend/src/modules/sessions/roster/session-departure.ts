@@ -4,7 +4,6 @@ import type { Prisma } from '@pickflick/database';
 import { recordAudit, type TAuditEvent } from '../../clubs/access/club-access.js';
 import { completeSessionPhase } from '../session-completion.js';
 import { lockSession } from '../session-lock.js';
-import { revokePendingInvites } from './session-invites.js';
 
 /**
  * The caller holds the Club lock and has already ended the Membership, so phase completion no longer
@@ -28,7 +27,6 @@ export async function departSessions(
     for (const participant of participants) {
         await lockSession(tx, participant.sessionId);
         await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
-        await revokePendingInvites(tx, participant.id);
         await recordRosterChange(tx, {
             clubId: participant.clubId,
             sessionId: participant.sessionId,

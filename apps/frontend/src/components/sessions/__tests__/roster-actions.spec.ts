@@ -4,7 +4,6 @@ const roster = vi.hoisted(() => ({
     joinSession: vi.fn(),
     leaveSession: vi.fn(),
     removeSessionParticipant: vi.fn(),
-    revokeSessionInvitation: vi.fn(),
 }));
 const sessions = vi.hoisted(() => ({ getSession: vi.fn() }));
 vi.mock('#api/session-roster.server', () => roster);

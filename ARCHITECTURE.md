@@ -135,9 +135,9 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 | S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images                                   |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                                      |
 
-The schema (`packages/database/prisma/schema.prisma`, thirty-four migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma`, forty-four migrations) holds `User`,
 `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
-`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `SessionInvite`, `Nomination`,
+`ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `Nomination`,
 `SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
 `PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
@@ -175,17 +175,13 @@ current Membership began reject joining and rating. No new token table or migrat
 `GET /session-invitations/pending` derives unanswered invitations from open Club Sessions and uses
 Session IDs for their decisions. These rows have no separate expiry; closed Sessions disappear.
 
-Existing personalized Session invitations use separate digest-only tokens and target a Membership through a
-SessionParticipant. One rule governs every Session roster control (invite, revoke, remove): an
-Admin or Moderator in an active Club that has an Admin and is within its member limit;
-accepted participants can leave open Sessions, including in archived Clubs. Personal invitation
-creation and responses by invitation ID were removed in Phase 18, along with `eligibleMembers`
-and `canInvite`. Existing tokens still support preview, response and revocation; tokens travel
-only in POST bodies. Private, uncached preview/response APIs return a single detail-free `unavailable`
-state for invalid, expired, revoked, wrong-target, departed, archived, and closed access. Responses
-and roster changes lock Club → Session before writing. Roster projections use a repeatable-read snapshot. Club departure updates open
-Session participants and revokes their pending links in its membership transaction, preserving
-completed history. Migration 16 adds five Session invitation/participant audit actions without
+Club members join or decline a Session from the Session itself; personal Session invitation links
+were removed in Phase 18, and migration `20261106000200_drop_session_invites` dropped their table
+before launch. One rule governs Session roster removal: an Admin or Moderator in an active Club
+that has an Admin and is within its member limit; accepted participants can leave open Sessions,
+including in archived Clubs. Roster changes lock Club → Session before writing. Roster projections
+use a repeatable-read snapshot. Club departure updates open Session participants in its membership
+transaction, preserving completed history. Migration 16 adds five Session invitation/participant audit actions without
 changing existing data. The current workflow also evaluates Nomination/Selection completion
 after roster changes; deadline processing is described below.
 
@@ -234,10 +230,8 @@ runtime application has been added in the current Club-management pass.
 
 `SessionParticipant` references a historical Membership, with invited, accepted, declined, left,
 and removed states plus nullable attendance. Composite foreign keys require the Session and
-Membership to share a Club. `SessionInvite` references that participant and a same-Club inviter
-Membership, stores only a unique SHA-256 digest, and checks expiry and response consistency. These
-storage constraints do not authorize a request: current preview, participation and roster APIs
-re-read Membership, Club lifecycle, phase and actor permissions on every command.
+Membership to share a Club. These storage constraints do not authorize a request: participation
+and roster APIs re-read Membership, Club lifecycle, phase and actor permissions on every command.
 
 The existing partial unique index still enforces one Nomination/Selection/Watching Session per
 Club; Rating is outside it. A trigger keeps participant identity from moving between Sessions,
@@ -1027,8 +1021,8 @@ owner visual acceptance are still pending.
 ### Durable notification intent
 
 Phase 18 adds `SESSION_PARTICIPANT_REMOVED` with additive enum and notification-shape migrations.
-It notifies the removed member in the inbox; personal Session invitation creation has been
-removed, so no new targeted-invite producer is added. Audited Club/start actions omit actor
+It notifies the removed member in the inbox; personal Session invitations no longer exist, so no
+targeted-invite producer is added. Audited Club/start actions omit actor
 self-notices, while Admin transfer retains the former Admin's role-change notice. Achievement
 awards still originate from view evaluation.
 

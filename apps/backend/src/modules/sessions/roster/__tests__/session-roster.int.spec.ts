@@ -6,7 +6,6 @@ import { snapshotSessionSettings } from '@pickflick/database';
 import {
     addMember,
     createSession,
-    createSessionInvite,
     createUser,
     findNotifiedUsers,
     type ITestApi,
@@ -15,7 +14,6 @@ import {
 import { removeUsers } from '../../../../testing/remove-users.js';
 import { readRoster } from '../session-roster-projection.js';
 
-const unavailable = { state: 'unavailable' };
 describe('Session roster', () => {
     let api: ITestApi;
     let users: string[];
@@ -26,7 +24,6 @@ describe('Session roster', () => {
     let clubId: string;
     let sessionId: string;
     let memberId: string;
-    let adminId: string;
     beforeAll(async () => {
         api = await startTestApi();
     });
@@ -42,7 +39,6 @@ describe('Session roster', () => {
         ] as const) {
             const membership = await addMember(api.prisma, clubId, userId, role);
             if (userId === member) memberId = membership;
-            if (userId === admin) adminId = membership;
         }
         const session = await createSession(api.prisma, clubId, {
             type: 'FULL_CYCLE',
@@ -58,19 +54,16 @@ describe('Session roster', () => {
     afterAll(async () => {
         await api.close();
     });
-    const preview = (token: string, userId = member) =>
-        api.request('/session-invitations/preview', { userId, method: 'POST', json: { token } });
-    const respond = (token: string, decision = 'accept', userId = member) =>
-        api.request('/session-invitations/respond', {
+    const participate = (decision: 'accept' | 'decline' = 'accept', userId = member) =>
+        api.request(`/sessions/${sessionId}/participation`, {
             userId,
             method: 'POST',
-            json: { token, decision },
+            json: { decision },
         });
     const roster = async (userId = admin) =>
         (await (
             await api.request(`/sessions/${sessionId}/roster`, { userId })
         ).json()) as ISessionRoster;
-    const createInvite = () => createSessionInvite(api.prisma, sessionId, adminId, memberId);
     const accepted = () =>
         api.prisma.sessionParticipant.count({ where: { sessionId, status: 'ACCEPTED' } });
     const pending = async (userId = member) =>
@@ -89,113 +82,20 @@ describe('Session roster', () => {
             method: 'POST',
             json: { confirmation: 'REMOVE' },
         });
-    const revoke = (id: string, userId = moderator) =>
-        api.request(`/sessions/${sessionId}/invitations/${id}/revoke`, { userId, method: 'POST' });
 
-    it('should accept once without creating Membership and count one accepted participant', async () => {
-        const invitation = await createInvite();
-        expect(invitation.token).toHaveLength(43);
-        expect(await (await preview(invitation.token)).json()).toMatchObject({
-            state: 'valid',
-            topic: 'Protected title',
-        });
-        const membershipCount = await api.prisma.membership.count();
-        const responses = await Promise.all([respond(invitation.token), respond(invitation.token)]);
-        expect(await responses[0]?.json()).toMatchObject({ state: 'accepted', sessionId });
-        expect(await responses[1]?.json()).toMatchObject({ state: 'accepted', sessionId });
-        expect(await api.prisma.membership.count()).toBe(membershipCount);
-        expect(await accepted()).toBe(1);
-        expect(await roster()).toMatchObject({ acceptedCount: 1 });
-        expect(await pending()).toEqual([]);
-        expect(
-            await api.prisma.clubAuditEvent.count({
-                where: { sessionId, action: 'SESSION_INVITE_RESPONDED' },
-            }),
-        ).toBe(1);
-        const stored = await api.prisma.sessionInvite.findUniqueOrThrow({
-            where: { id: invitation.id },
-        });
-        expect(stored.tokenDigest).toHaveLength(64);
-        expect(JSON.stringify(stored)).not.toContain(invitation.token);
-    });
-    it('should deny non-members, wrong recipients, invalid links and departed memberships without details', async () => {
-        const invitation = await createInvite();
-        for (const userId of [outsider, admin, moderator]) {
-            expect(await (await preview(invitation.token, userId)).json()).toEqual(unavailable);
-            expect(await (await respond(invitation.token, 'accept', userId)).json()).toEqual(
-                unavailable,
-            );
-            expect((await pending(userId)).map((row) => row.id)).toEqual(
-                userId === outsider ? [] : [sessionId],
-            );
-        }
-        expect(await (await preview('a'.repeat(43))).json()).toEqual(unavailable);
-        expect((await preview(invitation.token)).headers.get('Cache-Control')).toBe(
-            'private, no-store',
-        );
-        await api.expectStatus(401, '/session-invitations/preview', {
-            method: 'POST',
-            json: { token: invitation.token },
-        });
-        await api.expectStatus(404, `/sessions/${sessionId}/roster`, { userId: outsider });
-        await api.request(`/clubs/${clubId}/leave`, {
-            userId: member,
-            method: 'POST',
-            json: { confirmation: 'LEAVE' },
-        });
-        await addMember(api.prisma, clubId, member);
-        expect(await (await preview(invitation.token)).json()).toEqual(unavailable);
-        expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
-        expect(await accepted()).toBe(0);
-    });
-    it('should list open Sessions for Club members without token material', async () => {
-        const invitation = await createInvite();
-        const rows = await pending();
-        expect(rows).toEqual([
+    it('should list open Sessions for Club members until they answer', async () => {
+        expect(await pending()).toEqual([
             expect.objectContaining({ id: sessionId, topic: 'Protected title', scheduledAt: null }),
         ]);
-        expect(JSON.stringify(rows)).not.toContain(invitation.token);
-        expect(JSON.stringify(rows)).not.toContain('tokenDigest');
-        expect(await (await respond(invitation.token, 'accept', outsider)).json()).toEqual(
-            unavailable,
-        );
-        expect(await (await respond(invitation.token, 'decline')).json()).toEqual({
-            state: 'declined',
-        });
+        expect((await participate('accept', outsider)).status).toBe(404);
+        expect(await (await participate('decline')).json()).toEqual({ state: 'declined' });
         expect(await pending()).toEqual([]);
         expect(await accepted()).toBe(0);
-        expect(await (await respond(invitation.token)).json()).toEqual({ state: 'declined' });
-    });
-    it('should invalidate expired, revoked and replaced links', async () => {
-        const first = await createInvite();
-        const second = await createInvite();
-        expect(await (await preview(first.token)).json()).toEqual(unavailable);
-        expect((await pending()).map((row) => row.id)).toEqual([sessionId]);
-        await api.prisma.sessionInvite.update({
-            where: { id: second.id },
-            data: {
-                createdAt: new Date(Date.now() - 2000),
-                expiresAt: new Date(Date.now() - 1000),
-            },
-        });
-        expect(await (await respond(second.token)).json()).toEqual(unavailable);
-        expect((await pending()).map((row) => row.id)).toEqual([sessionId]);
-        const third = await createInvite();
-        expect((await revoke(third.id)).status).toBe(204);
-        expect((await revoke(third.id)).status).toBe(204);
-        expect(await (await preview(third.token)).json()).toEqual(unavailable);
-        expect(
-            await api.prisma.clubAuditEvent.count({
-                where: { sessionId, action: 'SESSION_INVITE_REVOKED' },
-            }),
-        ).toBe(1);
     });
     it('should require operator rights and typed confirmations', async () => {
-        const invitation = await createInvite();
-        await respond(invitation.token);
+        await participate();
         const participant = (await roster()).participants[0]!;
         expect((await remove(participant.id, member)).status).toBe(403);
-        expect((await revoke(invitation.id, member)).status).toBe(403);
         expect((await remove(participant.id, outsider)).status).toBe(404);
         await api.expectStatus(400, `/sessions/${sessionId}/leave`, {
             userId: member,
@@ -213,15 +113,12 @@ describe('Session roster', () => {
         );
         expect(await accepted()).toBe(1);
     });
-    it('should leave or remove once and prevent old accepted links from restoring participation', async () => {
-        const invitation = await createInvite();
-        await respond(invitation.token);
+    it('should leave or remove once and keep a removed participant out', async () => {
+        await participate();
         expect((await leave()).status).toBe(204);
         expect((await leave()).status).toBe(204);
         expect(await accepted()).toBe(0);
-        expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
-        const replacement = await createInvite();
-        await respond(replacement.token);
+        await participate();
         const participant = (await roster()).participants[0]!;
         expect((await remove(participant.id)).status).toBe(204);
         expect((await remove(participant.id)).status).toBe(204);
@@ -229,13 +126,14 @@ describe('Session roster', () => {
         expect(
             await findNotifiedUsers(api.prisma, participant.id, 'SESSION_PARTICIPANT_REMOVED'),
         ).toEqual([member]);
-        expect(await (await respond(replacement.token)).json()).toEqual(unavailable);
+        expect((await participate()).status).toBe(409);
         expect(
             await api.prisma.clubAuditEvent.count({
                 where: { sessionId, action: 'SESSION_PARTICIPANT_REMOVED' },
             }),
         ).toBe(1);
     });
+
     it('should let Moderators remove only Members, and nobody the Admin', async () => {
         const join = (userId: string) =>
             api.request(`/sessions/${sessionId}/participation`, {
@@ -261,8 +159,7 @@ describe('Session roster', () => {
     });
 
     it('should return the progress version from the roster snapshot across a departure', async () => {
-        const invitation = await createInvite();
-        await respond(invitation.token);
+        await participate();
         await api.prisma.$transaction(
             async (tx) => {
                 const before = await readRoster(tx, admin, sessionId);
@@ -285,23 +182,8 @@ describe('Session roster', () => {
             { isolationLevel: 'RepeatableRead' },
         );
     });
-    it('should serialize acceptance with removal and revocation', async () => {
-        const invitation = await createInvite();
-        const participant = (await roster()).participants[0]!;
-        await Promise.all([respond(invitation.token), remove(participant.id)]);
-        expect(await accepted()).toBe(0);
-        expect(await (await preview(invitation.token)).json()).toEqual(unavailable);
-        const replacement = await createInvite();
-        await Promise.all([respond(replacement.token), revoke(replacement.id)]);
-        const stored = await api.prisma.sessionInvite.findUniqueOrThrow({
-            where: { id: replacement.id },
-        });
-        expect(Boolean(stored.respondedAt)).not.toBe(Boolean(stored.revokedAt));
-        expect(await accepted()).toBe(stored.accepted ? 1 : 0);
-    });
-    it('should propagate Club departure to open Sessions, preserve completed history, and revoke links', async () => {
-        const invitation = await createInvite();
-        await respond(invitation.token);
+    it('should propagate Club departure to open Sessions and preserve completed history', async () => {
+        await participate();
         const settings = await snapshotSessionSettings(api.prisma, clubId);
         const completed = await api.prisma.session.create({
             data: { id: randomUUID(), clubId, type: 'PAST', phase: 'COMPLETED', ...settings },
@@ -321,17 +203,16 @@ describe('Session roster', () => {
                 method: 'POST',
                 json: { confirmation: 'LEAVE' },
             }),
-            respond(invitation.token),
+            participate(),
         ]);
         expect(await accepted()).toBe(0);
         expect(
             await api.prisma.sessionParticipant.findFirst({ where: { sessionId: completed.id } }),
         ).toMatchObject({ status: 'ACCEPTED', attended: true });
-        expect(await (await preview(invitation.token)).json()).toEqual(unavailable);
         expect(await roster()).toMatchObject({ acceptedCount: 0 });
     });
-    it('should propagate Club removal for pending participants and prevent later acceptance', async () => {
-        const invitation = await createInvite();
+    it('should propagate Club removal and prevent later acceptance', async () => {
+        await participate('decline');
         const response = await api.request(`/clubs/${clubId}/members/${memberId}/remove`, {
             userId: admin,
             method: 'POST',
@@ -339,31 +220,29 @@ describe('Session roster', () => {
         });
         expect(response.status).toBe(204);
         expect(await pending()).toEqual([]);
-        expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
+        expect((await participate()).status).toBe(404);
         const participant = (await roster()).participants[0]!;
-        expect(participant.status).toBe('REMOVED');
+        expect(participant.status).toBe('DECLINED');
         // Club removal is announced once, as MEMBERSHIP_REMOVED.
         expect(
             await findNotifiedUsers(api.prisma, participant.id, 'SESSION_PARTICIPANT_REMOVED'),
         ).toEqual([]);
     });
     it('should freeze roster management in restricted Clubs while keeping existing participation', async () => {
-        const invitation = await createInvite();
         await api.prisma.membership.updateMany({
             where: { clubId, userId: admin },
             data: { role: 'MEMBER' },
         });
-        expect(await (await respond(invitation.token)).json()).toMatchObject({ state: 'accepted' });
+        expect(await (await participate()).json()).toMatchObject({ state: 'accepted' });
         const participant = (await roster(moderator)).participants[0]!;
         expect((await remove(participant.id)).status).toBe(409);
         expect((await roster(moderator)).canManage).toBe(false);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
         expect((await roster(moderator)).canManage).toBe(false);
     });
-    it('should hide cancelled and archived invitations and disallow terminal roster changes', async () => {
-        const invitation = await createInvite();
+    it('should hide Sessions of archived Clubs and disallow terminal roster changes', async () => {
+        await participate();
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ARCHIVED' } });
-        expect(await (await preview(invitation.token)).json()).toEqual(unavailable);
         expect(await pending()).toEqual([]);
         await api.prisma.club.update({ where: { id: clubId }, data: { lifecycle: 'ACTIVE' } });
         await api.request(`/sessions/${sessionId}/cancel`, {
@@ -371,7 +250,7 @@ describe('Session roster', () => {
             method: 'POST',
             json: { version: 1, confirmation: 'CANCEL' },
         });
-        expect(await (await respond(invitation.token)).json()).toEqual(unavailable);
+        expect((await participate()).status).toBe(409);
         expect((await leave()).status).toBe(409);
         expect((await roster()).canManage).toBe(false);
     });

@@ -2,11 +2,8 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestj
 import {
     invitationDecisionSchema,
     leaveSessionSchema,
-    previewInvitationSchema,
     removeSessionParticipantSchema,
-    respondInvitationSchema,
     type TInvitationDecision,
-    type TRespondInvitation,
 } from '@pickflick/contracts';
 
 import { UUID_PARAM, ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe.js';
@@ -31,16 +28,6 @@ export class SessionRosterController {
         @Body(new ZodValidationPipe(invitationDecisionSchema)) input: TInvitationDecision,
     ) {
         return this.roster.participate(user.id, id, input.decision);
-    }
-
-    @Post('sessions/:sessionId/invitations/:inviteId/revoke')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    revoke(
-        @CurrentUser() user: IAuthUser,
-        @Param('sessionId', UUID_PARAM) id: string,
-        @Param('inviteId', UUID_PARAM) inviteId: string,
-    ) {
-        return this.roster.revoke(user.id, id, inviteId);
     }
 
     @Post('sessions/:sessionId/leave')
@@ -68,24 +55,5 @@ export class SessionRosterController {
     @Get('session-invitations/pending')
     listPending(@CurrentUser() user: IAuthUser) {
         return this.roster.listPending(user.id);
-    }
-
-    @Post('session-invitations/preview')
-    @HttpCode(HttpStatus.OK)
-    preview(
-        @CurrentUser() user: IAuthUser,
-        @Body(new ZodValidationPipe(previewInvitationSchema))
-        input: Pick<TRespondInvitation, 'token'>,
-    ) {
-        return this.roster.preview(user.id, input.token);
-    }
-
-    @Post('session-invitations/respond')
-    @HttpCode(HttpStatus.OK)
-    respond(
-        @CurrentUser() user: IAuthUser,
-        @Body(new ZodValidationPipe(respondInvitationSchema)) input: TRespondInvitation,
-    ) {
-        return this.roster.respond(user.id, input.token, input.decision);
     }
 }

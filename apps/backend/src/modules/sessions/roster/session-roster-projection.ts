@@ -2,7 +2,6 @@ import { NotFoundException } from '@nestjs/common';
 import { type ISessionRoster, isOpenSessionPhase } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
-import { getInviteState } from '../../../common/invite-token.js';
 import { findMembership, loadClubAccess } from '../../clubs/access/club-access.js';
 import { getClubPermissions } from '../../clubs/access/club-permissions.js';
 import { canJoinSession, canRemoveParticipant, getOwnStatus } from '../session-access.js';
@@ -24,10 +23,7 @@ export async function readRoster(
     const participants = await tx.sessionParticipant.findMany({
         where: { sessionId },
         orderBy: { createdAt: 'asc' },
-        include: {
-            membership: { include: { user: true } },
-            invitations: { orderBy: { createdAt: 'desc' }, take: 1 },
-        },
+        include: { membership: { include: { user: true } } },
     });
     const ownStatus = getOwnStatus(
         participants.filter((participant) => participant.membership.userId === userId),
@@ -64,14 +60,6 @@ export async function readRoster(
                     participant.membershipId !== membership.id &&
                     canRemoveParticipant(membership.role, participant.membership.role) &&
                     ['INVITED', 'ACCEPTED'].includes(participant.status),
-                invitation:
-                    isManager && participant.invitations[0]
-                        ? {
-                              id: participant.invitations[0].id,
-                              expiresAt: participant.invitations[0].expiresAt.toISOString(),
-                              state: getInviteState(participant.invitations[0]),
-                          }
-                        : null,
             })),
     };
 }

@@ -8,7 +8,7 @@ const allowedReturnTargets = [
     /^\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u,
     /^\/app$/u,
     /^\/library\?tab=achievements$/u,
-    /^\/invite\/(?:club|session)\/[\w-]{1,512}$/u,
+    /^\/invite\/club\/[\w-]{1,512}$/u,
     /^\/clubs\/new$/u,
     /^\/clubs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\/settings|\/members|\/sessions|\/sessions\/new|\/sessions\/past\/new|\/achievements)?$/u,
 ];

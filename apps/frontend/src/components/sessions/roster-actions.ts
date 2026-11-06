@@ -8,12 +8,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import {
-    joinSession,
-    leaveSession,
-    removeSessionParticipant,
-    revokeSessionInvitation,
-} from '#api/session-roster.server';
+import { joinSession, leaveSession, removeSessionParticipant } from '#api/session-roster.server';
 import { getSession } from '#api/sessions.server';
 import { getFailureMessage } from '#lib/action-failure';
 import { ACCESS_LOST_STATUSES } from '#lib/http-status';
@@ -28,7 +23,6 @@ const commandSchema = z.discriminatedUnion('action', [
         action: z.literal('remove'),
         participantId: z.uuidv4(),
     }),
-    z.strictObject({ action: z.literal('revoke'), inviteId: z.uuidv4() }),
 ]);
 export async function changeRosterAction(id: string, input: unknown) {
     const parsed = commandSchema.safeParse(input);
@@ -39,7 +33,6 @@ export async function changeRosterAction(id: string, input: unknown) {
         if (command.action === 'join') await joinSession(id);
         if (command.action === 'leave') await leaveSession(id);
         if (command.action === 'remove') await removeSessionParticipant(id, command.participantId);
-        if (command.action === 'revoke') await revokeSessionInvitation(id, command.inviteId);
         revalidatePath(`/sessions/${id}`);
         revalidatePath(`/clubs/${session.clubId}`, 'layout');
         revalidatePath('/app');

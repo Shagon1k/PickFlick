@@ -4,7 +4,7 @@ The UI scripts build the web app, start it on loopback against a mock API
 (`tests/ui/start-frontend-with-mock-api.ts`), and run Playwright in Chromium over
 the public pages, Login, Club onboarding, Hub overview, settings, Club invitation states, the recovery
 states, Hub membership restrictions and pending invitations, the `/ui-preview` component gallery,
-live Session creation/edit/cancellation, member-only Session invitation responses and roster
+live Session creation/edit/cancellation, member-only Session joining and roster
 management, Nomination submissions and personal suggestions, immutable Selection ballots,
 policy-filtered Selection results and early-close confirmations, historical Session Rating submission,
 partial completion and permitted results, Completed facts/ratings/nomination disclosures, Hub
@@ -35,8 +35,8 @@ Actions.
 `pnpm test:ui` runs the full suite. Playwright's `@smoke` tag selects PR behavior checks with
 `test:ui:smoke`: security headers and CSP, Club switching and stale access, invitation sign-in
 continuation and responses, member removal, landing accessibility, a pricing interaction, product shell navigation, global Movie search and read-only Movie Details at 390, 768, 1024 and 1440px, and overflow
-at 1024px, plus full-cycle creation/edit/cancellation, keyboard pre-selected Movie creation, Session invitation
-privacy and sign-in continuation, accepted-roster leave, operator invitation/removal focus, and personal-suggestion nomination with privacy and submission locking, plus Selection completeness, keyboard scoring and immutable submission. Screenshot comparisons use the `@visual` tag;
+at 1024px, plus full-cycle creation/edit/cancellation, keyboard pre-selected Movie creation, Session
+privacy for non-members, accepted-roster leave, operator removal focus, and personal-suggestion nomination with privacy and submission locking, plus Selection completeness, keyboard scoring and immutable submission. Screenshot comparisons use the `@visual` tag;
 `test:ui:contract` excludes it, and `test:ui:visual` selects it. The contract selection includes
 accessibility, keyboard and touch interaction, security headers and CSP, responsive overflow,
 reduced motion, and other behavior assertions.
@@ -103,7 +103,6 @@ file paths to the existing Playwright commands. It combines all affected areas:
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Marketing routes, contact API                                                            | Public pages                                                                                 |
 | Club invitation routes (`/invite/club/[token]`)                                          | Club invitations                                                                             |
-| Session invitation routes (`/invite/session/[token]`)                                    | Session roster                                                                               |
 | Login routes                                                                             | Authentication                                                                               |
 | Club routes (except Session creation), Club/invitation API                               | Club onboarding, Hub, invitations, members, settings, Ratings and Achievements               |
 | Session routes/components/API, including `/clubs/[clubId]/sessions/new`                  | Session workflows, roster, Nomination, Selection, Watching, Rating, history and Hub          |

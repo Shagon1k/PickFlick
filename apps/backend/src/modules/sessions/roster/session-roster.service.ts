@@ -3,12 +3,11 @@ import {
     type IPendingSessionInvitation,
     type ISessionRoster,
     OPEN_SESSION_PHASES,
-    type TSessionInvitationPreview,
+    type TSessionParticipationResult,
 } from '@pickflick/contracts';
 
-import { digestInviteToken } from '../../../common/invite-token.js';
 import { PrismaService } from '../../../database/prisma.service.js';
-import { assertActive, lockClub } from '../../clubs/access/club-access.js';
+import { assertActive } from '../../clubs/access/club-access.js';
 import { recordNotification } from '../../notifications/notification-store.js';
 import { Transactions } from '../../notifications/transactions.js';
 import {
@@ -18,9 +17,8 @@ import {
     getOwnStatus,
     predatesMembership,
 } from '../session-access.js';
-import { lockSession, lockSessionForMember } from '../session-lock.js';
+import { lockSessionForMember } from '../session-lock.js';
 import { recordRosterChange } from './session-departure.js';
-import { inviteInclude, revokePendingInvites, toInvitationPreview } from './session-invites.js';
 import { readRoster } from './session-roster-projection.js';
 
 @Injectable()
@@ -40,7 +38,7 @@ export class SessionRosterService {
         userId: string,
         sessionId: string,
         decision: 'accept' | 'decline',
-    ): Promise<TSessionInvitationPreview> {
+    ): Promise<TSessionParticipationResult> {
         return this.transactions.write(async (tx) => {
             const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
             assertOpen(session.phase);
@@ -61,7 +59,7 @@ export class SessionRosterService {
                 throw new ConflictException({ reason: 'MEMBERSHIP_INELIGIBLE' });
             const status = decision === 'accept' ? 'ACCEPTED' : 'DECLINED';
             if (existing?.status !== status) {
-                const participant = await tx.sessionParticipant.upsert({
+                await tx.sessionParticipant.upsert({
                     where: { sessionId_membershipId: { sessionId, membershipId: membership.id } },
                     create: {
                         sessionId,
@@ -71,7 +69,6 @@ export class SessionRosterService {
                     },
                     update: { status },
                 });
-                await revokePendingInvites(tx, participant.id);
                 await recordRosterChange(tx, {
                     actorUserId: userId,
                     subjectUserId: userId,
@@ -84,32 +81,6 @@ export class SessionRosterService {
             return decision === 'accept'
                 ? { state: 'accepted', sessionId, clubId: session.clubId }
                 : { state: 'declined' };
-        });
-    }
-
-    async revoke(userId: string, sessionId: string, inviteId: string) {
-        await this.transactions.write(async (tx) => {
-            const { session, membership } = await lockSessionForMember(tx, userId, sessionId);
-            assertOpen(session.phase);
-            await assertManager(tx, membership);
-            const invite = await tx.sessionInvite.findFirst({
-                where: { id: inviteId, participant: { sessionId } },
-                include: inviteInclude,
-            });
-            if (!invite) throw new NotFoundException();
-            if (invite.revokedAt || invite.respondedAt) return;
-            await tx.sessionInvite.update({
-                where: { id: inviteId },
-                data: { revokedAt: new Date() },
-            });
-            await recordRosterChange(tx, {
-                actorUserId: userId,
-                subjectUserId: invite.participant.membership.userId,
-                subjectMembershipId: invite.participant.membershipId,
-                clubId: session.clubId,
-                sessionId,
-                action: 'SESSION_INVITE_REVOKED',
-            });
         });
     }
 
@@ -139,7 +110,6 @@ export class SessionRosterService {
             )
                 throw new ConflictException({ reason: 'NOT_PARTICIPATING' });
             await tx.sessionParticipant.update({ where: { id: participant.id }, data: { status } });
-            await revokePendingInvites(tx, participant.id);
             await recordRosterChange(tx, {
                 actorUserId: userId,
                 subjectUserId: participant.membership.userId,
@@ -158,20 +128,6 @@ export class SessionRosterService {
                     sessionId,
                 });
         });
-    }
-
-    async preview(userId: string, token: string): Promise<TSessionInvitationPreview> {
-        return this.transactions.read(
-            async (tx) =>
-                toInvitationPreview(
-                    await tx.sessionInvite.findUnique({
-                        where: { tokenDigest: digestInviteToken(token) },
-                        include: inviteInclude,
-                    }),
-                    userId,
-                ),
-            { isolationLevel: 'RepeatableRead' },
-        );
     }
 
     async listPending(userId: string): Promise<IPendingSessionInvitation[]> {
@@ -212,52 +168,5 @@ export class SessionRosterService {
                 topic: session.topic,
                 scheduledAt: session.scheduledAt?.toISOString() ?? null,
             }));
-    }
-
-    async respond(
-        userId: string,
-        token: string,
-        decision: 'accept' | 'decline',
-    ): Promise<TSessionInvitationPreview> {
-        return this.transactions.write(async (tx) => {
-            const where = { tokenDigest: digestInviteToken(token) };
-            const found = await tx.sessionInvite.findUnique({
-                where,
-                include: { participant: true },
-            });
-            if (!found) return { state: 'unavailable' };
-            await lockClub(tx, found.clubId);
-            await lockSession(tx, found.participant.sessionId);
-            const invite = await tx.sessionInvite.findUniqueOrThrow({
-                where,
-                include: inviteInclude,
-            });
-            const view = toInvitationPreview(invite, userId);
-            if (view.state !== 'valid') return view;
-            const isAccepted = decision === 'accept';
-            await tx.sessionInvite.update({
-                where: { id: invite.id },
-                data: { respondedAt: new Date(), accepted: isAccepted },
-            });
-            await tx.sessionParticipant.update({
-                where: { id: invite.participantId },
-                data: { status: isAccepted ? 'ACCEPTED' : 'DECLINED' },
-            });
-            await recordRosterChange(tx, {
-                actorUserId: userId,
-                subjectUserId: userId,
-                subjectMembershipId: invite.participant.membershipId,
-                clubId: invite.clubId,
-                sessionId: invite.participant.sessionId,
-                action: 'SESSION_INVITE_RESPONDED',
-            });
-            return isAccepted
-                ? {
-                      state: 'accepted',
-                      sessionId: invite.participant.sessionId,
-                      clubId: invite.clubId,
-                  }
-                : { state: 'declined' };
-        });
     }
 }

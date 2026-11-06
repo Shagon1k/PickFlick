@@ -13,7 +13,6 @@ import {
 } from '@pickflick/database';
 
 import { AppModule } from '../app.module.js';
-import { createInviteToken } from '../common/invite-token.js';
 import { configureApplication } from '../config/configure-application.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { AuthService } from '../modules/auth/auth.service.js';
@@ -74,39 +73,6 @@ export async function createSession(
             ...data,
         },
     });
-}
-
-/**
- * Stores a personal Session invitation as earlier releases issued them, replacing the member's
- * pending one; the API now only previews, answers and revokes such links.
- */
-export async function createSessionInvite(
-    prisma: PrismaClient,
-    sessionId: string,
-    inviterMembershipId: string,
-    membershipId: string,
-) {
-    const { clubId } = await prisma.session.findUniqueOrThrow({ where: { id: sessionId } });
-    const participant = await prisma.sessionParticipant.upsert({
-        where: { sessionId_membershipId: { sessionId, membershipId } },
-        create: { sessionId, membershipId, clubId },
-        update: { status: 'INVITED' },
-    });
-    await prisma.sessionInvite.updateMany({
-        where: { participantId: participant.id, revokedAt: null, respondedAt: null },
-        data: { revokedAt: new Date() },
-    });
-    const { token, tokenDigest, expiresAt } = createInviteToken();
-    const { id } = await prisma.sessionInvite.create({
-        data: {
-            tokenDigest,
-            participantId: participant.id,
-            clubId,
-            inviterMembershipId,
-            expiresAt,
-        },
-    });
-    return { id, token };
 }
 
 /** The users notified of `event` for a Session or audit source, sorted for stable comparison. */

@@ -5,28 +5,32 @@ import Button from '#components/ui/Button/Button';
 import Modal from '#components/ui/Modal/Modal';
 import { getMonogram } from '#lib/format';
 
-import { describeStatus } from './roster-status';
 import styles from './SessionRoster.module.scss';
 
 type TParticipant = ISessionRoster['participants'][number];
 
-/** The operator list of current participants, with Revoke and Remove. */
+const STATUS_LABELS: Record<TParticipant['status'], string> = {
+    INVITED: 'Invited',
+    ACCEPTED: 'Joined',
+    DECLINED: 'Declined',
+    LEFT: 'Left',
+    REMOVED: 'Removed',
+};
+
+/** The operator list of current participants, each with Kick when the operator may remove them. */
 export default function KickDialog({
     open,
     participants,
-    canRevoke,
     disabled,
     status,
     isSuccess,
     isConfirming,
     closeRef,
     onClose,
-    onRevoke,
     onRemove,
 }: {
     open: boolean;
     participants: TParticipant[];
-    canRevoke: boolean;
     disabled: boolean;
     status: string;
     isSuccess: boolean;
@@ -34,7 +38,6 @@ export default function KickDialog({
     isConfirming: boolean;
     closeRef: RefObject<HTMLButtonElement | null>;
     onClose: () => void;
-    onRevoke: (inviteId: string) => void;
     onRemove: (participant: TParticipant) => void;
 }) {
     return (
@@ -55,9 +58,7 @@ export default function KickDialog({
                         <KickRow
                             key={participant.id}
                             participant={participant}
-                            canRevoke={canRevoke}
                             disabled={disabled}
-                            onRevoke={onRevoke}
                             onRemove={() => onRemove(participant)}
                         />
                     ))}
@@ -78,18 +79,14 @@ export default function KickDialog({
 
 function KickRow({
     participant,
-    canRevoke,
     disabled,
-    onRevoke,
     onRemove,
 }: {
     participant: TParticipant;
-    canRevoke: boolean;
     disabled: boolean;
-    onRevoke: (inviteId: string) => void;
     onRemove: () => void;
 }) {
-    const { displayName, invitation } = participant;
+    const { displayName } = participant;
     return (
         <li className={styles.row}>
             <span aria-hidden="true" className={styles.avatar}>
@@ -97,19 +94,8 @@ function KickRow({
             </span>
             <span className={styles.name}>
                 {displayName}
-                <small>{describeStatus(participant)}</small>
+                <small>{STATUS_LABELS[participant.status]}</small>
             </span>
-            {invitation?.state === 'pending' && canRevoke ? (
-                <Button
-                    aria-label={`Revoke invite for ${displayName}`}
-                    disabled={disabled}
-                    onClick={() => onRevoke(invitation.id)}
-                    size="small"
-                    variant="secondary"
-                >
-                    Revoke
-                </Button>
-            ) : null}
             {participant.canRemove ? (
                 <Button
                     aria-label={`Remove ${displayName}`}

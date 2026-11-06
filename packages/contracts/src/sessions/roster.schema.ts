@@ -5,21 +5,10 @@ import type { IPendingClubInvitation } from '../clubs/invitation.schema.js';
 export const leaveSessionSchema = z.strictObject({ confirmation: z.literal('LEAVE') });
 export const removeSessionParticipantSchema = z.strictObject({ confirmation: z.literal('REMOVE') });
 
-export const sessionInvitationPreviewSchema = z.discriminatedUnion('state', [
-    z.strictObject({ state: z.literal('unavailable') }),
-    z.strictObject({ state: z.literal('declined') }),
-    z.strictObject({ state: z.literal('accepted'), sessionId: z.uuid(), clubId: z.uuid() }),
-    z.strictObject({
-        state: z.literal('valid'),
-        clubName: z.string(),
-        topic: z.string().nullable(),
-        scheduledAt: z.iso.datetime().nullable(),
-        location: z.string().nullable(),
-        inviterName: z.string(),
-        expiresAt: z.iso.datetime(),
-    }),
-]);
-export type TSessionInvitationPreview = z.infer<typeof sessionInvitationPreviewSchema>;
+/** The answer to joining or declining a Session. */
+export type TSessionParticipationResult =
+    | { state: 'accepted'; sessionId: string; clubId: string }
+    | { state: 'declined' };
 export interface IPendingSessionInvitation {
     id: string;
     clubName: string;
@@ -40,11 +29,6 @@ export interface ISessionRoster {
         membershipId: string;
         displayName: string;
         status: 'INVITED' | 'ACCEPTED' | 'DECLINED' | 'LEFT' | 'REMOVED';
-        invitation: {
-            id: string;
-            expiresAt: string;
-            state: 'pending' | 'expired' | 'revoked' | 'accepted' | 'declined';
-        } | null;
         canRemove: boolean;
     }[];
 }

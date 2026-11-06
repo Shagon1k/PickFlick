@@ -27,11 +27,7 @@ export default function SessionRoster({
     const [isKickOpen, setIsKickOpen] = useState(false);
     const [dialog, setDialog] = useState<TRosterDialog | null>(null);
     const { message, isSuccess, setMessage, announceSuccess, isPending, run } = useActionStatus();
-    const managed = roster.participants.filter(
-        (participant) =>
-            participant.canRemove ||
-            (roster.canManage && participant.invitation?.state === 'pending'),
-    );
+    const managed = roster.participants.filter((participant) => participant.canRemove);
     function send(input: unknown) {
         run(() => changeRosterAction(sessionId, input), {
             unreachableMessage: 'We could not reach PickFlick. Check your connection and retry.',
@@ -70,14 +66,12 @@ export default function SessionRoster({
             <KickDialog
                 open={isKickOpen}
                 participants={managed}
-                canRevoke={roster.canManage}
                 disabled={isPending}
                 status={dialog ? '' : message}
                 isSuccess={isSuccess}
                 isConfirming={dialog !== null}
                 closeRef={closeRef}
                 onClose={() => setIsKickOpen(false)}
-                onRevoke={(inviteId) => send({ action: 'revoke', inviteId })}
                 onRemove={(participant) =>
                     confirm({
                         action: 'remove',

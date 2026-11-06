@@ -191,10 +191,6 @@ export class SessionsService {
                     detailsVersion: { increment: 1 },
                 },
             });
-            await transaction.sessionInvite.updateMany({
-                where: { participant: { sessionId: id }, revokedAt: null, respondedAt: null },
-                data: { revokedAt: new Date() },
-            });
             await recordSessionAction(transaction, id, membership, 'SESSION_CANCELLED');
             await publishProgress(transaction, id, 'CANCELLED');
         });
