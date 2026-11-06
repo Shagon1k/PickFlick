@@ -1,7 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto';
 
 import { sessionSchema } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     addMember,
@@ -195,7 +194,6 @@ describe('Nominations', () => {
         const otherMembership = await api.prisma.membership.findFirstOrThrow({
             where: { clubId, userId: admin },
         });
-        const settings = await snapshotSessionSettings(api.prisma, clubId);
         async function history(
             owner: string,
             movieId: string,
@@ -215,27 +213,13 @@ describe('Nominations', () => {
             if (isOtherClub) {
                 historyClub = randomUUID();
                 await api.prisma.club.create({ data: { id: historyClub, name: 'Other Club' } });
-                membershipId = (
-                    await api.prisma.membership.create({
-                        data: {
-                            id: randomUUID(),
-                            clubId: historyClub,
-                            userId: member,
-                            role: 'ADMIN',
-                        },
-                    })
-                ).id;
+                membershipId = await addMember(api.prisma, historyClub, member, 'ADMIN');
             }
-            const session = await api.prisma.session.create({
-                data: {
-                    id: randomUUID(),
-                    clubId: historyClub,
-                    type: 'FULL_CYCLE',
-                    phase,
-                    movieId: winner,
-                    createdAt: new Date(isEarlier ? '2020-01-01' : '2090-01-01'),
-                    ...settings,
-                },
+            const session = await createSession(api.prisma, historyClub, {
+                type: 'FULL_CYCLE',
+                phase,
+                movieId: winner,
+                createdAt: new Date(isEarlier ? '2020-01-01' : '2090-01-01'),
             });
             const participant = await api.prisma.sessionParticipant.create({
                 data: {

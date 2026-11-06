@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import type { IClubHub, TSession } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     addMember,
+    createSession,
     createUser,
     findNotifiedUsers,
     type ITestApi,
@@ -203,14 +203,12 @@ describe('Session workflows', () => {
         ]);
     });
     it('should retain every Rating row independently of recent history and reject completed mutations', async () => {
-        const settings = await snapshotSessionSettings(api.prisma, clubId);
         const ratingIds = Array.from({ length: 6 }, () => randomUUID());
         for (const id of ratingIds)
-            await api.prisma.session.create({
-                data: { id, clubId, ...settings, type: 'FULL_CYCLE', phase: 'RATING' },
-            });
-        const completed = await api.prisma.session.create({
-            data: { id: randomUUID(), clubId, ...settings, type: 'PAST', phase: 'COMPLETED' },
+            await createSession(api.prisma, clubId, { id, type: 'FULL_CYCLE', phase: 'RATING' });
+        const completed = await createSession(api.prisma, clubId, {
+            type: 'PAST',
+            phase: 'COMPLETED',
         });
         expect((await create()).status).toBe(201);
         const hub = (await (

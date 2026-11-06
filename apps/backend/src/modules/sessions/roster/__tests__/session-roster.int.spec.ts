@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
 import type { IPendingSessionInvitation, ISessionRoster } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     addMember,
@@ -184,9 +183,9 @@ describe('Session roster', () => {
     });
     it('should propagate Club departure to open Sessions and preserve completed history', async () => {
         await participate();
-        const settings = await snapshotSessionSettings(api.prisma, clubId);
-        const completed = await api.prisma.session.create({
-            data: { id: randomUUID(), clubId, type: 'PAST', phase: 'COMPLETED', ...settings },
+        const completed = await createSession(api.prisma, clubId, {
+            type: 'PAST',
+            phase: 'COMPLETED',
         });
         await api.prisma.sessionParticipant.create({
             data: {

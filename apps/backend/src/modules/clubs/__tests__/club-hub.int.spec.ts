@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
 import { HUB_HISTORY_LIMIT, type IClubHub } from '@pickflick/contracts';
-import { snapshotSessionSettings } from '@pickflick/database';
 
 import {
     addMember,
@@ -80,42 +79,24 @@ describe('Club Hub projection', () => {
 
     it('should retain open Rating Sessions beyond recent activity and prefer a blocking Session', async () => {
         const ratingId = randomUUID();
-        const settings = await snapshotSessionSettings(api.prisma, second);
-        await api.prisma.session.createMany({
-            data: [
-                {
-                    ...(await snapshotSessionSettings(api.prisma, first)),
-                    id: randomUUID(),
-                    clubId: first,
-                    type: 'FULL_CYCLE',
-                    phase: 'RATING',
-                },
-                {
-                    id: randomUUID(),
-                    clubId: second,
-                    ...settings,
-                    type: 'FULL_CYCLE',
-                    phase: 'RATING',
-                    updatedAt: new Date('2026-01-01T00:00:00Z'),
-                },
-                {
-                    id: ratingId,
-                    clubId: second,
-                    ...settings,
-                    type: 'FULL_CYCLE',
-                    phase: 'RATING',
-                    updatedAt: new Date('2026-01-02T00:00:00Z'),
-                },
-                ...Array.from({ length: 5 }, () => ({
-                    id: randomUUID(),
-                    clubId: second,
-                    ...settings,
-                    type: 'PAST' as const,
-                    phase: 'COMPLETED' as const,
-                    updatedAt: new Date('2026-02-01T00:00:00Z'),
-                })),
-            ],
+        await createSession(api.prisma, first, { type: 'FULL_CYCLE', phase: 'RATING' });
+        await createSession(api.prisma, second, {
+            type: 'FULL_CYCLE',
+            phase: 'RATING',
+            updatedAt: new Date('2026-01-01T00:00:00Z'),
         });
+        await createSession(api.prisma, second, {
+            id: ratingId,
+            type: 'FULL_CYCLE',
+            phase: 'RATING',
+            updatedAt: new Date('2026-01-02T00:00:00Z'),
+        });
+        for (let index = 0; index < 5; index += 1)
+            await createSession(api.prisma, second, {
+                type: 'PAST',
+                phase: 'COMPLETED',
+                updatedAt: new Date('2026-02-01T00:00:00Z'),
+            });
 
         const firstHub = (await (
             await api.request(`/clubs/${first}/hub`, { userId: admin })

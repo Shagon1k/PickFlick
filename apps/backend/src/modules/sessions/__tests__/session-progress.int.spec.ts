@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { sessionSchema } from '@pickflick/contracts';
 
 import {
+    addMember,
     createSession,
     createUser,
     type ITestApi,
@@ -39,16 +40,7 @@ describe('Session progress', () => {
         memberships = [];
         for (const [index, userId] of users.entries()) {
             memberships.push(
-                (
-                    await api.prisma.membership.create({
-                        data: {
-                            id: randomUUID(),
-                            clubId,
-                            userId,
-                            role: index === 0 ? 'ADMIN' : 'MEMBER',
-                        },
-                    })
-                ).id,
+                await addMember(api.prisma, clubId, userId, index === 0 ? 'ADMIN' : 'MEMBER'),
             );
         }
         sessionId = randomUUID();
