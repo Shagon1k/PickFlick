@@ -10,6 +10,7 @@ import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
+import { formatMovieTitle } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
 
 import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
@@ -171,7 +172,7 @@ function NominationPicker({
             shouldReserveMessage={false}
             placeholder="Search films…"
             value={chosen?.id ?? null}
-            selectedTitle={chosen?.title ?? 'Movie title unavailable'}
+            selectedTitle={formatMovieTitle(chosen)}
             onChange={(movie) =>
                 onChoose(
                     movie

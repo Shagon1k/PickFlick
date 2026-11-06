@@ -14,7 +14,7 @@ import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
-import { formatAverage, formatCount } from '#lib/format';
+import { formatAverage, formatCount, formatMovieTitle } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 import { getNextTableSort } from '#lib/table-sort';
 
@@ -105,7 +105,7 @@ export default function ClubRatings({
                                           className={styles.clubRatings__film}
                                           href={`/movies/${item.movieId}`}
                                       >
-                                          {item.title ?? 'Untitled film'}
+                                          {formatMovieTitle(item)}
                                       </Link>
                                   ),
                                   year: item.year ?? '—',

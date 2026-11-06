@@ -13,6 +13,7 @@ import Alert from '#components/ui/Alert/Alert';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import SprocketDivider from '#components/ui/SprocketDivider/SprocketDivider';
 import { ApiError } from '#lib/api.server';
+import { formatMovieTitle } from '#lib/format';
 
 import MovieHero from './_components/MovieHero/MovieHero';
 import MovieLinks from './_components/MovieLinks/MovieLinks';
@@ -45,7 +46,7 @@ export default async function MoviePage({ params }: { params: Promise<{ movieId:
     }
     const [rating, watchlistItem] = await loadPersonalState(movieId);
     const movie = result.data;
-    const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
+    const title = formatMovieTitle(movie);
     const relatedIds = [...new Set(movie.similarMovieIds ?? [])]
         .filter((id) => id !== movieId)
         .slice(0, MAX_RELATED_MOVIES);

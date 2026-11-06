@@ -4,6 +4,7 @@ import type { TSelectionScores } from '@pickflick/contracts';
 import { useId, useState } from 'react';
 
 import Table from '#components/ui/Table/Table';
+import { formatMovieTitle } from '#lib/format';
 import { getNextTableSort } from '#lib/table-sort';
 
 import styles from './SelectionScores.module.scss';
@@ -52,9 +53,7 @@ export default function SelectionScores({ data }: { data: TSelectionScores }) {
                     ...data.films.map((film) => ({
                         key: film.nominationId,
                         header: (
-                            <span className={styles.filmTitle}>
-                                {film.movie.title ?? 'Movie title unavailable'}
-                            </span>
+                            <span className={styles.filmTitle}>{formatMovieTitle(film.movie)}</span>
                         ),
                         isNumeric: true,
                         ...sortable(film.nominationId),

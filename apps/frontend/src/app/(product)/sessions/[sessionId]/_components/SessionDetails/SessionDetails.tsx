@@ -19,6 +19,7 @@ import SessionForm from '#components/sessions/SessionForm/SessionForm';
 import SessionRoster from '#components/sessions/SessionRoster/SessionRoster';
 import Alert from '#components/ui/Alert/Alert';
 import Modal from '#components/ui/Modal/Modal';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import Nomination from '../Nomination/Nomination';
@@ -202,7 +203,7 @@ function ScreeningFilm({ movie, session }: { movie: TMovieDetails | null; sessio
                             placement="poster"
                         />
                     }
-                    title={movie.title ?? movie.originalTitle ?? 'Untitled film'}
+                    title={formatMovieTitle(movie)}
                 />
             </div>
         );

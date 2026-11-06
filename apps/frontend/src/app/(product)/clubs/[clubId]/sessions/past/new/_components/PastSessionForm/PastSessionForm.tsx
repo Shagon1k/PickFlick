@@ -17,6 +17,7 @@ import Button from '#components/ui/Button/Button';
 import Textarea from '#components/ui/Textarea/Textarea';
 import TextInput from '#components/ui/TextInput/TextInput';
 import { focusFirstInvalid, toFieldErrors } from '#lib/form-errors';
+import { formatMovieTitle } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
 import { useIsHydrated } from '#lib/use-is-hydrated';
 
@@ -188,7 +189,7 @@ export default function PastSessionForm({
                                 const id = movie.id;
                                 setTitles({
                                     ...titles,
-                                    [id]: movie.title ?? movie.originalTitle ?? 'Untitled film',
+                                    [id]: formatMovieTitle(movie),
                                 });
                                 // Default once on selection; Back/Next keeps explicit removals.
                                 if (!form.values.nominations.some((row) => row.movieId === id))

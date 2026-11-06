@@ -7,6 +7,7 @@ import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import HorizontalScroll from '#components/ui/HorizontalScroll/HorizontalScroll';
 import InfoTip from '#components/ui/InfoTip/InfoTip';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from './Nomination.module.scss';
 
@@ -74,7 +75,7 @@ function SuggestionList({
                 <HorizontalScroll label={`${title} suggestions`} variant="plain">
                     <ul className={styles.suggestions}>
                         {movies.map((movie) => {
-                            const movieTitle = movie.title ?? 'Movie title unavailable';
+                            const movieTitle = formatMovieTitle(movie);
                             return (
                                 <li key={movie.id}>
                                     <button

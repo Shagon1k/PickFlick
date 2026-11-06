@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from './NominationMovieCard.module.scss';
 
@@ -23,7 +24,7 @@ export default function NominationMovieCard({
     maxGenres?: number;
     isLoading?: boolean;
 }) {
-    const title = movie.title ?? 'Movie title unavailable';
+    const title = formatMovieTitle(movie);
     const filmLabel = movie.year ? `${title} (${movie.year})` : title;
     return (
         <div

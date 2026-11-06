@@ -19,6 +19,7 @@ import InfoTip from '#components/ui/InfoTip/InfoTip';
 import ScoreControl from '#components/ui/ScaleControl/ScoreControl';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
 import StatusLine from '#components/ui/StatusLine/StatusLine';
+import { formatMovieTitle } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
 
 import PhaseProgress from '../PhaseProgress/PhaseProgress';
@@ -119,7 +120,7 @@ export default function Selection({
                                     <ScoreControl
                                         isCompact
                                         isLoading={isLoading}
-                                        label={`Score for ${row.movie.title ?? 'unavailable Movie'}`}
+                                        label={`Score for ${formatMovieTitle(row.movie)}`}
                                         name={`score-${row.id}`}
                                         min={data.scaleMin}
                                         max={data.scaleMax}
@@ -165,7 +166,7 @@ function SelectionMovie({
     author: string | null;
     isLoading: boolean;
 }) {
-    const title = movie.title ?? 'Movie title unavailable';
+    const title = formatMovieTitle(movie);
     return (
         <Link className={styles.film} href={`/movies/${movie.id}`} prefetch={false}>
             <SearchPoster

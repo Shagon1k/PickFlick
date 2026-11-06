@@ -10,6 +10,7 @@ import FilmStripMenu, {
     type IFilmStripMenuProps,
 } from '#components/ui/FilmStripMenu/FilmStripMenu';
 import Icon from '#components/ui/Icon/Icon';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from '../../page.module.scss';
 import NominationDeadline from '../NominationDeadline/NominationDeadline';
@@ -40,7 +41,7 @@ export default function SessionHeader({
 }) {
     const items = getMenuItems(session, { onKick, onClosePhase, onEdit, onCancel });
     const isDecisionPhase = isDecision(session.phase);
-    const title = movie?.title ?? movie?.originalTitle ?? 'Untitled film';
+    const title = formatMovieTitle(movie);
     const filmHref = movie && session.movieId ? `/movies/${session.movieId}` : null;
     return (
         <header

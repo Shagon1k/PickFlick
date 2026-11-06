@@ -9,6 +9,13 @@ const AVERAGE_FORMAT = new Intl.NumberFormat('en', {
 });
 const HOURS_FORMAT = new Intl.NumberFormat('en', { maximumFractionDigits: 1 });
 
+/** A Movie's display title; the provider may omit both the local and the original title. */
+export function formatMovieTitle(
+    movie?: { title?: string | null; originalTitle?: string | null } | null,
+): string {
+    return movie?.title ?? movie?.originalTitle ?? 'Untitled film';
+}
+
 /** The `YYYY-MM-DD` part of an ISO timestamp, as date inputs and compact labels show it. */
 export function toIsoDate(value: string): string {
     return value.slice(0, ISO_DATE_LENGTH);

@@ -9,7 +9,7 @@ import InfoTip from '#components/ui/InfoTip/InfoTip';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Popover from '#components/ui/Popover/Popover';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
-import { formatAverage, formatCount } from '#lib/format';
+import { formatAverage, formatCount, formatMovieTitle } from '#lib/format';
 
 import NominationMovieCard from '../NominationMovieCard/NominationMovieCard';
 import NominationMovieList from '../NominationMovieList/NominationMovieList';
@@ -89,7 +89,7 @@ function RivalScore({
 }) {
     const id = useId();
     const [isOpen, setIsOpen] = useState(false);
-    const title = rival.movie.title ?? 'this Movie';
+    const title = formatMovieTitle(rival.movie);
     return (
         <Popover
             id={id}

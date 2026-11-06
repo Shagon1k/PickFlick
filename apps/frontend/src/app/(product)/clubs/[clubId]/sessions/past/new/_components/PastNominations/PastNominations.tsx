@@ -10,6 +10,7 @@ import MoviePicker from '#components/sessions/MoviePicker/MoviePicker';
 import Button from '#components/ui/Button/Button';
 import Icon from '#components/ui/Icon/Icon';
 import Select from '#components/ui/Select/Select';
+import { formatMovieTitle } from '#lib/format';
 import { useActionStatus } from '#lib/use-action-status';
 
 import { buildMemberNames, formatMemberName } from '../../past-members';
@@ -65,7 +66,7 @@ export default function PastNominations({
         }
         onTitlesChange({
             ...titles,
-            [movieId]: movie.title ?? movie.originalTitle ?? 'Untitled film',
+            [movieId]: formatMovieTitle(movie),
         });
         onChange({ nominations: [...nominations, { movieId }], scoreMatrix });
         announceSuccess('Nomination added.');

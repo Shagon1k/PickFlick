@@ -11,6 +11,7 @@ import {
 import SearchCredits from '#components/movies/SearchCredits/SearchCredits';
 import SearchPoster from '#components/movies/SearchPoster/SearchPoster';
 import Skeleton from '#components/ui/Skeleton/Skeleton';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from './MovieSearchResults.module.scss';
 
@@ -64,7 +65,7 @@ export default function MovieSearchResults({
                     tabIndex={-1}
                 >
                     {movies.map((movie, index) => {
-                        const title = movie.title ?? movie.originalTitle ?? 'Untitled film';
+                        const title = formatMovieTitle(movie);
                         const meta = [
                             movie.releaseYear ?? 'Year unavailable',
                             movie.genres?.join(', '),

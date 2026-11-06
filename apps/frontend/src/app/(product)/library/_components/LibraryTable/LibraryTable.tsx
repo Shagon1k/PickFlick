@@ -18,7 +18,7 @@ import Icon from '#components/ui/Icon/Icon';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
 import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
-import { formatCount } from '#lib/format';
+import { formatCount, formatMovieTitle } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
 import { getNextTableSort } from '#lib/table-sort';
 
@@ -92,9 +92,7 @@ export default function LibraryTable({
             rank: (library.page - 1) * library.pageSize + index + 1,
             film: (
                 <Link href={`/movies/${item.movieId}`} className={styles.libraryTable__film}>
-                    <span className={styles.libraryTable__title}>
-                        {item.title ?? 'Untitled film'}
-                    </span>
+                    <span className={styles.libraryTable__title}>{formatMovieTitle(item)}</span>
                 </Link>
             ),
             genre: item.genres.join(', ') || '—',

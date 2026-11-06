@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getMovieDetails } from '#api/movies.server';
 import MoviePoster from '#components/movies/MoviePoster/MoviePoster';
 import ColorReveal from '#components/ui/ColorReveal/ColorReveal';
+import { formatMovieTitle } from '#lib/format';
 
 import styles from '../../page.module.scss';
 
@@ -16,7 +17,7 @@ function describeRelated(result: TRelatedResult) {
             name: 'Related film unavailable',
             label: 'Open details to try again',
         };
-    const title = result.data.title ?? 'Untitled film';
+    const title = formatMovieTitle(result.data);
     return {
         posterUrl: result.data.posterUrl,
         posterTitle: title,
