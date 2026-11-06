@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import ProductChrome from '#components/shells/ProductChrome/ProductChrome';
+import SectionTabs from '#components/shells/SectionTabs/SectionTabs';
 import {
     canonicalRoutes,
     type IShellNavigationItem,
@@ -49,18 +50,9 @@ export default function ProductShell({
                         Primary action
                     </Link>
                 </header>
-                <nav aria-label="Club sections" className={styles.contextTabs}>
-                    {clubItems.map((item) => (
-                        <Link
-                            aria-current={item.current ? 'page' : undefined}
-                            href={item.href}
-                            key={item.label}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
-                {children}
+                <SectionTabs items={clubItems} label="Club sections">
+                    {children}
+                </SectionTabs>
             </main>
         </ProductChrome>
     );
