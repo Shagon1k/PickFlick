@@ -1406,13 +1406,18 @@ intermittent failures also occur on `main`. Owner deferrals from these passes we
 no open Blocker or Major; that acceptance was recorded on the owner's instruction ahead of the
 merge of #205 and the closing of #63. Phases 13–17 keep their own open gates listed above.
 
-### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
+### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · In progress
 
 **Goal:** Users control their profile, personal appearance, portability, privacy rights, and account removal without
 damaging shared history.
 
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.
+
+Policy discovery uses the [Phase 19 working reference](_docs/phase-19-privacy.md): data inventory,
+pending retention/deletion/export decisions, provider/cookie evidence and external review gates.
+No new retention period or legal copy is approved by that preparation; implementation and phase
+acceptance remain open.
 
 **Tickets:** [#64](https://github.com/Shagon1k/PickFlick/issues/64) retention, deletion, export, and
 legal-copy policy · [#65](https://github.com/Shagon1k/PickFlick/issues/65) personal Settings, profile, avatar and Appearance ·
@@ -1790,7 +1795,8 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 13 — Watching, Rating & Completion                     | In progress | Watching → Rating → Completed is implemented; exact-head hosted/owner phase acceptance remains open.               |
 | 14–17                                                  | In progress | Past imports, Library, analytics/achievements and notifications are built; hosted/sandbox acceptance remains open. |
 | 18 — Human Verification & Bug Fixing III               | Done        | #63, PRs #199 and #205: owner-accepted verification and fixes for Phases 13–17 (2026-11-06).                       |
-| 19–22                                                  | Not started |                                                                                                                    |
+| 19 — Profile, Privacy & Account Deletion               | In progress | Policy discovery started; owner/legal decisions and implementation acceptance remain open.                         |
+| 20–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |
 | 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                            |
 | 25 — Production Deploy                                 | Not started | Needs the Phase 24 Go.                                                                                             |

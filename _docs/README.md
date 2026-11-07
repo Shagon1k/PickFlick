@@ -20,6 +20,13 @@ Start here before non-trivial product, design, architecture, implementation, or 
 | [Production operations](production-operations.md) | Keeping production inactive, provisioning, promotion, rollback, and recovery.          |
 | [UI quality checks](ui-quality.md)                | Running and reviewing the Playwright suite.                                            |
 
+## Active phase work
+
+[Phase 19 — Profile, privacy, portability, and account deletion](phase-19-privacy.md) holds the
+data inventory, pending policy decisions, provider/cookie review and sign-off requirements for
+[#64](https://github.com/Shagon1k/PickFlick/issues/64). It does not approve retention periods or
+legal copy; the Roadmap owns phase acceptance and Project 3 owns issue status.
+
 ## Working rules
 
 | Document                                                                                                                                     | Purpose                                                           |
