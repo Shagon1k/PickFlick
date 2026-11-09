@@ -60,6 +60,12 @@ latest explicit developer decision
 
 The retired blueprint was removed after synthesis and is not a source of truth.
 
+## Active phase
+
+[Phase 19 privacy preparation](phase-19-privacy.md) holds the data inventory, owner-backed
+retention inputs, provider/cookie review and outstanding policy sign-offs for #64. It does not
+authorize dependent implementation or replace the canonical requirements.
+
 ## Historical audits
 
 The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,

@@ -12,6 +12,13 @@ and recover. Activating production and every production deployment need an expli
 
 ## Keep production inactive
 
+The [Phase 19 policy preparation](phase-19-privacy.md) records the owner's 30-day backup retention
+input. This is not a configured or demonstrated backup guarantee. #83 must approve destinations,
+clock/expiry details, access and recovery objectives; #88 must prove database/object restoration
+and deletion replay before final UAT. A restored system must stay isolated until deleted accounts
+and private data are removed again and access revocation is verified. Do not treat a backup as an
+exception to account deletion without reviewed limits and matching public disclosure.
+
 - Keep the repository variable `PRODUCTION_DEPLOY_ENABLED` absent or `false`.
 - Keep Dokploy auto deploy off on the production Compose resource.
 - Attach no public domain to the production `frontend` service.

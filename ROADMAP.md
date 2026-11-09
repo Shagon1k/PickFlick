@@ -418,7 +418,7 @@ again, while their other metadata remains usable. Silent Era requires a known re
 | Session history                  | Unlimited               | Unlimited                     |
 | Club customization               | Included                | Included                      |
 | Session visibility settings      | Included                | Included                      |
-| Inactivity grace                 | 90 days                 | 180 days                      |
+| Inactivity grace                 | 180 days                | 360 days                      |
 | Club ratings leaderboard         | Included                | Included                      |
 | Club analytics                   | All Overview statistics | All Overview statistics       |
 
@@ -430,6 +430,10 @@ again, while their other metadata remains usable. Silent Era requires a known re
   deleted automatically and can be reactivated.
 - Members never need Pro to participate; the Admin's plan sets the Club's limits.
 
+The owner approved the 180/360-day Club thresholds during #64 discovery. Automatic inactivity
+archiving remains Proposed (#74); current Pricing copy still needs reconciliation with these
+thresholds. These periods do not authorize automatic deletion of inactive personal accounts.
+
 ### Account deletion and shared history
 
 - Delete the User's private profile data and cancel their subscription through an audited workflow.
@@ -438,7 +442,16 @@ again, while their other metadata remains usable. Silent Era requires a known re
 - Remove memberships and personal Library and Watchlist data under the approved retention policy.
 - If the User was a Club's Admin and no transfer happened, the Club becomes adminless, every member
   is notified, and owner-only actions stay unavailable until a recovery policy exists.
-- Legal wording and deletion timing need review before launch; prototype copy is not a commitment.
+- Owner-approved product targets from #64: revoke access immediately after re-authenticated,
+  confirmed deletion; finish private-data cleanup within a 24-hour technical target; make a
+  generated archive available for 7 days; retain technical logs for 30 days, audit for 90 days,
+  and backups for 30 days. These are Proposed behavior, not verified runtime guarantees or legal
+  approval. Clock origins, category-specific exceptions and restore handling need final review.
+- Legal wording and the complete policy disposition need owner and legal/privacy review before
+  dependent implementation; launch copy must also match tested behavior. Operator location is
+  Lithuania and the intended audience includes Europe and the US; final controller identity,
+  exact European coverage and age policy remain open. The proposed 18+ restriction is unapproved.
+  [Phase 19 preparation](_docs/phase-19-privacy.md) records evidence and remaining decisions.
 
 ## 4. Glossary
 
@@ -1406,10 +1419,14 @@ intermittent failures also occur on `main`. Owner deferrals from these passes we
 no open Blocker or Major; that acceptance was recorded on the owner's instruction ahead of the
 merge of #205 and the closing of #63. Phases 13–17 keep their own open gates listed above.
 
-### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · Not started
+### Phase 19 — Profile, Privacy, Import/Export & Account Deletion · In progress
 
 **Goal:** Users control their profile, personal appearance, portability, privacy rights, and account removal without
 damaging shared history.
+
+**Working evidence:** [Policy preparation](_docs/phase-19-privacy.md) inventories current data and
+records accepted product periods separately from open legal/privacy decisions. The #64 owner
+checkpoint remains required before dependent implementation; no policy acceptance is recorded here.
 
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.
@@ -1790,7 +1807,8 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 13 — Watching, Rating & Completion                     | In progress | Watching → Rating → Completed is implemented; exact-head hosted/owner phase acceptance remains open.               |
 | 14–17                                                  | In progress | Past imports, Library, analytics/achievements and notifications are built; hosted/sandbox acceptance remains open. |
 | 18 — Human Verification & Bug Fixing III               | Done        | #63, PRs #199 and #205: owner-accepted verification and fixes for Phases 13–17 (2026-11-06).                       |
-| 19–22                                                  | Not started |                                                                                                                    |
+| 19 — Profile, Privacy, Import/Export & Deletion        | In progress | Policy preparation; owner and legal/privacy disposition remains required before dependent implementation.          |
+| 20–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |
 | 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                            |
 | 25 — Production Deploy                                 | Not started | Needs the Phase 24 Go.                                                                                             |

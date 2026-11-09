@@ -441,7 +441,12 @@ every authentication session.
 - **Observability:** nestjs-pino structured logs with a request ID; health endpoints. Error
   telemetry and alerts are Proposed.
 - **Privacy:** minimal collection, private storage, export and deletion that anonymizes shared
-  history. — Proposed
+  history. — Proposed. [Phase 19 preparation](_docs/phase-19-privacy.md) maps current tables,
+  snapshots, files, mail and provider copies to deletion/export review. Product targets are
+  immediate access revocation, private cleanup within 24 hours, seven-day archives, 30-day logs,
+  90-day audit and 30-day backups; clock origins/exceptions and legal/privacy sign-off remain
+  open. No cleanup job, anonymization mechanism or restore guarantee is made Active by this policy
+  preparation. #68 owns deletion, #87 retention enforcement and #83/#88 backup/restore alignment.
 - **Security headers:** every page gets a per-request nonce CSP from `proxy.ts` (scripts only with
   the nonce, no framing, no plugins); every frontend response adds HSTS, `nosniff`, a referrer
   policy, a permissions policy, and a same-origin opener policy; the backend sends its own
