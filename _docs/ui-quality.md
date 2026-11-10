@@ -252,3 +252,23 @@ the popover anchor left Floating UI at a fractional intermediate position. The c
 its existing inner press surface; its anchor stays fixed. Captures also wait for the automatic
 Medium save to finish. Seven Watchlist contract checks and ten repeated strict Linux comparisons
 pass after the fix, without changing either baseline PNG or the screenshot tolerance.
+
+## Personal Settings baseline review, 2026-11-10
+
+Issue #65 adds four captures: Profile and Appearance at 390 and 1440. The review inspected rendered
+`settings.html` references at both widths, the prototype Design contract and responsive baselines,
+then the application captures. Profile keeps the heading/context, 218px sidebar, 36px column gap,
+flat card and 72px photo. Phones use the shared product chrome, stack photo actions and expose
+Settings sections through the bottom menu. Shared controls retain 44px targets and accessible
+validation/save feedback. The upload limit is the existing 512 KiB boundary; the prototype's 2 MB
+fixture is not used as policy. Appearance extends the same card foundation for #65's explicit
+personal controls; it has no separate canonical prototype panel.
+
+Six existing captures change: Club Ratings, My Ratings and populated Watchlist at both widths.
+Expected/actual/diff inspection confirms the shared column control below search shifts the table
+and following content while preserving row geometry, typography, pagination and local scrolling.
+The canonical Design table rules and existing approved components still govern those tables.
+All ten changed/new PNGs were inspected. No screenshot tolerance or quality gate changed.
+
+These are local engineering comparisons. Exact-head hosted preview review and owner acknowledgment
+remain required before #65 is accepted.

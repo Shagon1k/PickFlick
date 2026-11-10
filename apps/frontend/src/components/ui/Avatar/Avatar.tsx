@@ -17,7 +17,7 @@ export default function Avatar({
 }: {
     name: string;
     src: string | null;
-    size?: 'small' | 'medium' | 'large' | 'extra-large';
+    size?: 'small' | 'medium' | 'large' | 'extra-large' | 'profile';
     withColorReveal?: boolean;
     isLoading?: boolean;
 }) {

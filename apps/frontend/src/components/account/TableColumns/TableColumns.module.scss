@@ -1,0 +1,27 @@
+.columns {
+    margin-bottom: var(--gap-sm);
+    font-size: var(--fs-body-sm);
+    color: var(--fg-secondary);
+}
+
+.columns summary {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    min-height: var(--hit);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+}
+
+.columns__options {
+    display: grid;
+    gap: var(--gap-xs);
+    padding: var(--gap-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.columns__options p {
+    margin: 0;
+}

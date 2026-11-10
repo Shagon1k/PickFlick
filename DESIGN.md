@@ -236,7 +236,7 @@ All canonical screens are MVP and approved as direction.
 | Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Active — film, screening facts, historical ratings/comments and permitted nomination breakdowns                           | Exact-SHA hosted preview and owner review pending                                 |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Active — searchable Ratings/Watchlist tables with sortable headers and shared editors; statistics and achievement shelves | Exact-SHA hosted preview and owner review pending                                 |
 | `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player, links, Personal Rating and Watchlist priority editors implemented                                | Details accepted 2026-10-23; editor QA recorded in Phase 15; owner review pending |
-| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Not started                                                                                                               | Not checked                                                                       |
+| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Partial — Profile and Appearance implemented; remaining sections Proposed                                                 | Local 390/1440 checks passed; hosted owner review pending                         |
 | `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                                                               | Not checked                                                                       |
 | `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                                                      | Passed locally                                                                    |
 
@@ -590,14 +590,35 @@ here.
   Exact-SHA hosted visual review is pending.
   No fixture statistics or film content appear.
 
-#### Personal Appearance — Proposed
+#### Personal Appearance — Partial
 
-Phase 19 personal Settings [#65](https://github.com/Shagon1k/PickFlick/issues/65) covers per-user monochrome media,
-quiet mode (grain/ambient-motion reduction with a tooltip), Comfortable/Compact list spacing and
-one shared optional-column control for applicable tables. These preferences apply across Hub,
-Sessions and My Library without changing another user's view or Club result visibility. Essential
-Film and Rating/Priority controls remain available. Existing Club/Session media values are legacy
-data; this work does not rewrite historical records.
+Personal Settings [#65](https://github.com/Shagon1k/PickFlick/issues/65) implements Profile and
+Appearance at `/settings`. The desktop composition follows `settings.html`: heading and personal
+account context, a 218px sidebar, 36px content gap, and one flat bordered card. Below 768px the
+shared product Settings menu replaces the sidebar. The 72px profile avatar and upload actions
+recompose vertically on phones. Shared form controls provide read-only email/provider and English
+language information, name validation, offline/error feedback and live save status. Other Settings
+sections remain Proposed under their owning issues.
+
+Appearance saves per-user monochrome film/trailer media, Color reveal, quiet mode,
+Comfortable/Compact spacing and one shared optional-column setup. Quiet mode has an adjacent
+InfoTip and removes grain; current product surfaces have no continuous decorative motion apart
+from loading indicators, which remain active. System reduced motion and action press feedback
+remain independent. Disabling Color reveal cancels active masks and restores ordinary hover
+feedback. Club Ratings, My Ratings and Watchlist retain ordinary table hover behavior.
+
+Compact rows use shared tokens without changing fonts, 44px controls, or tab-to-content spacing.
+Film and Rating/Priority columns remain available; optional Rank, Year, Genre and Date preferences
+apply wherever those columns exist. The control keeps keyboard focus while saving and leaves
+server sorting, filters and pagination unchanged. Tables keep local horizontal scrolling.
+Existing Club/Session media fields remain legacy data; no shared history or privacy snapshot is
+rewritten. Private personal uploads are served only through the account endpoint; existing shared
+provider-photo permissions are unchanged.
+
+Local rendered comparison and axe/overflow checks cover 390 and 1440. Representative baselines
+and the remaining verification are tracked in [Phase 19 Settings](_docs/phase-19-settings.md).
+The exact-head hosted preview still requires owner acknowledgment; local evidence is not final
+visual acceptance.
 
 #### Create Session
 
@@ -844,8 +865,8 @@ data; this work does not rewrite historical records.
   Members retains its ordinary avatar color transition. There is no light ring or brightness overlay.
   Duration and feather live in `tokens.scss`; feather is 0.4 of the maximum distance from the origin.
   `COLOR_REVEAL_CONFIG.enabled` in the shared ColorReveal configuration
-  switches all remaining reveals to ordinary 150ms hover feedback without a radial mask. A persisted
-  personal Appearance switch is Proposed in #65; the current global default is enabled.
+  switches all remaining reveals to ordinary 150ms hover feedback without a radial mask. The persisted
+  personal Appearance preference combines with this central switch; the global default remains enabled.
   Related Movie titles/years are centered with 12px side padding and 12px bottom padding below the year.
   Local DOM checks cover both global switch states, timings, table opt-outs and 390px Related Movie
   alignment/overflow; broader visual/automated checks remain deferred.

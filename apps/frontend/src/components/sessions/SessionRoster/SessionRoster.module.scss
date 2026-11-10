@@ -8,8 +8,8 @@
     display: flex;
     gap: var(--gap-sm);
     align-items: center;
-    min-height: 52px;
-    padding-block: var(--gap-xs);
+    min-height: var(--participant-row-height);
+    padding-block: var(--participant-row-padding);
     overflow-wrap: anywhere;
 }
 

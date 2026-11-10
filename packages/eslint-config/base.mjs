@@ -178,6 +178,7 @@ export default [
                         'movies',
                         'navigation',
                         'notifications',
+                        'account',
                         'sessions',
                         'shells',
                         'statistics',

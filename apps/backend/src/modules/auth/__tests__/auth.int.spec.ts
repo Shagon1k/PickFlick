@@ -105,6 +105,33 @@ describe('AuthService', () => {
     });
 
     describe('when resolving a session', () => {
+        it('should omit private avatar keys and appearance storage from the auth response', async () => {
+            const userId = await user();
+            const key = `account-avatars/private-${userId}.webp`;
+            await prisma.accountAvatarObject.create({ data: { key } });
+            try {
+                await prisma.user.update({ where: { id: userId }, data: { avatarObjectKey: key } });
+                const session = await login(userId);
+                const response = await service.auth.handler(
+                    new Request(`${environment.auth.baseUrl}/api/auth/get-session`, {
+                        headers: headersOf(session),
+                    }),
+                );
+                expect(response.status).toBe(200);
+                const body = (await response.json()) as { user: Record<string, unknown> };
+                const fields = Object.keys(body.user);
+                expect(fields).not.toContain('avatarObjectKey');
+                expect(fields).not.toContain('appearance');
+                expect(fields).not.toContain('isAvatarRemoved');
+            } finally {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { avatarObjectKey: null },
+                });
+                await prisma.accountAvatarObject.delete({ where: { key } });
+            }
+        });
+
         it('should return the signed-in User', async () => {
             const userId = await user();
             const session = await login(userId);

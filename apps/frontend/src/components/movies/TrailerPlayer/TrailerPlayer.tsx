@@ -51,6 +51,7 @@ export default function TrailerPlayer({
             )}
             {trailer && isPlaying ? (
                 <iframe
+                    data-film-media
                     allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                     allowFullScreen
                     className={styles.frame}

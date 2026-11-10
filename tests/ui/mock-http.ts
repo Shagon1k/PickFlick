@@ -23,7 +23,7 @@ export function sendError(
     });
 }
 
-type TMethod = 'GET' | 'POST' | 'PATCH';
+type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 /**
  * Returns which of `routes` (path suffix after `prefix` → its API method) the path names exactly,

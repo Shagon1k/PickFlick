@@ -1,3 +1,4 @@
+export * from './account/account.schema.js';
 export * from './achievements/achievement.schema.js';
 export * from './auth/return-target.js';
 export * from './clubs/club.schema.js';

@@ -15,6 +15,7 @@ import {
 import { AppModule } from '../app.module.js';
 import { configureApplication } from '../config/configure-application.js';
 import { PrismaService } from '../database/prisma.service.js';
+import { AvatarCleanupService } from '../modules/account/avatar-cleanup.service.js';
 import { AuthService } from '../modules/auth/auth.service.js';
 import type { IAuthUser } from '../modules/auth/auth.types.js';
 import { NotificationSignals } from '../modules/notifications/notification-signals.js';
@@ -163,6 +164,7 @@ class MemoryStorage {
 type TTestRequestInit = RequestInit & { userId?: string; json?: unknown };
 
 export interface ITestApi {
+    avatarCleanup: AvatarCleanupService;
     prisma: PrismaService;
     transactions: Transactions;
     signals: NotificationSignals;
@@ -217,6 +219,7 @@ export async function startTestApi(): Promise<ITestApi> {
             ...(json === undefined ? {} : { body: JSON.stringify(json) }),
         });
     return {
+        avatarCleanup: app.get(AvatarCleanupService),
         prisma: app.get(PrismaService),
         transactions: app.get(Transactions),
         signals: app.get(NotificationSignals),

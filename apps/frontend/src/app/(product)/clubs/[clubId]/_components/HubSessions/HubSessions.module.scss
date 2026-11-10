@@ -42,7 +42,7 @@
     grid-template-columns: 64px minmax(0, 1fr) auto;
     gap: var(--gap-md);
     align-items: center;
-    padding-block: var(--gap-sm);
+    padding-block: var(--list-row-padding);
     color: var(--fg);
     text-decoration: none;
     border-block: 0;

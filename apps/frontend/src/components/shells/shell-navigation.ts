@@ -248,6 +248,11 @@ export function buildMobileNavigation({
     const defaultSettingsItems: readonly IShellNavigationItem[] = [
         { href: routes.settings, label: 'Profile', icon: 'profile' },
         {
+            href: buildSectionHref(routes.settings, 'appearance'),
+            label: 'Appearance',
+            icon: 'settings',
+        },
+        {
             href: buildSectionHref(routes.settings, 'notifications'),
             label: 'Notifications',
             icon: 'bell',

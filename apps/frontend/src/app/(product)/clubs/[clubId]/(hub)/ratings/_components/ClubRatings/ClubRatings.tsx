@@ -15,7 +15,7 @@ import {
 } from '#components/movies/film-table-columns';
 import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
 import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
-import Table from '#components/ui/Table/Table';
+import PersonalFilmTable from '#components/movies/PersonalFilmTable/PersonalFilmTable';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatAverage, formatCount, formatMovieTitle } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
@@ -92,7 +92,7 @@ export default function ClubRatings({
             <p className={message ? undefined : 'visually-hidden'} role="status">
                 {message || status}
             </p>
-            <Table
+            <PersonalFilmTable
                 variant="leaderboard"
                 isLoading={isPending}
                 caption="Club rating leaderboard"

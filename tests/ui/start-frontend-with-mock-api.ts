@@ -11,6 +11,7 @@ import type {
     TRespondInvitation,
 } from '@pickflick/contracts';
 
+import { handleAccount } from './account.ts';
 import { handleAchievements } from './achievements.ts';
 import { settingsProjection } from './club-projections.ts';
 import { handleClubRatings } from './club-ratings.ts';
@@ -41,6 +42,7 @@ const clubsBySession = new Map<TToken, IClubSummary[]>();
 const removedMembersBySession = new Set<TToken>();
 const avatarVersionsBySession = new Map<TToken, string>();
 const SETTINGS_CLUB_ID = '10000000-0000-4000-8000-000000000031';
+const ACCOUNT_SESSION_DELAY_MS = 1200;
 const SECOND_CLUB_ID = '10000000-0000-4000-8000-000000000032';
 const avatarPng = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -98,6 +100,13 @@ function handleSession(request: TMockRequest, response: TMockResponse): void {
         return;
     }
     const isAuthenticated = token?.startsWith('valid') ?? false;
+    if (token?.includes('account-loading')) {
+        setTimeout(
+            () => sendJson(response, 200, { user: { id: `user-${token}` } }),
+            ACCOUNT_SESSION_DELAY_MS,
+        );
+        return;
+    }
     sendJson(response, 200, isAuthenticated ? { user: { id: `user-${token}` } } : null);
 }
 
@@ -417,6 +426,7 @@ const api = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (
         [
+            handleAccount,
             handleAchievements,
             handleNotifications,
             handleLibrary,
