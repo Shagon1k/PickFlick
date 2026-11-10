@@ -122,6 +122,13 @@ test(
             'transition-duration',
             '0s',
         );
+        const trailer = page.getByRole('region', { name: 'Trailer', exact: true });
+        const thumbnails = trailer.locator('img');
+        await expect(thumbnails).toHaveCount(2);
+        for (const thumbnail of await thumbnails.all())
+            await expect(thumbnail).toHaveCSS('filter', 'grayscale(1)');
+        await trailer.getByRole('button', { name: /^Play /u }).click();
+        await expect(trailer.locator('iframe')).toHaveCSS('filter', 'grayscale(1)');
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto('/library?sort=year&direction=asc');
         await page.getByText('Table columns', { exact: true }).click();

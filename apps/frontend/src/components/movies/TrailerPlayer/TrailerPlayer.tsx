@@ -153,6 +153,7 @@ function TrailerStill({ src }: { src: string }) {
     return (
         // eslint-disable-next-line @next/next/no-img-element -- authenticated same-origin image, bypassing the optimizer
         <img
+            data-film-media
             alt=""
             className={styles.backdrop}
             data-loaded={isLoaded || undefined}

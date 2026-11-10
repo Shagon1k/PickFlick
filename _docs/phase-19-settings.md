@@ -61,16 +61,19 @@ production setup or provider account changes are included.
 - Canonical references inspected: `settings.html`, prototype Design contract, responsive baselines,
   and canonical `DESIGN.md`. Profile/Appearance have four new reviewed 390/1440 captures; six
   existing table captures were reviewed and updated. See [baseline review](ui-quality.md#personal-settings-baseline-review-2026-11-10).
-- The final Settings suite passed 9/9; the full visual suite passed 116/116 in the pinned
-  Playwright image. Checks include accessibility, keyboard controls, account isolation,
+- The final Settings suite passed 9/9; the full smoke suite passed 120/120 and the full visual
+  suite passed 116/116 in the pinned Playwright image. Checks include accessibility, keyboard controls, account isolation,
   persistence, validation, offline/error/loading states, and local table scrolling.
+- A final audit found and added the monochrome marker to trailer thumbnails as well as the
+  playing iframe. After rebuilding, all 24 Settings/Movie Details checks passed, including both
+  thumbnail layers and the playing frame. Focused ESLint, test types and the frontend build passed.
 - Initial combined PR selection: 229/236 passed. Six expected table-baseline differences were
   subsequently reviewed and updated. The remaining failure was an intermittent menu-opening
   timeout in the existing two-client Nomination smoke test. It also reproduced on starting commit
   `d0ac433fda367dd3759140ef869023433511f357` (four of five baseline repeats passed).
   Attempted test-only waits and keyboard input did not resolve it and were removed. No Nomination
-  implementation or test changes are included. A fully green combined smoke selection remains
-  unverified; CI must still pass before delivery.
+  implementation or test changes are included. The final full smoke rerun passed all 120 checks,
+  including that unchanged test; CI must still pass before delivery.
 - Exact-head hosted preview and owner visual acknowledgment: required and pending. Do not mark
   the issue or phase Done based on local screenshots or CI alone.
 - Legal/privacy package acceptance remains separate and open.
