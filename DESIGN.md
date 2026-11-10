@@ -908,6 +908,12 @@ data; this work does not rewrite historical records.
 
 ### Prototype fixtures and superseded content
 
+The owner-backed product periods and remaining policy/copy gates are recorded in
+[Phase 19 preparation](_docs/phase-19-privacy.md). Pricing's 90/180-day inactivity copy is superseded
+by the Roadmap's 180/360 days; displayed copy still needs reconciliation in #69/#74. Keep legal
+entries provisional until review and implementation agree. The 24-hour cleanup target and other
+retention inputs are not unconditional public guarantees; the 18+ suggestion remains unapproved.
+
 | Prototype shows                                                                                                                     | Build this instead                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Personal suggestions beside Nomination search.                                                                                      | Separate Try again and Watchlist strips use the caller's own losing nominations in this Club and their private saved films, ordered by priority. Selecting a card uses the normal nomination flow. No shared saved-film list or new add/remove controls are introduced here.                                                                                                                            |
