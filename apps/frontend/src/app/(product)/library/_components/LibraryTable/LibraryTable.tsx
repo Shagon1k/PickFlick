@@ -16,11 +16,11 @@ import {
 } from '#components/movies/film-table-columns';
 import FilmTablePagination from '#components/movies/FilmTablePagination/FilmTablePagination';
 import { buildFilmTableSkeletonRows } from '#components/movies/FilmTableSkeleton/FilmTableSkeleton';
+import PersonalFilmTable from '#components/movies/PersonalFilmTable/PersonalFilmTable';
 import PersonalRating from '#components/movies/PersonalRating/PersonalRating';
 import WatchlistBookmark from '#components/movies/WatchlistBookmark/WatchlistBookmark';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import LocalTime from '#components/ui/LocalTime/LocalTime';
-import Table from '#components/ui/Table/Table';
 import TableSearch from '#components/ui/TableSearch/TableSearch';
 import { formatCount, formatMovieTitle } from '#lib/format';
 import { getOfflineMessage } from '#lib/offline';
@@ -178,7 +178,7 @@ export default function LibraryTable({
             <p hidden={!navigationMessage} role="status">
                 {navigationMessage}
             </p>
-            <Table
+            <PersonalFilmTable
                 variant="leaderboard"
                 isLoading={isPending}
                 caption={isWatchlist ? 'Films to watch' : 'Rated films'}

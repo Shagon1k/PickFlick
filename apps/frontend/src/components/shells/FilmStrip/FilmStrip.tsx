@@ -7,7 +7,7 @@ import styles from '#components/shells/product-navigation.module.scss';
 import { useProductOverlay } from '#components/shells/product-overlay';
 import type { TShellMenuItem } from '#components/shells/shell-navigation';
 import Icon from '#components/ui/Icon/Icon';
-import { authClient } from '#lib/auth-client';
+import { signOutAndRedirect } from '#lib/auth-client';
 
 function FilmMenuItem({ item }: { item: TShellMenuItem }) {
     // Hub sections share a persistent frame, so a route change alone would leave the strip open.
@@ -59,15 +59,7 @@ function SignOutMenuItem({ content }: { content: ReactNode }) {
         setIsPending(true);
         setError('');
         try {
-            const result = await authClient.signOut();
-            if (result.error) {
-                setError('Sign out failed. Please try again.');
-                setIsPending(false);
-                return;
-            }
-            // A full load after sign-out drops every cached signed-in page.
-            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- see above
-            window.location.assign('/login');
+            await signOutAndRedirect();
         } catch {
             setError('Sign out failed. Please try again.');
             setIsPending(false);

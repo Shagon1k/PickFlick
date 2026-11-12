@@ -63,8 +63,11 @@ The retired blueprint was removed after synthesis and is not a source of truth.
 ## Active phase
 
 [Phase 19 privacy preparation](phase-19-privacy.md) holds the data inventory, owner-backed
-retention inputs, provider/cookie review and outstanding policy sign-offs for #64. It does not
-authorize dependent implementation or replace the canonical requirements.
+retention inputs, provider/cookie review and outstanding policy sign-offs for #64. It preserves the owner’s separate #65 implementation approval and the remaining legal/privacy
+gates; it does not replace canonical requirements.
+
+[Phase 19 personal Settings](phase-19-settings.md) records #65 implementation boundaries,
+verification evidence and the exact-SHA preview acceptance checkpoint.
 
 ## Historical audits
 

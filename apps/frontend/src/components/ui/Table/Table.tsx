@@ -29,6 +29,7 @@ export interface ITableProps {
     emptyMessage?: string;
     variant?: 'default' | 'leaderboard' | 'matrix';
     isLoading?: boolean;
+    hasExplicitSort?: boolean;
 }
 
 function getAriaSort(direction?: 'asc' | 'desc') {
@@ -51,10 +52,10 @@ export default function Table({
     rows,
     variant = 'default',
     isLoading = false,
+    hasExplicitSort = columns.some((column) => column.sortDirection),
 }: ITableProps) {
     const getCellClass = (column: ITableColumn) =>
         column.isNumeric ? styles.table__numeric : undefined;
-    const hasExplicitSort = columns.some((column) => column.sortDirection);
     return (
         <HorizontalScroll
             label={caption}
@@ -72,6 +73,7 @@ export default function Table({
                         {columns.map((column) => (
                             <th
                                 aria-sort={getAriaSort(column.sortDirection)}
+                                data-column={column.key}
                                 className={clsx(
                                     getCellClass(column),
                                     column.onSort && styles.table__sortable,
@@ -105,7 +107,11 @@ export default function Table({
                         rows.map((row) => (
                             <tr key={row.id}>
                                 {columns.map((column) => (
-                                    <td className={getCellClass(column)} key={column.key}>
+                                    <td
+                                        className={getCellClass(column)}
+                                        data-column={column.key}
+                                        key={column.key}
+                                    >
                                         {row.cells[column.key]}
                                     </td>
                                 ))}

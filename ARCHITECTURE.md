@@ -46,7 +46,7 @@ flowchart LR
 | Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.                   | Partial — auth, Clubs, Contact, health, catalog and Sessions through Session Rating and completion; later modules Proposed                | ADR-002, 010, 011 |
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.                  | Active                                                                                                                                    | ADR-012           |
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.               | Partial — identity, Clubs, catalog, Session roster, Nomination, Selection and durable result/notification intent; later entities Proposed | ADR-003           |
-| Objects    | S3-compatible storage for avatars, catalog images and exports.                               | Partial — Club avatars and catalog images                                                                                                 | —                 |
+| Objects    | S3-compatible storage for avatars, catalog images and exports.                               | Partial — Club/personal avatars and catalog images                                                                                        | —                 |
 | Background | Session-row deadlines polled by the backend worker; no scheduling table or queue dependency. | Active                                                                                                                                    | ADR-018           |
 | Real-time  | Session progress polls every five seconds; notification changes use Redis Pub/Sub and SSE.   | Active                                                                                                                                    | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.               | Partial — repository-verified; live production not provisioned                                                                            | ADR-007, 008      |
@@ -78,6 +78,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 
 | Module                           | Owns                                                                                                                                                                                | State                                                                                         |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| account                          | Own profile, read-only provider/email projection, personal Appearance and private avatar lifecycle.                                                                                 | Implemented locally; hosted acceptance pending                                                |
 | auth                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
 | clubs                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
 | contact                          | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
@@ -101,6 +102,28 @@ its `page.module.scss`, `actions.ts`, and `_components/`. `src/components/ui/<Na
 Server code calls the backend only through `src/api/<area>.server.ts`, which forwards the session cookie
 and client address. Forms use `@mantine/form` and call server actions that return typed results and recovery feedback.
 [apps/frontend/AGENTS.md](apps/frontend/AGENTS.md) holds the conventions.
+
+### Personal Settings
+
+The product route layout loads `GET /account` into a shared account context. User-owned appearance
+JSON is validated through the shared contract and applied through ColorReveal, film-media markers,
+spacing tokens and a common film-table column control. The API derives every read/write identity
+from the session and rejects account selectors. Profile updates change only display name and the
+English locale. Email and provider identities are projected read-only; credentials, object keys
+and provider source URLs never enter the profile response.
+
+`PUT /account/avatar` receives bounded image bytes through the existing raw parser; browser uploads
+do not write directly to S3. `AccountAvatarObject` records each opaque key before storage. A User
+row lock serializes pointer replacement/removal; object-row locks protect attachment from cleanup.
+Replaced objects and failed attachments are removed immediately. Failed deletion retains a tracking
+row. Each running API process checks at ten-minute intervals, taking up to 100 unreferenced objects
+older than one hour. Storage deletion precedes tracking-row removal, and reference checks preserve
+live objects. This personal-avatar cleanup is separate from broader release retention work.
+The self-only avatar endpoint returns private/no-store bytes with an opaque revision for browser
+refresh. Existing Club/member/participant provider-image projections keep their permissions.
+The backend directly depends on the already-locked `sharp@0.35.5`: limit decoded input to 16,777,216
+pixels, apply orientation, resize within 512 × 512 without enlarging, and encode a fresh static
+WebP without source metadata. Corrupt or oversized decoded content is rejected before storage.
 
 ### How a request flows
 
@@ -132,11 +155,11 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 | Store                 | Holds                                                                     | State                                                                       |
 | --------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | PostgreSQL            | All domain state, sessions, audit.                                        | Active for local/CI/UAT; production provisioning remains separate under #94 |
-| S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club avatars and catalog images                                   |
+| S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club/personal avatars and catalog images                          |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                                      |
 
-The schema (`packages/database/prisma/schema.prisma`, forty-four migrations) holds `User`,
-`ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
+The schema (`packages/database/prisma/schema.prisma`, forty-five migrations) holds `User`,
+`AccountAvatarObject`, `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `Nomination`,
 `SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,

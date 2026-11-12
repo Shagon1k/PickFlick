@@ -26,6 +26,7 @@ export default function SearchPoster({
     const image =
         url && failedUrl !== url ? (
             <Image
+                data-film-media
                 src={url}
                 alt=""
                 width={POSTER_WIDTH}

@@ -15,7 +15,7 @@
 
 .table th,
 .table td {
-    padding: 13px 16px;
+    padding: var(--table-row-padding, 13px) 16px;
     vertical-align: top;
     text-align: left;
     border-top: 1px solid var(--border);
@@ -115,8 +115,8 @@
     vertical-align: middle;
 }
 
-.table.m-leaderboard th:first-child,
-.table.m-leaderboard td:first-child:not(.table__empty) {
+.table.m-leaderboard th[data-column='rank'],
+.table.m-leaderboard td[data-column='rank'] {
     width: 40px;
     font: var(--fs-lead)/var(--lh-body) var(--font-display);
     color: var(--muted);

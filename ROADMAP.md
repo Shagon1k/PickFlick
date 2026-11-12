@@ -579,7 +579,7 @@ hidden from normal history unless product copy exposes it.
 | Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
 | Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
 | Resend                | Transactional and opted-in email.                                                                  | Contact and notification delivery built; live sandbox acceptance pending                 |
-| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club avatars and catalog images built; User avatars and exports planned                  |
+| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club/personal avatars and catalog images implemented; exports pending                    |
 | Sentry                | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
 | IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
 
@@ -1425,8 +1425,12 @@ merge of #205 and the closing of #63. Phases 13–17 keep their own open gates l
 damaging shared history.
 
 **Working evidence:** [Policy preparation](_docs/phase-19-privacy.md) inventories current data and
-records accepted product periods separately from open legal/privacy decisions. The #64 owner
-checkpoint remains required before dependent implementation; no policy acceptance is recorded here.
+records accepted product periods separately from open legal/privacy decisions. On 2026-11-10 the owner explicitly authorized #65 while keeping unresolved legal/privacy
+decisions gated separately. This clears #65 implementation only; no final policy acceptance is
+recorded here. [Personal Settings evidence](_docs/phase-19-settings.md) records profile, avatar
+and Appearance verification and the outstanding exact-head visual acknowledgment. The same continuation accepted a 16+ product age, Europe + US intent, and
+archiving inactive personal accounts on the 180/360-day Free/Pro schedule without automatic erasure.
+Country-specific review, operational details and operator form remain open.
 
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.

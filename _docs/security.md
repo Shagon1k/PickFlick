@@ -101,7 +101,7 @@ Club member avatar reads validate both path UUIDs and require the viewer's curre
 the target's active Membership in the same Club. Foreign/departed targets return 404; the endpoint
 reuses the same downloader and private/no-store response without exposing source URLs.
 The authenticated `/account/avatar` endpoint accepts no identifiers or source URLs and reads only
-the current user's stored image. It reuses the same bounded downloader as participant photos and
+the current user's private upload or stored provider image. Provider photos reuse the same bounded downloader as participant photos; uploaded objects stay private. The endpoint
 returns private/no-store bytes. No third-party browser image origin is enabled. Unsupported photos fall back to initials; raw
 provider URLs, addresses and image bodies are omitted from logs.
 
@@ -145,6 +145,20 @@ Local live email requires an explicit recipient allowlist and Notification creat
 worker leaves older or out-of-scope deliveries untouched and skips operator alerts; the shared
 Resend adapter also rejects out-of-scope direct sends. Only local may omit the webhook secret,
 and an unconfigured callback endpoint still refuses requests. See [local verification](email-delivery.md#verify-real-email-locally).
+
+## Personal profile and avatars
+
+Account profile and Appearance endpoints take identity only from the authenticated session. Strict
+schemas reject peer selectors, email/provider changes and essential film-column hiding. Appearance
+is personal presentation; it does not change Club visibility policy or historical snapshots.
+
+Personal avatar writes accept PNG, JPEG or WebP up to 512 KiB, with MIME/signature checks before
+storage. Sharp then limits decoded input to 16,777,216 pixels, applies orientation, resizes within
+512 × 512 without enlarging, and creates a static WebP without source metadata. Corrupt content
+and decompression-heavy images are rejected before storage. Opaque objects are registered before upload and served through the self-only
+account endpoint, never a public object URL. Replacement/removal serialize User pointer changes.
+Cleanup rechecks references under an object-row lock; failed deletion keeps a durable tracking row
+for a bounded retry sweep. The browser receives an opaque revision hash, never an object key.
 
 ## Abuse limits
 
@@ -258,7 +272,7 @@ See [UAT operations](uat-operations.md) and [production operations](production-o
 - Data export and account deletion that anonymizes shared history.
 - HSTS `includeSubDomains` and `preload`.
 - Apple Sign In activation; its gated adapter exists and stays off until the owner approves it.
-- Periodic abandoned-object cleanup, owned by release retention work in #87.
+- Broad abandoned catalog/object cleanup under #87; personal avatar retry cleanup is implemented by #65.
 - Owner confirmation of repository-level Dependabot security-update enablement before release readiness;
   the committed weekly-update configuration does not prove that account setting.
 

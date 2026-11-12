@@ -66,3 +66,18 @@ body::after {
     border: 0;
     clip: rect(0, 0, 0, 0);
 }
+
+html[data-quiet-mode='true'] body::after {
+    display: none;
+}
+
+[data-list-spacing='compact'] {
+    --participant-row-height: var(--hit);
+    --participant-row-padding: calc(var(--gap-xs) / 2);
+    --table-row-padding: var(--table-row-padding-compact);
+    --list-row-padding: var(--list-row-padding-compact);
+}
+
+[data-monochrome] [data-film-media] {
+    filter: grayscale(1);
+}

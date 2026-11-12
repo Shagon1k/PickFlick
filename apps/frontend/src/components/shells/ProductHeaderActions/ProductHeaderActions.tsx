@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
+import { useAccount } from '#components/account/account-context';
 import { useNotifications } from '#components/notifications/notifications-context';
 import NotificationsPanel from '#components/notifications/NotificationsPanel/NotificationsPanel';
 import FilmStrip from '#components/shells/FilmStrip/FilmStrip';
@@ -27,7 +28,10 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
     const notificationsRef = useRef<HTMLDivElement>(null);
     const isAccountMenuOpen = activeOverlay === 'account';
     const isNotificationsPanelOpen = activeOverlay === 'notifications';
+    const { account } = useAccount();
     const { data: session } = authClient.useSession();
+    const sessionAvatarUrl = session?.user.image ? '/api/account/avatar' : null;
+    const avatarUrl = account ? account.avatarUrl : sessionAvatarUrl;
     const { data: notifications } = useNotifications();
 
     useOverlayDismissal({
@@ -105,9 +109,9 @@ export default function ProductHeaderActions({ accountItems }: IProductHeaderAct
                     {session?.user.name ? (
                         <span className={styles.avatarImage}>
                             <Avatar
-                                key={session.user.id}
-                                name={session.user.name}
-                                src={session.user.image ? '/api/account/avatar' : null}
+                                key={`${account?.id ?? session?.user.id}-${account?.avatarUrl}`}
+                                name={account?.displayName ?? session?.user.name ?? ''}
+                                src={avatarUrl}
                                 size="large"
                             />
                         </span>

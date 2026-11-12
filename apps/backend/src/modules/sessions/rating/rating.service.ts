@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, Injectable } from '@nestjs/commo
 import type { TCloseRating, TOpenRating, TRating, TSubmitRating } from '@pickflick/contracts';
 import type { Prisma } from '@pickflick/database';
 
+import { getAccountAvatarUrl } from '../../account/account-avatar-path.js';
 import { assertActive, type TMembership } from '../../clubs/access/club-access.js';
 import { getParticipantAvatarPath } from '../../clubs/participant-avatars/participant-avatar-path.js';
 import { Transactions } from '../../notifications/transactions.js';
@@ -25,7 +26,18 @@ export class RatingService {
             where: { sessionId: session.id },
             include: {
                 rating: true,
-                membership: { select: { user: { select: { displayName: true, image: true } } } },
+                membership: {
+                    select: {
+                        user: {
+                            select: {
+                                displayName: true,
+                                image: true,
+                                avatarObjectKey: true,
+                                isAvatarRemoved: true,
+                            },
+                        },
+                    },
+                },
             },
             orderBy: { id: 'asc' },
         });
@@ -68,7 +80,7 @@ export class RatingService {
                 ? {
                       ...toRating(own.rating),
                       author: own.membership.user.displayName,
-                      avatarUrl: own.membership.user.image ? '/api/account/avatar' : null,
+                      avatarUrl: getAccountAvatarUrl(own.membership.user),
                   }
                 : null,
             results: {

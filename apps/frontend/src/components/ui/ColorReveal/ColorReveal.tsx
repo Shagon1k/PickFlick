@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useRef } from 'react';
 
+import { useAppearance } from '#components/account/account-context';
 import { readDurationToken } from '#lib/css-duration';
 
 import { COLOR_REVEAL_CONFIG } from './color-reveal.config';
@@ -23,6 +24,8 @@ export default function ColorReveal({
     shouldFill?: boolean;
     variant?: 'image' | 'accent' | 'surface' | 'outline';
 }) {
+    const appearance = useAppearance();
+    const isEnabled = COLOR_REVEAL_CONFIG.enabled && appearance.colorReveal;
     const ref = useRef<HTMLSpanElement>(null);
     const colorRef = useRef<HTMLSpanElement>(null);
 
@@ -47,7 +50,7 @@ export default function ColorReveal({
         }
 
         function fade() {
-            if (!COLOR_REVEAL_CONFIG.enabled || reducedMotion.matches) {
+            if (!isEnabled || reducedMotion.matches) {
                 showStandardState(false);
                 return;
             }
@@ -79,7 +82,7 @@ export default function ColorReveal({
         }
 
         function animateColor(isRevealing: boolean, event?: PointerEvent) {
-            if (!COLOR_REVEAL_CONFIG.enabled || reducedMotion.matches) {
+            if (!isEnabled || reducedMotion.matches) {
                 showStandardState(isRevealing);
                 return;
             }
@@ -167,6 +170,9 @@ export default function ColorReveal({
         trigger.addEventListener('focusin', handleFocusIn);
         trigger.addEventListener('focusout', handleFocusOut);
         reducedMotion.addEventListener('change', fade);
+        hasKeyboardFocus =
+            trigger.matches(':focus-visible') || Boolean(trigger.querySelector(':focus-visible'));
+        showStandardState(trigger.matches(':hover') || hasKeyboardFocus);
         return () => {
             stop();
             trigger.removeEventListener('pointerenter', handlePointerEnter);
@@ -177,7 +183,7 @@ export default function ColorReveal({
             trigger.removeEventListener('focusout', handleFocusOut);
             reducedMotion.removeEventListener('change', fade);
         };
-    }, [variant]);
+    }, [variant, isEnabled]);
 
     return (
         <span

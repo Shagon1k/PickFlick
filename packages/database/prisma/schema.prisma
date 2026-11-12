@@ -95,6 +95,10 @@ model User {
   emailVerified            Boolean                  @default(false)
   displayName              String
   image                    String?
+  avatarObjectKey          String?                  @unique
+  avatarObject             AccountAvatarObject?     @relation(fields: [avatarObjectKey], references: [key], onDelete: SetNull)
+  isAvatarRemoved          Boolean                  @default(false)
+  appearance               Json                     @default("{}")
   appRole                  AppRole                  @default(USER)
   status                   UserStatus               @default(ACTIVE)
   locale                   String                   @default("en")
@@ -111,6 +115,14 @@ model User {
   providerAccounts         ProviderAccount[]
   clubAuditEventsAsActor   ClubAuditEvent[]         @relation("ClubAuditActor")
   clubAuditEventsAsSubject ClubAuditEvent[]         @relation("ClubAuditSubject")
+}
+
+model AccountAvatarObject {
+  key       String   @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User?
+
+  @@index([createdAt])
 }
 
 model AuthSession {

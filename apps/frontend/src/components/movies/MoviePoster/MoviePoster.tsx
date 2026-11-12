@@ -32,6 +32,7 @@ export default function MoviePoster({
         content = (
             <ColorReveal shouldFill>
                 <Image
+                    data-film-media
                     src={url}
                     alt={`${title} poster`}
                     width={POSTER_WIDTH}
