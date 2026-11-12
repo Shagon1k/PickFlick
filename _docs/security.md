@@ -146,6 +146,18 @@ worker leaves older or out-of-scope deliveries untouched and skips operator aler
 Resend adapter also rejects out-of-scope direct sends. Only local may omit the webhook secret,
 and an unconfigured callback endpoint still refuses requests. See [local verification](email-delivery.md#verify-real-email-locally).
 
+## Personal ratings CSV
+
+Personal ratings CSV uploads use a separate raw `text/csv` parser capped at 512 KiB; JSON limits
+stay unchanged. The format permits at most 1,000 records and 2,048 characters per decoded cell.
+Strict version, canonical Movie UUID and score validation prevents executable machine fields.
+Unescaped formula-like names are rejected; exports quote cells and prefix dangerous names with
+an apostrophe, including after whitespace/control characters. Preview renders escaped text and
+uses catalog names. Any invalid record blocks all writes, and persistence commits atomically.
+The session supplies ownership, query selectors are rejected, and exports expose only the caller's
+current ratings with private/no-store caching and no retained files or public URLs. See
+[Personal ratings CSV](ratings-csv.md).
+
 ## Personal profile and avatars
 
 Account profile and Appearance endpoints take identity only from the authenticated session. Strict

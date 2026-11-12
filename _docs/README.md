@@ -15,6 +15,7 @@ Start here before non-trivial product, design, architecture, implementation, or 
 | [Authentication and sessions](authentication.md)  | Explanation: sign-in, sessions, the auth guard, and abuse limits.                      |
 | [Email delivery operations](email-delivery.md)    | Configure notification email, inspect failures and suppression, and generate previews. |
 | [Security](security.md)                           | Explanation: headers and CSP, cross-site requests, input, secrets, and dependencies.   |
+| [Personal ratings CSV](ratings-csv.md)            | Version 1 format, import limits, validation, ownership and spreadsheet safety.         |
 | [Environment reference](environment.md)           | Variables, email identities, health, errors, logs, CI, images, and Compose.            |
 | [UAT operations](uat-operations.md)               | Provisioning UAT and how automatic delivery works.                                     |
 | [Production operations](production-operations.md) | Keeping production inactive, provisioning, promotion, rollback, and recovery.          |
@@ -68,6 +69,9 @@ gates; it does not replace canonical requirements.
 
 [Phase 19 personal Settings](phase-19-settings.md) records #65 implementation boundaries,
 verification evidence and the exact-SHA preview acceptance checkpoint.
+
+[Phase 19 personal ratings CSV](phase-19-ratings-csv.md) records #66 implementation boundaries,
+verification and its required exact-SHA hosted preview acknowledgment.
 
 ## Historical audits
 

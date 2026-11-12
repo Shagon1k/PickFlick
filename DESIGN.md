@@ -621,6 +621,23 @@ and the remaining verification are tracked in [Phase 19 Settings](_docs/phase-19
 The exact-head hosted preview still requires owner acknowledgment; local evidence is not final
 visual acceptance.
 
+#### Personal ratings CSV — Partial
+
+Settings → Import & Export follows `settings.html#panel-import-export`: separate flat import and
+export cards within the existing Settings shell, a desktop sidebar from 1024px and full-width
+content with compact product navigation below it. Shared buttons retain 44px targets; the
+expandable preview uses the shared table with local horizontal scrolling. Visible labels and
+live feedback cover file selection, size/format errors, validation, confirmation/cancel, pending,
+offline, expired sessions, failed requests, successful imports and empty/private downloads.
+
+The prototype's `name,rating` fixture cannot provide stable Movie mapping. Version 1 uses
+`version,movie_id,name,rating`; catalog IDs determine identity and names are descriptive.
+Preview shows all invalid records plus new/changed/unchanged counts and current/incoming scores.
+An error blocks the whole file. Confirmation revalidates; file replacement clears the preview.
+Session history stays unchanged. The [format reference](_docs/ratings-csv.md) owns limits and
+spreadsheet handling. [Working evidence](_docs/phase-19-ratings-csv.md) records local comparisons
+and verification; exact-head hosted owner acknowledgment remains required.
+
 #### Create Session
 
 - The setup scene has a Back link, required date and location, optional topic and notes, the two live

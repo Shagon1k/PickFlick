@@ -13,6 +13,7 @@ import { ApiError } from '#lib/api.server';
 
 import AppearanceForm from './_components/AppearanceForm/AppearanceForm';
 import ProfileForm from './_components/ProfileForm/ProfileForm';
+import RatingsCsv from './_components/RatingsCsv/RatingsCsv';
 import SettingsSignOut from './_components/SettingsSignOut';
 import styles from './page.module.scss';
 
@@ -136,6 +137,7 @@ function SettingsContent({
             </section>
         );
     if (tab === 'appearance') return <AppearanceForm appearance={account.appearance} />;
+    if (tab === 'import-export') return <RatingsCsv />;
     if (!tab || tab === 'profile') return <ProfileForm account={account} />;
     return (
         <section className={styles.card}>

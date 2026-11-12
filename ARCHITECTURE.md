@@ -339,7 +339,7 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | Live progress     | Frontend → API                               | Authenticated version polling, re-fetch on change                              | Active                                                                            |
 | Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active when configured; provider coverage and media rights remain separate checks |
 | Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                                          |
-| CSV               | Frontend ↔ API                               | Versioned CSV schema                                                           | Proposed                                                                          |
+| CSV               | Frontend ↔ API                               | Version 1 personal ratings CSV; bounded preview and atomic import              | Partial — local implementation; hosted acceptance pending                         |
 
 Email sender identities follow ADR-009 and its 2026-10-28 amendment: production uses
 `PickFlick <notifications@pick-flick.app>`, while UAT uses `PickFlick UAT <uat@pick-flick.app>`.
@@ -909,6 +909,19 @@ so they cannot overwrite later personal edits or newer screenings. Concurrent wr
 User/Movie use the database's atomic upsert; the last write becomes the current opinion.
 Personal edits have no path to Session or Club history. Imported past evidence remains historical
 and does not set another user's current opinion. No recomputation or historical backfill runs.
+
+### Personal ratings portability
+
+Personal ratings portability uses `GET /library/ratings-csv` and raw `text/csv` POST endpoints at
+`/preview` and `/import` below that path. Identity comes only from the session; responses remain
+private/no-store. A bounded parser validates UTF-8, CSV structure and the shared version 1 record
+schema before resolving canonical Movie IDs. Validation reports every invalid record and blocks
+the whole file. Import revalidates in its transaction, then uses a parameterized bulk upsert on
+the existing `(userId, movieId)` key. Equal scores preserve source/update metadata; changed/new
+scores become PERSONAL. No historical Session data is read or written. Export quotes all cells
+and prefixes formula-like names with an apostrophe. Files and exports are not retained. This
+synchronous personal CSV path adds no job or storage infrastructure; the proposed GDPR archive
+remains separate. See [format and limits](_docs/ratings-csv.md).
 
 ### Searchable personal Library
 

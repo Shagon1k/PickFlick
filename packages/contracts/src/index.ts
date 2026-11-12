@@ -17,6 +17,7 @@ export * from './movies/library.schema.js';
 export * from './movies/library-statistics.schema.js';
 export * from './movies/movie.schema.js';
 export * from './movies/personal-rating.schema.js';
+export * from './movies/ratings-csv.schema.js';
 export * from './movies/tmdb.schema.js';
 export * from './movies/watchlist.schema.js';
 export * from './notifications/email-webhook.schema.js';
