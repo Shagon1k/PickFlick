@@ -135,7 +135,7 @@ function SettingsContent({
                 <RetryButton />
             </section>
         );
-    if (tab === 'appearance') return <AppearanceForm />;
+    if (tab === 'appearance') return <AppearanceForm appearance={account.appearance} />;
     if (!tab || tab === 'profile') return <ProfileForm account={account} />;
     return (
         <section className={styles.card}>

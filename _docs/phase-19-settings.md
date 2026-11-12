@@ -96,3 +96,30 @@ Nomination smoke check timed out initially and passed on retry; CI mode rejects 
 This is the same intermittent check documented above. No Nomination code or tests were changed.
 The dependency audit, lint, Knip, formatting, type checking, all 669 unit tests and both production
 builds passed.
+
+## Review fix round 2
+
+The bounded review of `cf61c29465aab957f63cca3510e6644fd726960f` identified an Appearance
+initialization bug and duplicated sign-out behavior. Appearance now starts from the account
+fetched by Settings, so a failed account read in the persistent product layout cannot replace
+saved preferences with defaults on a later save. Both sign-out callers use the same request and
+success-only full document redirect; their offline, pending and accessible feedback stay intact.
+
+Browser coverage includes client navigation after the initial account-read failure, preservation
+of other saved preferences when changing one setting, and Settings sign-out offline/error/retry
+behavior. Existing shell checks cover successful sign-out and retry after failure.
+
+`pnpm verify` passed: dependency audit, lint, Knip, formatting, type checking, all 669 unit
+tests and both production builds. The audit reported the same eight low/moderate findings and
+no high/critical findings.
+
+All 15 Settings checks passed in the pinned Playwright image, including the recovery and
+sign-out regressions, responsive/accessibility checks and unchanged Profile/Appearance baselines.
+
+The combined full smoke/visual selection plus Settings and shell sign-out contract checks finished
+with 260 passed and one failed. All smoke and visual checks passed, as did the existing shell
+sign-out success/retry checks. The additional `Library and Settings menus expose distinct
+subsection destinations` contract check failed because its expected menu omits Appearance.
+Both that assertion and the menu's Appearance link are unchanged from the reviewed source commit.
+This unrelated assertion remains outside the two-item fix scope; the combined command returned
+failure. No screenshot baselines changed. Exact-head hosted preview acknowledgment remains required.

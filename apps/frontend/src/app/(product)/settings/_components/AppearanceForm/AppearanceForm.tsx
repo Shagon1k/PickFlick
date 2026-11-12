@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form';
 import { appearanceSchema, type TAppearance } from '@pickflick/contracts';
 import { useState, useTransition } from 'react';
 
-import { useAccount, useAppearance } from '#components/account/account-context';
+import { useAccount } from '#components/account/account-context';
 import { saveAppearance } from '#components/account/actions';
 import TableColumns from '#components/account/TableColumns/TableColumns';
 import Button from '#components/ui/Button/Button';
@@ -15,9 +15,12 @@ import { getOfflineMessage } from '#lib/offline';
 
 import styles from '../../page.module.scss';
 
-export default function AppearanceForm() {
+interface IAppearanceFormProps {
+    appearance: TAppearance;
+}
+
+export default function AppearanceForm({ appearance: saved }: IAppearanceFormProps) {
     const { setAccount } = useAccount();
-    const saved = useAppearance();
     const [message, setMessage] = useState('');
     const form = useForm<TAppearance>({
         initialValues: saved,

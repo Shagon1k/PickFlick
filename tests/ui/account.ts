@@ -15,6 +15,7 @@ import {
 } from './mock-http.ts';
 
 const accounts = new Map<string, IAccountProfile>();
+const failedAccountReads = new Set<string>();
 const PNG = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     'base64',
@@ -61,7 +62,12 @@ export function handleAccount(request: TMockRequest, response: TMockResponse): b
         sendError(response, 401, 'UNAUTHORIZED', 'account-auth');
         return true;
     }
-    if (token.includes('account-unavailable')) {
+    const shouldFailInitialRead =
+        pathname === '/account' &&
+        token.includes('account-read-recovery') &&
+        !failedAccountReads.has(token);
+    if (token.includes('account-unavailable') || shouldFailInitialRead) {
+        failedAccountReads.add(token);
         sendError(response, 503, 'SERVICE_UNAVAILABLE', 'account-read');
         return true;
     }

@@ -5,6 +5,14 @@ export const authClient = createAuthClient();
 
 export type TIdentityProvider = 'apple' | 'google';
 
+export async function signOutAndRedirect(): Promise<void> {
+    const result = await authClient.signOut();
+    if (result.error) throw new Error('Sign out failed. Please try again.');
+    // A full load after sign-out drops every cached signed-in page.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- sign-out must clear the client router cache
+    window.location.assign('/login');
+}
+
 /** Preserves rate-limit feedback without exposing raw provider messages. */
 export async function startSocialSignIn(
     provider: TIdentityProvider,

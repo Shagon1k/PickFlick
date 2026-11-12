@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import type { TAppearance } from '@pickflick/contracts';
 import { expect, test } from '@playwright/test';
 
 import { expectNoPageOverflow } from './layout';
@@ -211,6 +212,94 @@ test(
         await expect(page.locator('html')).toHaveAttribute('data-quiet-mode', 'false');
     },
 );
+
+test(
+    'Appearance recovers saved preferences after an initial account read failure',
+    { tag: '@smoke' },
+    async ({ page, context }) => {
+        await signInMock(context, `valid-library-account-read-recovery-${Date.now()}`);
+        const appearance: TAppearance = {
+            monochrome: true,
+            colorReveal: false,
+            quietMode: false,
+            listSpacing: 'compact',
+            hiddenColumns: ['year'],
+        };
+        const seeded = await context.request.put('/api/account/appearance', { data: appearance });
+        expect(seeded.ok()).toBe(true);
+        await page.goto('/library');
+        const warning = page.getByText(
+            'Your display preferences could not be loaded. Reload to try again.',
+            { exact: true },
+        );
+        await expect(warning).toBeVisible();
+        await page.getByRole('button', { name: 'Account menu' }).click();
+        await page
+            .getByRole('navigation', { name: 'Account navigation' })
+            .getByRole('link', { name: 'Settings', exact: true })
+            .click();
+        await page
+            .getByRole('navigation', { name: 'Settings sections' })
+            .getByRole('link', { name: 'Appearance', exact: true })
+            .click();
+        await expect(warning).toBeVisible();
+        await expect(
+            page.getByRole('switch', { name: 'Black-and-white posters and trailers' }),
+        ).toBeChecked();
+        await expect(
+            page.getByRole('switch', { name: 'Color reveal', exact: true }),
+        ).not.toBeChecked();
+        await expect(page.getByRole('combobox', { name: 'List spacing' })).toHaveValue('Compact');
+        await page.getByText('Table columns', { exact: true }).click();
+        await expect(page.getByRole('switch', { name: 'Year', exact: true })).not.toBeChecked();
+        await page.getByText('Quiet mode', { exact: true }).click();
+        await page.getByRole('button', { name: 'Save appearance' }).click();
+        await expect(
+            page.getByRole('status').filter({ hasText: 'Appearance saved.' }),
+        ).toBeVisible();
+        const saved = await context.request.get('/api/account');
+        expect(await saved.json()).toMatchObject({
+            appearance: { ...appearance, quietMode: true },
+        });
+    },
+);
+
+test('Settings sign out reports offline and failed requests before a successful retry', async ({
+    page,
+    context,
+}) => {
+    let attempts = 0;
+    await signInMock(context, `valid-account-signout-${Date.now()}`);
+    await page.goto('/settings');
+    await page.route('**/api/auth/sign-out', async (route) => {
+        attempts++;
+        expect(route.request().method()).toBe('POST');
+        await route.fulfill({
+            contentType: 'application/json',
+            headers:
+                attempts === 1
+                    ? {}
+                    : { 'set-cookie': 'pickflick.session_token=; Max-Age=0; Path=/; HttpOnly' },
+            json: attempts === 1 ? { message: 'failed' } : { success: true },
+            status: attempts === 1 ? 500 : 200,
+        });
+    });
+    const signOut = page.getByRole('main').getByRole('button', { name: 'Sign out' });
+    await context.setOffline(true);
+    await signOut.click();
+    await expect(page.getByRole('status').filter({ hasText: /offline/iu })).toBeVisible();
+    expect(attempts).toBe(0);
+    await context.setOffline(false);
+    await signOut.click();
+    await expect(
+        page.getByRole('status').filter({ hasText: 'Sign out failed. Please try again.' }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/settings$/u);
+    await expect(signOut).toBeEnabled();
+    await signOut.click();
+    await expect(page).toHaveURL(/\/login$/u);
+    expect(attempts).toBe(2);
+});
 
 test('Settings keeps unsaved entries on failure and reports offline saves', async ({
     page,
