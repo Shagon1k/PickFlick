@@ -77,3 +77,22 @@ production setup or provider account changes are included.
 - Exact-head hosted preview and owner visual acknowledgment: required and pending. Do not mark
   the issue or phase Done based on local screenshots or CI alone.
 - Legal/privacy package acceptance remains separate and open.
+
+## Review fix round 1
+
+The bounded review of `49efb45af25a9f70a984e074d05467800e333ad8` identified two Settings
+composition regressions. Compact navigation, hidden account context and full-width content now
+continue below 1024px. Profile feedback occupies the existing Save changes row, so successful
+saves preserve the card and button geometry.
+
+Four browser checks cover navigation, save geometry, accessibility and overflow at 390, 768,
+1024 and 1440px. Geometry assertions account for browser scrolling when Save changes receives
+focus. The existing Profile and Appearance screenshot baselines match in the pinned Playwright
+image without updates. Hosted preview acknowledgment remains required.
+
+The pinned-image smoke/visual selection plus the three remaining Settings contract checks finished
+with 242 passed and one flaky check. All 13 Settings checks passed. The unchanged two-client
+Nomination smoke check timed out initially and passed on retry; CI mode rejects that flaky result.
+This is the same intermittent check documented above. No Nomination code or tests were changed.
+The dependency audit, lint, Knip, formatting, type checking, all 669 unit tests and both production
+builds passed.

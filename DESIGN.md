@@ -594,11 +594,12 @@ here.
 
 Personal Settings [#65](https://github.com/Shagon1k/PickFlick/issues/65) implements Profile and
 Appearance at `/settings`. The desktop composition follows `settings.html`: heading and personal
-account context, a 218px sidebar, 36px content gap, and one flat bordered card. Below 768px the
+account context, a 218px sidebar, 36px content gap, and one flat bordered card. Below 1024px the
 shared product Settings menu replaces the sidebar. The 72px profile avatar and upload actions
-recompose vertically on phones. Shared form controls provide read-only email/provider and English
-language information, name validation, offline/error feedback and live save status. Other Settings
-sections remain Proposed under their owning issues.
+recompose vertically in this compact layout. Shared form controls provide read-only email/provider
+and English language information, name validation, offline/error feedback and live save status
+beside Save changes without expanding the card. Other Settings sections remain Proposed under
+their owning issues.
 
 Appearance saves per-user monochrome film/trailer media, Color reveal, quiet mode,
 Comfortable/Compact spacing and one shared optional-column setup. Quiet mode has an adjacent

@@ -145,11 +145,11 @@ export default function ProfileForm({ account }: { account: IAccountProfile }) {
                     <Button type="submit" loading={isPending}>
                         Save changes
                     </Button>
+                    <p className={styles.feedback} role="status">
+                        {message}
+                    </p>
                 </div>
             </form>
-            <p className={styles.feedback} hidden={!message} role="status">
-                {message}
-            </p>
         </section>
     );
 }

@@ -4,7 +4,52 @@ import { expect, test } from '@playwright/test';
 import { expectNoPageOverflow } from './layout';
 import { signInMock } from './mock-session';
 import { settle } from './settle';
-import { screenshotViewports } from './viewports';
+import { canonicalViewports, screenshotViewports } from './viewports';
+
+for (const viewport of canonicalViewports) {
+    test(
+        `Settings composition and stable profile save at ${viewport.name}`,
+        { tag: '@smoke' },
+        async ({ page, context }) => {
+            await page.setViewportSize(viewport);
+            await signInMock(context, `valid-account-layout-${viewport.name}`);
+            await page.goto('/settings', { waitUntil: 'load' });
+            await expect(page.getByLabel('Display name')).toHaveValue('Jane Doe');
+            await settle(page);
+            const isDesktop = viewport.width >= 1024;
+            await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeVisible({
+                visible: isDesktop,
+            });
+            await expect(page.getByText('Personal account', { exact: true })).toBeVisible({
+                visible: isDesktop,
+            });
+            await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible({
+                visible: !isDesktop,
+            });
+            const profile = page.getByRole('region', { name: 'Profile', exact: true });
+            const save = page.getByRole('button', { name: 'Save changes' });
+            await save.scrollIntoViewIfNeeded();
+            await settle(page);
+            const cardBefore = await profile.boundingBox();
+            const buttonBefore = await save.boundingBox();
+            const scrollBefore = await page.evaluate(() => globalThis.scrollY);
+            await save.click();
+            await expect(profile.getByRole('status')).toHaveText('Profile saved.');
+            await settle(page);
+            const scrollOffset = (await page.evaluate(() => globalThis.scrollY)) - scrollBefore;
+            expect(await profile.boundingBox()).toEqual({
+                ...cardBefore,
+                y: cardBefore!.y - scrollOffset,
+            });
+            expect(await save.boundingBox()).toEqual({
+                ...buttonBefore,
+                y: buttonBefore!.y - scrollOffset,
+            });
+            await expectNoPageOverflow(page);
+            expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+        },
+    );
+}
 
 for (const viewport of screenshotViewports) {
     test(`Settings profile at ${viewport.name}`, { tag: '@visual' }, async ({ page, context }) => {

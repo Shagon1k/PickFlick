@@ -188,7 +188,14 @@
     font-size: var(--fs-body-sm);
 }
 
-@media (width < 768px) {
+.actions .feedback {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+}
+
+@media (width < 1024px) {
     .settings__heading {
         padding-top: var(--settings-heading-top-mobile);
     }
