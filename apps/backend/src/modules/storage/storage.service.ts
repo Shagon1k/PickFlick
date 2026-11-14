@@ -34,7 +34,7 @@ export class StorageService {
         });
     }
 
-    async put(key: string, body: Buffer, contentType: string): Promise<void> {
+    async put(key: string, body: Buffer, contentType: string, signal?: AbortSignal): Promise<void> {
         await this.client.send(
             new PutObjectCommand({
                 Bucket: this.bucket,
@@ -42,13 +42,15 @@ export class StorageService {
                 Body: body,
                 ContentType: contentType,
             }),
+            { abortSignal: signal },
         );
     }
 
-    async get(key: string): Promise<IStoredObject | null> {
+    async get(key: string, signal?: AbortSignal): Promise<IStoredObject | null> {
         try {
             const object = await this.client.send(
                 new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+                { abortSignal: signal },
             );
             const body = await object.Body?.transformToByteArray();
             return body

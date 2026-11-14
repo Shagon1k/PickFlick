@@ -158,6 +158,17 @@ The session supplies ownership, query selectors are rejected, and exports expose
 current ratings with private/no-store caching and no retained files or public URLs. See
 [Personal ratings CSV](ratings-csv.md).
 
+## Personal data archives
+
+Archive requests, statuses, link issuance and downloads require the requesting user's active
+session and account. Each private artifact uses an opaque tracked attempt key; the API never
+exposes object keys or public storage URLs. HMAC-signed application links are bound to the job and
+user for at most five minutes within the fixed seven-day archive window. Downloads recheck active
+ownership and both deadlines after storage reads. Expiry denies downloads even during cleanup
+outages. Explicit field selections exclude credentials, peer identities/responses and shared JSON
+snapshots. Logs record fixed reasons and opaque job IDs without exception text or archive contents.
+See the [exact inventory and operations](gdpr-archives.md); legal/privacy sign-off remains separate.
+
 ## Personal profile and avatars
 
 Account profile and Appearance endpoints take identity only from the authenticated session. Strict
