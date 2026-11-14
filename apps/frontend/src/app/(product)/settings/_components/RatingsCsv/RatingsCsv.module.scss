@@ -1,0 +1,42 @@
+.csv {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-md);
+}
+
+.csv p {
+    font-size: var(--fs-meta);
+}
+
+.filename {
+    min-width: 0;
+    font-size: var(--fs-meta);
+    color: var(--fg-secondary);
+    overflow-wrap: anywhere;
+}
+
+.preview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-sm);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.preview summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--hit);
+    cursor: pointer;
+}
+
+.preview ul {
+    padding-left: var(--gap-md);
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    color: var(--danger-text);
+}
+
+.csv code {
+    overflow-wrap: anywhere;
+}

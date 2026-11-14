@@ -1453,6 +1453,9 @@ legal-copy policy · [#65](https://github.com/Shagon1k/PickFlick/issues/65) pers
       targets and system reduced-motion behavior. Club managers do not configure personal display.
 - [ ] Implement the ratings CSV schema with parser limits, formula-injection handling, a validation
       preview, idempotent import, and export.
+      [Format reference](_docs/ratings-csv.md) defines version 1 canonical Movie IDs, the 512 KiB /
+      1,000-rating import limits, complete validation and atomic current-opinion updates.
+      [Working evidence](_docs/phase-19-ratings-csv.md) retains the required hosted visual checkpoint.
 - [ ] Implement the GDPR archive job with a private expiring download, manifest, disclosures, and
       retry status.
 - [ ] Implement re-authenticated deletion: revoke sessions, handle billing, remove private data,

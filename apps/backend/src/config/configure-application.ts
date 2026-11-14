@@ -1,5 +1,9 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { CLUB_AVATAR_MAX_BYTES, CLUB_AVATAR_MEDIA_TYPES } from '@pickflick/contracts';
+import {
+    CLUB_AVATAR_MAX_BYTES,
+    CLUB_AVATAR_MEDIA_TYPES,
+    RATINGS_CSV_MAX_BYTES,
+} from '@pickflick/contracts';
 import type { NextFunction, Request, Response } from 'express';
 
 import { ApiExceptionFilter } from '../common/filters/api-exception.filter.js';
@@ -32,6 +36,7 @@ export function configureApplication(app: NestExpressApplication): void {
     });
     app.useBodyParser('json', { limit: '100kb' });
     app.useBodyParser('urlencoded', { extended: true, limit: '100kb' });
+    app.useBodyParser('raw', { limit: RATINGS_CSV_MAX_BYTES, type: 'text/csv' });
     // Headroom above the avatar limit lets the service, not the parser, reject oversize images.
     app.useBodyParser('raw', {
         limit: CLUB_AVATAR_MAX_BYTES + AVATAR_PARSER_HEADROOM_BYTES,

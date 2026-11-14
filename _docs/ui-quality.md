@@ -272,3 +272,23 @@ All ten changed/new PNGs were inspected. No screenshot tolerance or quality gate
 
 These are local engineering comparisons. Exact-head hosted preview review and owner acknowledgment
 remain required before #65 is accepted.
+
+## Personal ratings CSV baseline review, 2026-11-12
+
+Issue #66 adds two Settings Import & Export captures at 390 and 1440. The review inspected settled
+renders of `settings.html?tab=import-export` at both widths, the prototype Design contract and
+responsive Control-page baseline, then both application captures. The screen keeps the two flat
+cards, grouped file/actions row, section typography and upward export arrow. The existing Settings
+shell supplies the 218px desktop sidebar, 36px content gap and compact navigation below 1024px.
+Existing shared chrome, footer and Appearance navigation follow the later canonical Design rules.
+
+The versioned canonical-ID format, file limits, replacement explanation and preview/confirmation
+step replace the prototype's two-column fixture behavior as required by #66. Shared controls keep
+44px targets. Additional copy makes the mobile screen scroll vertically. Opening the preview
+initially expanded the page to 614px; bounded grid tracks now keep the shared table's scrolling
+inside its card. The browser check asserts both local table overflow on mobile and no page overflow.
+
+Both new baselines were inspected and the six focused browser checks pass in the pinned Linux
+image, including axe, keyboard selection, confirmation/cancel, validation, pending controls,
+download states, offline/request failures and session expiry. No existing baseline, mask or pixel
+tolerance changed. Exact-head hosted preview review and owner acknowledgment remain required.
