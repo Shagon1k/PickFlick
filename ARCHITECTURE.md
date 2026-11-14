@@ -46,7 +46,7 @@ flowchart LR
 | Backend    | NestJS feature modules, zod-validated REST, Better Auth database sessions.                   | Partial — auth, Clubs, Contact, health, catalog and Sessions through Session Rating and completion; later modules Proposed                | ADR-002, 010, 011 |
 | Validation | zod request schemas in `@pickflick/contracts`, shared by backend and forms.                  | Active                                                                                                                                    | ADR-012           |
 | Data       | PostgreSQL through reviewed Prisma migrations; SQL constraints for invariants.               | Partial — identity, Clubs, catalog, Session roster, Nomination, Selection and durable result/notification intent; later entities Proposed | ADR-003           |
-| Objects    | S3-compatible storage for avatars, catalog images and exports.                               | Partial — Club/personal avatars and catalog images                                                                                        | —                 |
+| Objects    | S3-compatible storage for avatars, catalog images and exports.                               | Active — private Club/personal avatars, catalog images and expiring personal archives                                                     | —                 |
 | Background | Session-row deadlines polled by the backend worker; no scheduling table or queue dependency. | Active                                                                                                                                    | ADR-018           |
 | Real-time  | Session progress polls every five seconds; notification changes use Redis Pub/Sub and SSE.   | Active                                                                                                                                    | —                 |
 | Delivery   | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion.               | Partial — repository-verified; live production not provisioned                                                                            | ADR-007, 008      |
@@ -79,6 +79,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | Module                           | Owns                                                                                                                                                                                | State                                                                                         |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | account                          | Own profile, read-only provider/email projection, personal Appearance and private avatar lifecycle.                                                                                 | Implemented locally; hosted acceptance pending                                                |
+| data-exports                     | Durable own-data archive jobs, manifest, private attempt objects, signed authenticated downloads and expiry cleanup.                                                                | Active — engineering verified; legal/privacy checkpoints remain separate                      |
 | auth                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
 | clubs                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
 | contact                          | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
@@ -152,11 +153,11 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 
 ## 3. Data
 
-| Store                 | Holds                                                                     | State                                                                       |
-| --------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| PostgreSQL            | All domain state, sessions, audit.                                        | Active for local/CI/UAT; production provisioning remains separate under #94 |
-| S3-compatible storage | Club avatars and catalog images under private opaque keys; later exports. | Partial — Club/personal avatars and catalog images                          |
-| Bundled assets        | Brand imagery, versioned with the frontend build.                         | Active                                                                      |
+| Store                 | Holds                                                                                  | State                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| PostgreSQL            | All domain state, sessions, audit.                                                     | Active for local/CI/UAT; production provisioning remains separate under #94     |
+| S3-compatible storage | Club/personal avatars, catalog images and expiring archives under private opaque keys. | Active — archives are served through signed authenticated application downloads |
+| Bundled assets        | Brand imagery, versioned with the frontend build.                                      | Active                                                                          |
 
 The schema (`packages/database/prisma/schema.prisma`, forty-five migrations) holds `User`,
 `AccountAvatarObject`, `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
@@ -463,13 +464,14 @@ every authentication session.
   minute (10 for social sign-in). — Active
 - **Observability:** nestjs-pino structured logs with a request ID; health endpoints. Error
   telemetry and alerts are Proposed.
-- **Privacy:** minimal collection, private storage, export and deletion that anonymizes shared
-  history. — Proposed. [Phase 19 preparation](_docs/phase-19-privacy.md) maps current tables,
+- **Privacy:** private own-data archives are Active; deletion/anonymization and broader retention
+  enforcement remain Proposed. [Phase 19 preparation](_docs/phase-19-privacy.md) maps current tables,
   snapshots, files, mail and provider copies to deletion/export review. Product targets are
   immediate access revocation, private cleanup within 24 hours, seven-day archives, 30-day logs,
   90-day audit and 30-day backups; clock origins/exceptions and legal/privacy sign-off remain
-  open. No cleanup job, anonymization mechanism or restore guarantee is made Active by this policy
-  preparation. #68 owns deletion, #87 retention enforcement and #83/#88 backup/restore alignment.
+  open. [Archive operations](_docs/gdpr-archives.md) specify the implemented seven-day download
+  deadline, tracked artifact cleanup and metadata-retention limitation. #68 owns deletion,
+  #87 broader retention enforcement and #83/#88 backup/restore alignment.
 - **Security headers:** every page gets a per-request nonce CSP from `proxy.ts` (scripts only with
   the nonce, no framing, no plugins); every frontend response adds HSTS, `nosniff`, a referrer
   policy, a permissions policy, and a same-origin opener policy; the backend sends its own
@@ -920,8 +922,26 @@ the whole file. Import revalidates in its transaction, then uses a parameterized
 the existing `(userId, movieId)` key. Equal scores preserve source/update metadata; changed/new
 scores become PERSONAL. No historical Session data is read or written. Export quotes all cells
 and prefixes formula-like names with an apostrophe. Files and exports are not retained. This
-synchronous personal CSV path adds no job or storage infrastructure; the proposed GDPR archive
-remains separate. See [format and limits](_docs/ratings-csv.md).
+synchronous personal CSV path adds no job or storage infrastructure; the GDPR archive remains
+separate. See [format and limits](_docs/ratings-csv.md).
+
+### Personal data archives
+
+The `data-exports` module serves `/account/data-exports`. Strict shared contracts and the global
+auth guard bind requests, status and signed downloads to the active requester. `DataExportJob`
+persists the lifecycle and retry count; `DataExportObject` registers each immutable private attempt
+key before upload. A Nest background sweep claims one due job every five seconds with PostgreSQL
+`SKIP LOCKED`, a five-minute lease and token fencing. Up to three claims recover after crashes;
+fixed reasons and structured attempt events expose failure without content or exception text.
+
+Generation takes an explicitly selected own-data snapshot, writes a gzip JSON document with a
+manifest and disclosures, then publishes only a current claim. READY starts the seven-day window.
+HMAC links point back through the authenticated API for at most five minutes, capped at archive
+expiry; storage stays private. Downloads recheck ownership, active account and deadlines after reads.
+Cleanup sweeps remove expired artifacts and abandoned attempts, retaining tracking rows on failure.
+No dependency, new environment variable or separate deployable is introduced. See
+[inventory, limits and operations](_docs/gdpr-archives.md). Legal/privacy sign-off, job-metadata
+retention, deletion and backup handling remain gated separately.
 
 ### Searchable personal Library
 

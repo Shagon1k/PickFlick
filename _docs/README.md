@@ -73,6 +73,9 @@ verification evidence and the exact-SHA preview acceptance checkpoint.
 [Phase 19 personal ratings CSV](phase-19-ratings-csv.md) records #66 implementation boundaries,
 verification and its required exact-SHA hosted preview acknowledgment.
 
+[Phase 19 personal data archives](phase-19-gdpr-archive.md) records #67 implementation and
+verification. [Archive reference](gdpr-archives.md) defines its field inventory, API and operations.
+
 ## Historical audits
 
 The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,
