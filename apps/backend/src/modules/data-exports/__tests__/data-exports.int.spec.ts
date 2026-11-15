@@ -255,6 +255,86 @@ describe('DataExportsController and worker', () => {
         expect((await getJob(job.id)).expiresAt).toEqual(ready.expiresAt);
     });
 
+    it('should continue generation after a stalled deletion aborts and retry cleanup next sweep', async () => {
+        const log = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+        const expired = await requestJob();
+        await api.dataExportWorker.sweep();
+        const artifact = await getJob(expired.id);
+        await api.prisma.dataExportJob.update({
+            where: { id: expired.id },
+            data: { status: 'EXPIRED' },
+        });
+        const pending = await requestJob();
+        const abort = new AbortController();
+        const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValueOnce(abort.signal);
+        let notifyStarted: () => void = () => undefined;
+        const started = new Promise<void>((resolve) => {
+            notifyStarted = resolve;
+        });
+        const deletion = vi.fn<StorageService['delete']>().mockImplementationOnce(
+            (_key, signal) =>
+                new Promise<void>((_resolve, reject) => {
+                    signal!.addEventListener('abort', () => reject(new Error('aborted')), {
+                        once: true,
+                    });
+                    notifyStarted();
+                }),
+        );
+        deletion.mockImplementation(api.storage.delete.bind(api.storage));
+        const worker = new DataExportWorkerService(api.prisma, {
+            get: api.storage.get.bind(api.storage),
+            put: api.storage.put.bind(api.storage),
+            delete: deletion,
+        });
+        const sweep = worker.sweep();
+        await started;
+        expect(timeout).toHaveBeenCalledWith(30_000);
+        expect(deletion).toHaveBeenCalledWith(artifact.objectKey, abort.signal);
+        abort.abort();
+        await sweep;
+        expect(await getJob(pending.id)).toMatchObject({ status: 'READY', attemptCount: 1 });
+        expect(api.storage.objects.has(artifact.objectKey!)).toBe(true);
+        expect(await api.prisma.dataExportObject.count({ where: { jobId: expired.id } })).toBe(1);
+        expect(log).toHaveBeenCalledWith({ event: 'export.cleanup.failed', jobId: expired.id });
+        await worker.sweep();
+        expect(deletion).toHaveBeenCalledTimes(2);
+        expect(api.storage.objects.has(artifact.objectKey!)).toBe(false);
+        expect(await api.prisma.dataExportObject.count({ where: { jobId: expired.id } })).toBe(0);
+    });
+
+    it('should grant a full generation lease after cleanup takes longer than five minutes', async () => {
+        const expired = await requestJob();
+        await api.dataExportWorker.sweep();
+        await api.prisma.dataExportJob.update({
+            where: { id: expired.id },
+            data: { status: 'EXPIRED' },
+        });
+        await api.prisma.dataExportObject.createMany({
+            data: Array.from({ length: 19 }, (_, index) => ({
+                key: `data-exports/${expired.id}/cleanup-${index}`,
+                jobId: expired.id,
+                deleteAfter: new Date(),
+            })),
+        });
+        const pending = await requestJob();
+        vi.useFakeTimers({ toFake: ['Date'] });
+        const afterCleanup = new Date(Date.now() + 20 * 16_000);
+        const originalDelete = api.storage.delete.bind(api.storage);
+        const deletion = vi.spyOn(api.storage, 'delete').mockImplementation(async (key) => {
+            vi.setSystemTime(Date.now() + 16_000);
+            await originalDelete(key);
+        });
+        const put = vi.spyOn(api.storage, 'put');
+        await api.dataExportWorker.sweep();
+        expect(await getJob(pending.id)).toMatchObject({
+            status: 'READY',
+            attemptCount: 1,
+            completedAt: afterCleanup,
+        });
+        expect(deletion).toHaveBeenCalledTimes(20);
+        expect(put).toHaveBeenCalledOnce();
+    });
+
     it('should expire downloads at the deadline while storage deletion is unavailable', async () => {
         vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
         const job = await requestJob();

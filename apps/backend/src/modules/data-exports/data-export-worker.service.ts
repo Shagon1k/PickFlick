@@ -75,7 +75,7 @@ export class DataExportWorkerService implements OnModuleInit, OnModuleDestroy {
         });
         if (exhausted.count)
             this.logger.error({ event: 'export.claims.exhausted', count: exhausted.count });
-        const claim = await claimExport(this.prisma, now);
+        const claim = await claimExport(this.prisma, new Date());
         if (!claim) return;
         this.logger.log({
             event: 'export.attempt.started',
@@ -179,7 +179,7 @@ export class DataExportWorkerService implements OnModuleInit, OnModuleDestroy {
         });
         for (const object of objects) {
             try {
-                await this.storage.delete(object.key);
+                await this.storage.delete(object.key, AbortSignal.timeout(STORAGE_TIMEOUT_MS));
                 await this.prisma.dataExportObject.deleteMany({ where: { key: object.key } });
                 this.logger.log({ event: 'export.object.deleted', jobId: object.jobId });
             } catch {

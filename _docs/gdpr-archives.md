@@ -74,8 +74,9 @@ The manifest discloses those exclusions; this is not a legal-compliance certific
 
 `DataExportJob` persists PENDING → PROCESSING → READY, with PENDING retries or terminal FAILED.
 The API process sweeps every five seconds, claims one due job using `FOR UPDATE SKIP LOCKED`, and
-uses a five-minute lease and claim token. Concurrent instances cannot claim the same current
-attempt. A crashed process is recoverable after its lease expires. Generation failures retry after
+uses a claim token and a five-minute lease starting when the job is claimed after cleanup.
+Concurrent instances cannot claim the same current attempt. A crashed process is recoverable after
+its lease expires. Generation failures retry after
 one minute, up to three claims; an interrupted final claim becomes FAILED after expiry. Failure
 reasons are `GENERATION_FAILED` or `ACCOUNT_UNAVAILABLE`.
 
@@ -95,9 +96,10 @@ both deadlines after storage reads. Sharing the URL grants no peer access. Missi
 
 READY jobs become EXPIRED at the seven-day deadline or when the account becomes inactive. Downloads
 deny access immediately, even while the API worker is stopped or storage cleanup fails. Sweeps
-delete expired artifacts and abandoned attempt objects after one hour, in batches of twenty;
-failed deletions keep their tracking rows for the next sweep. API availability and storage recovery
-therefore affect physical deletion timing, never the download deadline. Job/metadata retention,
+delete expired artifacts and abandoned attempt objects after one hour, in batches of twenty.
+Each deletion has a thirty-second abort deadline; failed or timed-out deletions keep their tracking
+rows for the next sweep. API availability and storage recovery therefore affect physical deletion
+timing, never the download deadline. Job/metadata retention,
 backups and account deletion remain separate policy/delivery work. Restrictive foreign keys retain
 cleanup evidence: #68 must remove tracked objects before deleting export jobs or the User.
 

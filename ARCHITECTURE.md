@@ -938,7 +938,8 @@ Generation takes an explicitly selected own-data snapshot, writes a gzip JSON do
 manifest and disclosures, then publishes only a current claim. READY starts the seven-day window.
 HMAC links point back through the authenticated API for at most five minutes, capped at archive
 expiry; storage stays private. Downloads recheck ownership, active account and deadlines after reads.
-Cleanup sweeps remove expired artifacts and abandoned attempts, retaining tracking rows on failure.
+Cleanup sweeps remove expired artifacts and abandoned attempts with thirty-second deletion abort
+deadlines, retaining tracking rows on failure. Claim leases start after cleanup completes.
 No dependency, new environment variable or separate deployable is introduced. See
 [inventory, limits and operations](_docs/gdpr-archives.md). Legal/privacy sign-off, job-metadata
 retention, deletion and backup handling remain gated separately.

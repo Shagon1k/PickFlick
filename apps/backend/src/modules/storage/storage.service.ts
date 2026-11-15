@@ -78,8 +78,10 @@ export class StorageService {
         }
     }
 
-    async delete(key: string): Promise<void> {
-        await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+    async delete(key: string, signal?: AbortSignal): Promise<void> {
+        await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
+            abortSignal: signal,
+        });
     }
 
     /** Readiness probe: succeeds when the bucket is reachable with the configured credentials. */

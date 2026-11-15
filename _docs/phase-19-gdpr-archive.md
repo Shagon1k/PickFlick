@@ -44,3 +44,18 @@ The owner/legal/privacy reviewer still owns public-copy, provider, shared-histor
 financial and backup decisions. Physical artifact cleanup retries during outages; seven-day download
 authorization remains fixed. Very large accounts may require future streaming rather than the
 current in-memory generation path.
+
+## Review fix round 1
+
+Storage deletion now uses the existing thirty-second abort deadline. A timeout retains the tracking
+row and lets generation continue; the next sweep retries cleanup. Job claims capture a fresh time
+after cleanup so slow deletions do not consume the five-minute generation lease.
+
+The focused archive suite passes all 15 tests against isolated PostgreSQL, Redis and MinIO. New
+regressions cover a stalled deletion followed by successful generation and cleanup on the next
+sweep, and twenty sixteen-second deletions followed by successful publication on the first attempt.
+
+`pnpm verify` passes under Node 24.15.0 / pnpm 11.25.0, including all 685 unit tests and both
+production builds. The full integration suite passes all 362 tests across 40 files. A built
+StorageService probe against a nonresponding local HTTP server confirms that S3 DELETE aborts
+after a one-second test deadline (observed 1009 ms). Local document links and `git diff --check` pass.
