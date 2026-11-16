@@ -77,7 +77,9 @@ baseline at 390 and 1440 pixels. It preserves the existing shell, reading measur
 mobile recomposition and shared dialog. The compact rights/Notice summary follows DESIGN's policy
 prose override; comment/history copy follows the owner's decision. Existing shared header/footer
 behavior is inherited. New representative PNGs were generated in CI's digest-pinned Playwright
-1.63.0 Noble image and inspected. The behavior checks cover OAuth initiation, explicit final
+1.63.0 Noble image and inspected. Dialog captures target the overlay itself: a full-page capture
+can move the sticky background header after mobile auto-scroll while the dialog stays unchanged.
+The behavior checks cover OAuth initiation, explicit final
 confirmation, keyboard submission, cancel/focus return, accessibility, no overflow, offline and
 expired-reauth feedback, and the access-ended state.
 
@@ -85,15 +87,16 @@ Local verification under Node 24.15.0 / pnpm 11.25.0:
 
 - All 695 unit tests pass. The latest focused deletion suite passes all eight tests, including the
   open-Session departure regression and physical MinIO cleanup.
-- Four integration batches report 370 passing tests across all 41 files before the final departure
-  regression. Two batch shells and longer full-suite runs receive SIGTERM from the local runner;
-  these are not claimed as successful whole-suite gates. CI must confirm the final full run.
+- [CI run 43850829511](https://github.com/Shagon1k/PickFlick/actions/runs/43850829511) on
+  `d7ce121e20830a857a3eb9e8595687e577622dff` passes all 371 integration tests across 41 files,
+  all 695 unit tests, full lint/types/builds, production images, worker and E2E smoke, and all
+  18 real-API browser journeys. This supplies the whole-suite evidence that longer local runs
+  interrupted by SIGTERM could not provide.
 - The final six deletion UI tests pass in the pinned image, including exact comparisons of all
   four inspected panel/dialog PNGs. The earlier Settings/auth regression selection passes all 22
   existing tests. Types and both production builds pass; focused lint, formatting, Knip and the
   production dependency audit are checked separately. The audit reports two low and six moderate
-  findings, no high/critical findings. Long local full-lint runs also receive SIGTERM; full lint
-  remains a CI gate.
+  findings, no high/critical findings. CI confirms the full static gate.
 - The final migration applies from zero on task-owned PostgreSQL. The shared local database has
   an older failed migration and was left unchanged. Test MinIO uses a task-owned private bucket.
 

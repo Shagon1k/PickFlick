@@ -70,9 +70,9 @@ for (const viewport of screenshotViewports) {
             await page.getByRole('button', { name: 'Delete account', exact: true }).click();
             await expect(page.getByRole('dialog')).toBeVisible();
             await settle(page);
-            await expect(page).toHaveScreenshot(`settings-deletion-confirm-${viewport.name}.png`, {
-                fullPage: true,
-            });
+            await expect(page.getByRole('dialog')).toHaveScreenshot(
+                `settings-deletion-confirm-${viewport.name}.png`,
+            );
         },
     );
 }
