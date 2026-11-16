@@ -106,6 +106,17 @@ flowchart LR
   sends. A Club you are not an active member of answers `404`, and App Admin grants no Club rights.
   No route requires the App Admin role yet.
 
+## Reauthentication for account deletion
+
+`POST /account/deletion/reauth` records the current session and time for the authenticated User.
+Settings then starts OAuth again, returning only to the allowlisted
+`/settings?tab=privacy&deletion=confirm`. Google uses the account chooser. Signing in does not
+accept deletion. `POST /account/deletion` also requires exact `DELETE` confirmation and a different
+session for the same User, created after preparation, unexpired and at most five minutes old.
+A forged return query, old session, or sign-in to another account cannot satisfy that check.
+Acceptance atomically makes the User ANONYMIZED and removes every session/provider link.
+See [deletion evidence](phase-19-account-deletion.md).
+
 ## The frontend side
 
 - `src/api/auth-session.server.ts` asks the backend for the session and returns `authenticated`,

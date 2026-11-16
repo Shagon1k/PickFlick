@@ -10,6 +10,13 @@ interface INotificationCopy {
 
 /** One wording per event: the inbox shows the subject; the email Card uses every field. */
 export const NOTIFICATION_COPY: Record<TNotificationEvent, INotificationCopy> = {
+    CLUB_ADMIN_DELETED: {
+        subject: 'Your Club has no Admin',
+        title: 'Your Club has no Admin.',
+        body: 'The Admin deleted their account. Shared history remains available. New Sessions and owner actions are unavailable until ownership is resolved.',
+        category: 'Club service notice',
+        action: 'View Club',
+    },
     SESSION_STARTED: {
         subject: 'A Session has started',
         title: 'A new Session. A shared screen.',

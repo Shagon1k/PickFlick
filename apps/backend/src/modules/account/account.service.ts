@@ -15,7 +15,7 @@ export class AccountService {
 
     async get(userId: string): Promise<IAccountProfile> {
         const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: userId, status: 'ACTIVE' },
             select: {
                 id: true,
                 displayName: true,
@@ -41,12 +41,15 @@ export class AccountService {
     }
 
     async updateProfile(userId: string, input: TUpdateProfile): Promise<IAccountProfile> {
-        await this.prisma.user.update({ where: { id: userId }, data: input });
+        await this.prisma.user.update({ where: { id: userId, status: 'ACTIVE' }, data: input });
         return this.get(userId);
     }
 
     async updateAppearance(userId: string, input: TAppearance): Promise<IAccountProfile> {
-        await this.prisma.user.update({ where: { id: userId }, data: { appearance: input } });
+        await this.prisma.user.update({
+            where: { id: userId, status: 'ACTIVE' },
+            data: { appearance: input },
+        });
         return this.get(userId);
     }
 }

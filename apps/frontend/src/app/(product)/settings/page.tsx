@@ -11,6 +11,7 @@ import Avatar from '#components/ui/Avatar/Avatar';
 import Icon from '#components/ui/Icon/Icon';
 import { ApiError } from '#lib/api.server';
 
+import AccountDeletion from './_components/AccountDeletion/AccountDeletion';
 import AppearanceForm from './_components/AppearanceForm/AppearanceForm';
 import ProfileForm from './_components/ProfileForm/ProfileForm';
 import RatingsCsv from './_components/RatingsCsv/RatingsCsv';
@@ -39,7 +40,7 @@ export default async function SettingsPage({
 }: {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-    const { tab } = await searchParams;
+    const { tab, deletion } = await searchParams;
     if ((await getSessionState()) === 'anonymous') redirect(buildLoginPath('/settings'));
     let account = null;
     try {
@@ -110,6 +111,7 @@ export default async function SettingsPage({
                     <div className={styles.settings__content}>
                         <SettingsContent
                             account={account}
+                            shouldConfirm={deletion === 'confirm'}
                             tab={tab}
                             title={items.find((item) => item.current)?.label ?? 'Settings'}
                         />
@@ -124,10 +126,12 @@ function SettingsContent({
     account,
     tab,
     title,
+    shouldConfirm,
 }: {
     account: IAccountProfile | null;
     tab: string | string[] | undefined;
     title: string;
+    shouldConfirm: boolean;
 }) {
     if (!account)
         return (
@@ -136,6 +140,8 @@ function SettingsContent({
                 <RetryButton />
             </section>
         );
+    if (tab === 'privacy')
+        return <AccountDeletion account={account} shouldConfirm={shouldConfirm} />;
     if (tab === 'appearance') return <AppearanceForm appearance={account.appearance} />;
     if (tab === 'import-export') return <RatingsCsv />;
     if (!tab || tab === 'profile') return <ProfileForm account={account} />;

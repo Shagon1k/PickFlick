@@ -621,7 +621,22 @@ and the remaining verification are tracked in [Phase 19 Settings](_docs/phase-19
 The exact-head hosted preview still requires owner acknowledgment; local evidence is not final
 visual acceptance.
 
-#### Personal ratings CSV — Partial
+#### Account deletion
+
+Settings → Privacy & data follows the canonical Settings shell and danger-zone composition.
+It links the Privacy Notice and offers same-account OAuth reauthentication before a separate
+ConfirmDialog with exact `DELETE` input. The copy states that private profile/Library/Watchlist/files
+are removed, all sessions end, shared comments and ratings retain their text under “Deleted user”,
+and administered Clubs become adminless. Signing in alone never accepts deletion. Pending actions
+are disabled; recoverable/offline/reauthentication errors stay visible in the dialog. Cancellation
+returns focus to Delete account. Successful acceptance makes a full navigation to sign-in with
+access-ended and cleanup-pending feedback, dropping signed-in router caches.
+
+This supersedes the prototype's destructive-history/billing fixture claims. Billing and the wider
+privacy surfaces remain separate work. [Working evidence](_docs/phase-19-account-deletion.md) records
+render comparisons and the required exact-head hosted owner review; that review remains open.
+
+### Personal ratings CSV — Partial
 
 Settings → Import & Export follows `settings.html#panel-import-export`: separate flat import and
 export cards within the existing Settings shell, a desktop sidebar from 1024px and full-width

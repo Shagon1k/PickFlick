@@ -1,6 +1,11 @@
 import 'server-only';
 
-import type { IAccountProfile, TAppearance, TUpdateProfile } from '@pickflick/contracts';
+import type {
+    IAccountProfile,
+    TAppearance,
+    TDeleteAccount,
+    TUpdateProfile,
+} from '@pickflick/contracts';
 import { cache } from 'react';
 
 import { requestApi } from '#lib/api.server';
@@ -13,3 +18,8 @@ export const updateAccountAppearance = (input: TAppearance) =>
 export const replaceAccountAvatar = (body: ArrayBuffer, contentType: string) =>
     requestApi('/account/avatar', { method: 'PUT', body, contentType });
 export const removeAccountAvatar = () => requestApi('/account/avatar', { method: 'DELETE' });
+
+export const startAccountDeletion = () =>
+    requestApi('/account/deletion/reauth', { method: 'POST', json: {} });
+export const acceptAccountDeletion = (input: TDeleteAccount) =>
+    requestApi('/account/deletion', { method: 'POST', json: input });

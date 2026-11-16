@@ -18,7 +18,7 @@ export class AccountAvatarService {
 
     async get(userId: string) {
         const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: userId, status: 'ACTIVE' },
             select: { image: true, avatarObjectKey: true, isAvatarRemoved: true },
         });
         if (!user || user.isAvatarRemoved) throw new NotFoundException();
@@ -50,14 +50,14 @@ export class AccountAvatarService {
         const previousKey = await this.prisma.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
             const user = await tx.user.findUnique({
-                where: { id: userId },
+                where: { id: userId, status: 'ACTIVE' },
                 select: { avatarObjectKey: true },
             });
             if (!user) throw new NotFoundException();
             if (key)
                 await tx.$queryRaw`SELECT key FROM "AccountAvatarObject" WHERE key = ${key} FOR UPDATE`;
             await tx.user.update({
-                where: { id: userId },
+                where: { id: userId, status: 'ACTIVE' },
                 data: { avatarObjectKey: key, isAvatarRemoved: key === null },
             });
             return user.avatarObjectKey;

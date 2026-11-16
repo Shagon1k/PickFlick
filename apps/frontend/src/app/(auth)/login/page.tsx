@@ -55,6 +55,12 @@ export default async function LoginPage({
                 <div className={styles.card}>
                     <h1 id="login-title">Welcome to PickFlick</h1>
                     <p className={styles.lead}>Sign in to join your Club&apos;s screening room.</p>
+                    {parameters.account === 'deleted' ? (
+                        <p role="status">
+                            Account deletion accepted. Access has ended; private file cleanup is in
+                            progress. Shared ratings and comments remain under “Deleted user”.
+                        </p>
+                    ) : null}
                     {errorMessage ? (
                         <p className={styles.errorBanner} role="alert">
                             {errorMessage}

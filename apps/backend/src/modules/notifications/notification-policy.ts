@@ -22,7 +22,7 @@ export function hasPreference(event: TNotificationEvent) {
 
 /** Service notices the recipient cannot switch off on either channel. */
 export function isMandatoryNotification(event: TNotificationEvent) {
-    return event === 'BILLING_SERVICE';
+    return event === 'BILLING_SERVICE' || event === 'CLUB_ADMIN_DELETED';
 }
 
 export function getNotificationPolicy(

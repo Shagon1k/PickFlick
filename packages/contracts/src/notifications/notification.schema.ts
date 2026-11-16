@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const NOTIFICATION_EVENTS = [
+    'CLUB_ADMIN_DELETED',
     'SESSION_STARTED',
     'SELECTION_OPENED',
     'SELECTION_CLOSED',

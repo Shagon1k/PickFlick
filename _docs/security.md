@@ -169,6 +169,22 @@ outages. Explicit field selections exclude credentials, peer identities/response
 snapshots. Logs record fixed reasons and opaque job IDs without exception text or archive contents.
 See the [exact inventory and operations](gdpr-archives.md); legal/privacy sign-off remains separate.
 
+## Account deletion
+
+Deletion uses a prepared intent and a new same-account OAuth session, followed by strict typed
+confirmation. Server time, original session ID, new-session creation/expiry and user identity are
+checked inside the acceptance transaction. The transaction revokes all sessions and provider
+links and makes the account ANONYMIZED, so subsequent API, file, archive and SSE checks deny access.
+Private-write triggers serialize against the User and prevent an in-flight request from restoring
+Library, auth, membership, notification or personal award data after deletion. Profile/avatar
+writes require ACTIVE; accepted deletion seals the profile against late provider writes. A fresh registration gets a new identity without access to old history.
+
+Durable deletion intent tracks private files until storage deletion succeeds; errors retain fixed
+failure reasons and retry without logging content or provider exceptions. Shared history and
+comment text remain with profile attribution removed. Retained technical references, identifying
+free text, already dispatched mail and backups require separate privacy handling; this workflow
+does not establish irreversible legal anonymization. See [deletion evidence](phase-19-account-deletion.md).
+
 ## Personal profile and avatars
 
 Account profile and Appearance endpoints take identity only from the authenticated session. Strict
@@ -292,7 +308,7 @@ See [UAT operations](uat-operations.md) and [production operations](production-o
 ## Not built yet
 
 - Error telemetry and alerts on security-relevant failures.
-- Data export and account deletion that anonymizes shared history.
+- Broader retention enforcement and deletion reapplication after a backup restore.
 - HSTS `includeSubDomains` and `preload`.
 - Apple Sign In activation; its gated adapter exists and stays off until the owner approves it.
 - Broad abandoned catalog/object cleanup under #87; personal avatar retry cleanup is implemented by #65.
