@@ -13,6 +13,7 @@ import { AchievementsModule } from './modules/achievements/achievements.module.j
 import { AuthModule } from './modules/auth/auth.module.js';
 import { ClubsModule } from './modules/clubs/clubs.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
+import { DataExportsModule } from './modules/data-exports/data-exports.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { LibraryModule } from './modules/library/library.module.js';
 import { MoviesModule } from './modules/movies/movies.module.js';
@@ -68,6 +69,7 @@ export class AppModule {
                 AchievementsModule,
                 ClubsModule,
                 ContactModule,
+                DataExportsModule,
                 HealthModule,
                 LibraryModule,
                 MoviesModule,

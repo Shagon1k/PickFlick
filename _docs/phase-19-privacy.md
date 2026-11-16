@@ -172,3 +172,24 @@ Lithuanian individual activity was discussed as an operator option, but no owner
 registration, tax review or legal sign-off was evidenced. Provider/cookie review, final public
 copy, financial exceptions and tested deletion/backup behavior remain open. No inactive-account
 archiving or age-enforcement behavior is added by #65.
+
+## Owner implementation approval for #67, 2026-11-14
+
+Alex explicitly authorized implementation of #67 in [the owner Discord message](https://discord.com/channels/1538486166330933358/1570963945701904516/1571137105193607322),
+replying to the proposed engineering boundary: own data only, no credentials or other users'
+personal data, a private archive available for seven days, and a manifest documenting exclusions.
+This clears the dependent **engineering implementation checkpoint for #67 only** using the
+existing data inventory above. Implement the issue's asynchronous job lifecycle, recoverable
+statuses, idempotent retries, private artifact generation, authorized expiring downloads and
+observable failures within that boundary. Record the exact included fields and exclusions and
+verify authorization, expiry and retry behavior; do not silently broaden disclosure.
+
+This approval is not legal/privacy sign-off, approval of public legal copy, launch authorization,
+permission to merge or deploy, or acceptance/closure of #64. Existing unresolved retention,
+provider, shared-history, financial and backup policy decisions remain gated separately. The
+seven-day archive availability was already product-approved; downloads must not extend it.
+
+The #67 implementation's exact included fields, exclusions, download protocol and operational
+limits are recorded in [Personal data archives](gdpr-archives.md), with
+[engineering evidence](phase-19-gdpr-archive.md). That implementation does not resolve this
+document's outstanding policy or legal/privacy decisions.

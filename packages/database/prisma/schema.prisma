@@ -88,6 +88,7 @@ enum SessionParticipantStatus {
 }
 
 model User {
+  dataExportJobs           DataExportJob[]
   notifications            Notification[]
   notificationPreferences  NotificationPreference[]
   id                       String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -115,6 +116,46 @@ model User {
   providerAccounts         ProviderAccount[]
   clubAuditEventsAsActor   ClubAuditEvent[]         @relation("ClubAuditActor")
   clubAuditEventsAsSubject ClubAuditEvent[]         @relation("ClubAuditSubject")
+}
+
+enum DataExportStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+}
+
+model DataExportJob {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String             @db.Uuid
+  requestId     String             @db.Uuid
+  status        DataExportStatus   @default(PENDING)
+  attemptCount  Int                @default(0)
+  nextAttemptAt DateTime           @default(now()) @db.Timestamptz(3)
+  leaseUntil    DateTime?          @db.Timestamptz(3)
+  claimToken    String?            @db.Uuid
+  signingKey    String
+  objectKey     String?
+  failure       String?
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  completedAt   DateTime?          @db.Timestamptz(3)
+  expiresAt     DateTime?          @db.Timestamptz(3)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  objects       DataExportObject[]
+
+  @@unique([userId, requestId])
+  @@index([status, nextAttemptAt])
+  @@index([status, leaseUntil])
+}
+
+model DataExportObject {
+  key         String        @id
+  jobId       String        @db.Uuid
+  deleteAfter DateTime      @db.Timestamptz(3)
+  job         DataExportJob @relation(fields: [jobId], references: [id], onDelete: Restrict)
+
+  @@index([deleteAfter])
 }
 
 model AccountAvatarObject {

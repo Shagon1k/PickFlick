@@ -579,7 +579,7 @@ hidden from normal history unless product copy exposes it.
 | Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
 | Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
 | Resend                | Transactional and opted-in email.                                                                  | Contact and notification delivery built; live sandbox acceptance pending                 |
-| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club/personal avatars and catalog images implemented; exports pending                    |
+| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club/personal avatars, catalog images and private expiring archives implemented          |
 | Sentry                | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
 | IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
 
@@ -1431,6 +1431,13 @@ recorded here. [Personal Settings evidence](_docs/phase-19-settings.md) records 
 and Appearance verification and the outstanding exact-head visual acknowledgment. The same continuation accepted a 16+ product age, Europe + US intent, and
 archiving inactive personal accounts on the 180/360-day Free/Pro schedule without automatic erasure.
 Country-specific review, operational details and operator form remain open.
+
+The owner separately authorized #67 engineering implementation on 2026-11-14 within the existing
+own-data inventory, without credentials or peer data. [Archive reference](_docs/gdpr-archives.md)
+defines the implemented field allowlist, manifest, durable retries, signed authenticated downloads
+and fixed seven-day availability. [Working evidence](_docs/phase-19-gdpr-archive.md) records
+verification. Legal/privacy, public-copy, job-metadata retention and backup decisions remain open;
+this does not accept #64 or complete Phase 19.
 
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.
