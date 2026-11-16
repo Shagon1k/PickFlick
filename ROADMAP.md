@@ -437,8 +437,9 @@ thresholds. These periods do not authorize automatic deletion of inactive person
 ### Account deletion and shared history
 
 - Delete the User's private profile data and cancel their subscription through an audited workflow.
-- Keep shared Club and Session history by anonymizing the User's attribution instead of deleting
-  nominations, votes, ratings, or Sessions that other members rely on.
+- Keep shared Club and Session history by removing the User's profile attribution instead of deleting
+  nominations, ballots, ratings, comments, or Sessions that other members rely on. The owner explicitly
+  chose to preserve comment text for #68; free-text privacy requests remain a separate review.
 - Remove memberships and personal Library and Watchlist data under the approved retention policy.
 - If the User was a Club's Admin and no transfer happened, the Club becomes adminless, every member
   is notified, and owner-only actions stay unavailable until a recovery policy exists.
@@ -1438,6 +1439,11 @@ defines the implemented field allowlist, manifest, durable retries, signed authe
 and fixed seven-day availability. [Working evidence](_docs/phase-19-gdpr-archive.md) records
 verification. Legal/privacy, public-copy, job-metadata retention and backup decisions remain open;
 this does not accept #64 or complete Phase 19.
+
+The owner separately authorized #68 implementation on 2026-11-16, preserving shared comments and
+deferring billing/provider selection. [Deletion evidence](_docs/phase-19-account-deletion.md) records
+the implementation, verification and open exact-head preview checkpoint. This approval does not
+accept privacy wording, retained technical references, financial exceptions or backup/restore policy.
 
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.

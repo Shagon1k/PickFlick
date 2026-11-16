@@ -67,7 +67,7 @@ indefinite retention.
 | ------------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
 | Deletion access                | Re-authenticate, explicitly confirm, revoke sessions and block login immediately                        | Define the durable acceptance point; repeat requests must converge without duplicate effects.                                                                                                                                                    | #68                               |
 | Private cleanup                | Within 24 hours is a technical target                                                                   | Measure from accepted confirmation; cover DB, objects, pending mail and provider links. Failures need visible operator status. Do not publish an unconditional guarantee before evidence.                                                        | #68, #87                          |
-| Shared history                 | Preserve Club/Session history with anonymized attribution; notify members if the Club becomes adminless | Review snapshots, free text and indirect identifiers. Decide residual linkability, comment handling and exceptions; a “Deleted user” label alone is insufficient. Ownership recovery stays out of scope.                                         | #68                               |
+| Shared history                 | Preserve Club/Session history with anonymized attribution; notify members if the Club becomes adminless | Review snapshots, free text and indirect identifiers. The owner chose to retain comment text for #68; review residual linkability and exceptions; a “Deleted user” label alone is insufficient. Ownership recovery stays out of scope.           | #68                               |
 | Personal CSV                   | Own Personal Ratings, separate from full archive                                                        | Confirm exact fields and formula-injection handling in #66. Direct downloads need no seven-day server copy unless an artifact is persisted.                                                                                                      | #66                               |
 | Full archive                   | Own data and manifest; private availability for 7 days                                                  | Start at successful generation; deny expired downloads and remove artifacts. Deletion also invalidates access. Confirm job metadata, partial/failed artifacts and backup treatment; downloads do not restart expiry.                             | #67, #87                          |
 | Technical logs                 | 30 days                                                                                                 | Start at event time; define application, worker, edge and telemetry coverage and deletion cadence. Minimize content when collected.                                                                                                              | #87, release observability work   |
@@ -193,3 +193,14 @@ The #67 implementation's exact included fields, exclusions, download protocol an
 limits are recorded in [Personal data archives](gdpr-archives.md), with
 [engineering evidence](phase-19-gdpr-archive.md). That implementation does not resolve this
 document's outstanding policy or legal/privacy decisions.
+
+## Owner continuation, 2026-11-16: account deletion
+
+The bounded predecessor conversation explicitly preserves comments and ratings in shared history
+while removing profile attribution. The owner deferred billing, company and payment-provider
+selection. The current continuation separately approves #68 engineering implementation, commits
+and same-branch pushes. [Deletion evidence](phase-19-account-deletion.md) records verification and
+the required exact-head visual review. None of these decisions approves legal copy or resolves
+personal data inside free text, retained technical references/job metadata, financial exceptions,
+provider copies or backup/restore handling. Update Privacy Notice and aligned terms only after
+owner/privacy review; do not infer that retaining comments is legally settled.

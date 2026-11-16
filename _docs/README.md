@@ -76,6 +76,9 @@ verification and its required exact-SHA hosted preview acknowledgment.
 [Phase 19 personal data archives](phase-19-gdpr-archive.md) records #67 implementation and
 verification. [Archive reference](gdpr-archives.md) defines its field inventory, API and operations.
 
+[Phase 19 account deletion](phase-19-account-deletion.md) records the same-account reauthentication,
+shared-history preservation, durable file cleanup and outstanding visual/privacy checkpoints for #68.
+
 ## Historical audits
 
 The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,

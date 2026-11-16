@@ -4,13 +4,13 @@ import { getNotificationPolicy } from '../notification-policy.js';
 
 describe('getNotificationPolicy', () => {
     it.each(NOTIFICATION_EVENTS)(
-        'should default %s to in-app and opted-out email except mandatory billing',
+        'should default %s to in-app and opted-out email except mandatory service notices',
         (event) => {
             expect(getNotificationPolicy(event)).toEqual({
                 event,
                 inApp: true,
-                email: event === 'BILLING_SERVICE',
-                mandatory: event === 'BILLING_SERVICE',
+                email: ['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event),
+                mandatory: ['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event),
             });
         },
     );
@@ -23,9 +23,11 @@ describe('getNotificationPolicy', () => {
                         getNotificationPolicy(event, { inApp: hasInApp, email: hasEmail }),
                     ).toEqual({
                         event,
-                        inApp: event === 'BILLING_SERVICE' || hasInApp,
-                        email: event === 'BILLING_SERVICE' || hasEmail,
-                        mandatory: event === 'BILLING_SERVICE',
+                        inApp:
+                            ['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event) || hasInApp,
+                        email:
+                            ['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event) || hasEmail,
+                        mandatory: ['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event),
                     });
                 },
             );

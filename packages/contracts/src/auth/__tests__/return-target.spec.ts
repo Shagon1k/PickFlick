@@ -3,6 +3,7 @@ import { DEFAULT_AUTH_RETURN_TARGET, resolveAuthReturnTarget } from '../return-t
 describe('resolveAuthReturnTarget', () => {
     it.each([
         '/app',
+        '/settings?tab=privacy&deletion=confirm',
         '/clubs/10000000-0000-4000-8000-000000000031/ratings',
         '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=title&page=2',
         '/library',
@@ -31,6 +32,9 @@ describe('resolveAuthReturnTarget', () => {
         '/\\evil.example/app',
         '/app?next=https://evil.example',
         '/admin',
+        '/settings?tab=privacy&deletion=confirm&next=//evil.example',
+        '/settings?tab=privacy&deletion=confirm#hidden',
+        '/settings?tab=privacy&deletion=confirm&deletion=confirm',
         // Personal Session invitation links are no longer served.
         '/invite/session/invite_token-123',
         '/clubs/10000000-0000-4000-8000-000000000031/ratings?sort=secret',

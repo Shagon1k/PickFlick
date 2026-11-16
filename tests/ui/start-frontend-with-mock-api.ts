@@ -11,7 +11,7 @@ import type {
     TRespondInvitation,
 } from '@pickflick/contracts';
 
-import { handleAccount } from './account.ts';
+import { handleAccount, isDeletedAccountSession } from './account.ts';
 import { handleAchievements } from './achievements.ts';
 import { settingsProjection } from './club-projections.ts';
 import { handleClubRatings } from './club-ratings.ts';
@@ -100,7 +100,7 @@ function handleSession(request: TMockRequest, response: TMockResponse): void {
         sendJson(response, 503, null);
         return;
     }
-    const isAuthenticated = token?.startsWith('valid') ?? false;
+    const isAuthenticated = Boolean(token?.startsWith('valid') && !isDeletedAccountSession(token));
     if (token?.includes('account-loading')) {
         setTimeout(
             () => sendJson(response, 200, { user: { id: `user-${token}` } }),

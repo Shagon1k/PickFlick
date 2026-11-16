@@ -351,7 +351,7 @@ environment configuration are not changed by repository updates.
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
 and transition at most once in one transaction. The deadline worker reads due Sessions directly and
 rechecks each one under its locks. Proposed Paddle flows verify events, store provider
-IDs and apply changes idempotently; proposed account deletion anonymizes shared history and revokes
+IDs and apply changes idempotently; account deletion removes shared attribution and revokes
 every authentication session.
 
 ## 5. Cross-cutting contracts
@@ -464,8 +464,8 @@ every authentication session.
   minute (10 for social sign-in). — Active
 - **Observability:** nestjs-pino structured logs with a request ID; health endpoints. Error
   telemetry and alerts are Proposed.
-- **Privacy:** private own-data archives are Active; deletion/anonymization and broader retention
-  enforcement remain Proposed. [Phase 19 preparation](_docs/phase-19-privacy.md) maps current tables,
+- **Privacy:** private own-data archives and account deletion with shared-history attribution removal
+  are Active; broader retention enforcement remains Proposed. [Phase 19 preparation](_docs/phase-19-privacy.md) maps current tables,
   snapshots, files, mail and provider copies to deletion/export review. Product targets are
   immediate access revocation, private cleanup within 24 hours, seven-day archives, 30-day logs,
   90-day audit and 30-day backups; clock origins/exceptions and legal/privacy sign-off remain
@@ -943,6 +943,38 @@ deadlines, retaining tracking rows on failure. Claim leases start after cleanup 
 No dependency, new environment variable or separate deployable is introduced. See
 [inventory, limits and operations](_docs/gdpr-archives.md). Legal/privacy sign-off, job-metadata
 retention, deletion and backup handling remain gated separately.
+
+### Account deletion
+
+The account module serves `POST /account/deletion/reauth` and `POST /account/deletion`.
+Preparation stores the original session UUID and intent time in `AccountDeletion`. Confirmation
+accepts only `{ confirmation: "DELETE" }` from a different same-user session created after intent,
+still unexpired and less than five minutes old. Settings starts a new OAuth flow and asks for final
+confirmation after returning; a query parameter alone cannot authorize deletion.
+
+Acceptance locks the user's Clubs in UUID order, then the User. One transaction stores PENDING
+cleanup, anonymizes profile attribution, revokes all sessions/provider accounts, ends Memberships,
+propagates departure to open Sessions through the existing phase-completion workflow, removes
+private Library/notification/achievement rows, revokes unanswered invitations and records
+Club audit plus mandatory adminless notifications. Shared participants, nominations, ballots,
+ratings, comments, frozen Selection inputs and Club achievement evidence remain. Existing Club
+access projections disable new work and owner actions when there is no Admin.
+
+Private-table triggers share-lock their owner and reject writes for ANONYMIZED accounts. This
+serializes in-flight private writes with deletion; accepted deletion also seals the profile against
+late provider writes. Profile/avatar mutations require ACTIVE.
+Every API replica polls due deletion jobs every five seconds with `FOR UPDATE SKIP LOCKED`.
+Each transaction deletes at most one tracked avatar/archive object with a ten-second storage
+abort deadline. Storage failure keeps intent and retries after a minute. Cleanup waits for export
+leases plus the thirty-second upload deadline; export generation rechecks active account/current
+claim before upload. Completion removes export-job metadata after all tracked objects are gone.
+No queue dependency, environment variable or extra deployable is introduced.
+
+The minimal job records `billing=NOT_IMPLEMENTED`; payment cancellation remains Phase 20.
+The history User UUID, Membership/audit references and job evidence remain; this is attribution
+removal, not proof of irreversible legal anonymization. Unattached avatar uploads use the existing
+orphan sweep. Comment text, residual linkability, audit/job retention and restore handling still
+need privacy approval. See [working evidence](_docs/phase-19-account-deletion.md).
 
 ### Searchable personal Library
 

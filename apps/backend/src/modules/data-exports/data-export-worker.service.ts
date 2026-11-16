@@ -92,6 +92,18 @@ export class DataExportWorkerService implements OnModuleInit, OnModuleDestroy {
                 return;
             }
             const body = await buildArchive(this.prisma, this.storage, claim.userId);
+            // A deletion may have committed while the archive was being assembled.
+            const activeClaim = await this.prisma.dataExportJob.findFirst({
+                where: {
+                    id: claim.id,
+                    claimToken: claim.claimToken,
+                    status: 'PROCESSING',
+                    leaseUntil: { gt: new Date() },
+                    user: { status: 'ACTIVE' },
+                },
+                select: { id: true },
+            });
+            if (!activeClaim) return;
             await this.storage.put(
                 getExportObjectKey(claim),
                 body,

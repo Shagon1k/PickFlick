@@ -38,6 +38,7 @@ enum MembershipStatus {
 }
 
 enum ClubAuditAction {
+  ACCOUNT_DELETED
   SESSION_RATING_CLOSED
   SESSION_RATING_OPENED
   SESSION_SELECTION_CLOSED
@@ -88,6 +89,7 @@ enum SessionParticipantStatus {
 }
 
 model User {
+  accountDeletion          AccountDeletion?
   dataExportJobs           DataExportJob[]
   notifications            Notification[]
   notificationPreferences  NotificationPreference[]
@@ -116,6 +118,29 @@ model User {
   providerAccounts         ProviderAccount[]
   clubAuditEventsAsActor   ClubAuditEvent[]         @relation("ClubAuditActor")
   clubAuditEventsAsSubject ClubAuditEvent[]         @relation("ClubAuditSubject")
+}
+
+enum AccountDeletionStatus {
+  AWAITING_REAUTH
+  PENDING
+  COMPLETE
+}
+
+model AccountDeletion {
+  userId        String                @id @db.Uuid
+  status        AccountDeletionStatus @default(AWAITING_REAUTH)
+  sessionId     String?               @db.Uuid
+  requestedAt   DateTime              @default(now()) @db.Timestamptz(3)
+  acceptedAt    DateTime?             @db.Timestamptz(3)
+  completedAt   DateTime?             @db.Timestamptz(3)
+  nextAttemptAt DateTime              @default(now()) @db.Timestamptz(3)
+  attemptCount  Int                   @default(0)
+  failure       String?
+  avatarKey     String?
+  billing       String                @default("NOT_IMPLEMENTED")
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([status, nextAttemptAt])
 }
 
 enum DataExportStatus {
@@ -586,6 +611,7 @@ model WatchlistItem {
 }
 
 enum NotificationEvent {
+  CLUB_ADMIN_DELETED
   SESSION_STARTED
   SELECTION_OPENED
   SELECTION_CLOSED

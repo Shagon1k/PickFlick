@@ -19,8 +19,12 @@ describe('renderNotificationEmail', () => {
             expect(email.html).toContain('<html lang="en">');
             expect(email.html).toContain('role="presentation"');
             expect(email.html).not.toMatch(/<script|<img|invitation|token=/u);
-            expect(email.text.includes('You opted in')).toBe(event !== 'BILLING_SERVICE');
-            expect(email.html.includes('Notification settings')).toBe(event !== 'BILLING_SERVICE');
+            expect(email.text.includes('You opted in')).toBe(
+                !['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event),
+            );
+            expect(email.html.includes('Notification settings')).toBe(
+                !['BILLING_SERVICE', 'CLUB_ADMIN_DELETED'].includes(event),
+            );
         },
     );
     it('should remove event details and target actions when access is unavailable', () => {

@@ -55,7 +55,7 @@ describe('AuthService', () => {
     }
 
     describe('when starting a social sign-in', () => {
-        const signIn = (callbackURL: string) =>
+        const signIn = (callbackURL: string, additionalParams?: Record<string, string>) =>
             service.auth.handler(
                 new Request(`${environment.auth.baseUrl}/api/auth/sign-in/social`, {
                     method: 'POST',
@@ -63,7 +63,7 @@ describe('AuthService', () => {
                         'content-type': 'application/json',
                         origin: environment.auth.baseUrl,
                     },
-                    body: JSON.stringify({ provider: 'google', callbackURL }),
+                    body: JSON.stringify({ provider: 'google', callbackURL, additionalParams }),
                 }),
             );
 
@@ -73,6 +73,16 @@ describe('AuthService', () => {
 
             expect(response.status).toBe(200);
             expect(new URL(body.url ?? '').hostname).toBe('accounts.google.com');
+        });
+
+        it('should start a new OAuth account choice for the deletion return target', async () => {
+            const response = await signIn('/settings?tab=privacy&deletion=confirm', {
+                prompt: 'select_account',
+            });
+            const body = (await response.json()) as { url: string };
+            expect(response.status).toBe(200);
+            expect(new URL(body.url).hostname).toBe('accounts.google.com');
+            expect(new URL(body.url).searchParams.get('prompt')).toBe('select_account');
         });
 
         it('should retain invitation continuation in transient state without sending it to the provider', async () => {
