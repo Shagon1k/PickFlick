@@ -1,4 +1,3 @@
-.summary,
 .danger {
     display: grid;
     gap: var(--gap-md);
@@ -9,19 +8,17 @@
     border-radius: var(--radius-lg);
 }
 
-.summary h2,
 .danger h2 {
     margin: 0;
     font-size: var(--fs-body-sm);
     font-weight: 600;
 }
 
-.summary p,
 .danger p {
     margin: 0;
 }
 
-.summary a {
+.danger a {
     color: var(--fg);
     text-decoration: underline;
     text-underline-offset: var(--gap-xs);
@@ -44,16 +41,9 @@
 }
 
 @media (width < 1024px) {
-    .summary,
     .danger {
         padding: var(--gap-md);
     }
-}
-
-.summary > a {
-    display: flex;
-    align-items: center;
-    min-height: var(--hit);
 }
 
 .feedback {

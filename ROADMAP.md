@@ -1445,6 +1445,13 @@ deferring billing/provider selection. [Deletion evidence](_docs/phase-19-account
 the implementation, verification and open exact-head preview checkpoint. This approval does not
 accept privacy wording, retained technical references, financial exceptions or backup/restore policy.
 
+The #69 continuation authorizes preview Privacy/Terms drafts with operator TODOs and Settings
+archive controls using the existing API. [Surface evidence](_docs/phase-19-privacy-surfaces.md)
+maps copy to current behavior and records the owner's retention clocks, limited exceptions and
+manual free-text request process. Retention/inactivity targets are distinguished from enforced
+behavior; public pricing uses the approved 180/360-day planned inactivity policy. Exact-copy
+legal/privacy approval, real operator details and exact-head hosted owner review remain required.
+
 **Dependencies:** Phase 18; Phase 17 notifications; legal and retention decisions before UAT
 approval.
 

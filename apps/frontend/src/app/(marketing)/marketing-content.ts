@@ -79,7 +79,7 @@ export const freePlanFeatures: readonly IPlanFeature[] = [
     { label: 'Club customization' },
     { label: 'Basic counters and the Club ratings leaderboard' },
     { label: 'Configurable Session visibility' },
-    { label: '90-day inactivity grace', tone: 'limited' },
+    { label: '180-day inactivity grace (planned)', tone: 'limited' },
 ];
 
 export const proPlanFeatures: readonly IPlanFeature[] = [
@@ -90,7 +90,7 @@ export const proPlanFeatures: readonly IPlanFeature[] = [
     { label: 'Unlimited Session history' },
     { label: 'Club customization' },
     { label: 'Configurable Session visibility' },
-    { label: '180-day inactivity grace', tone: 'upgrade' },
+    { label: '360-day inactivity grace (planned)', tone: 'upgrade' },
     { label: 'Extended deterministic analytics' },
 ];
 
@@ -111,7 +111,7 @@ export const comparisonRows = [
     { feature: 'Session history', free: 'Unlimited', pro: 'Unlimited' },
     { feature: 'Club customization', free: 'Included', pro: 'Included' },
     { feature: 'Session visibility settings', free: 'Included', pro: 'Included' },
-    { feature: 'Inactivity grace', free: '90 days', pro: '180 days' },
+    { feature: 'Inactivity grace (planned)', free: '180 days', pro: '360 days' },
     { feature: 'Club ratings leaderboard', free: 'Included', pro: 'Included' },
     { feature: 'Analytics', free: 'Basic counters', pro: 'Extended deterministic' },
     { feature: 'Price', free: '€0', pro: '€5 / month' },
@@ -136,7 +136,7 @@ export const pricingFaqs = [
     },
     {
         question: 'What is the inactivity grace period?',
-        answer: 'A Club with no activity for 90 days on Free or 180 days on Pro can be archived after the Admin is notified. Nothing is automatically deleted, and the Club can be reactivated.',
+        answer: 'The planned policy archives inactive Clubs after 180 days on Free or 360 days on Pro, after notifying the Admin. Archiving preserves data and allows reactivation. Automatic inactivity archiving is not implemented yet.',
     },
     {
         question: 'Can I upgrade to Pro now?',

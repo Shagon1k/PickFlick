@@ -15,6 +15,7 @@ import { handleAccount, isDeletedAccountSession } from './account.ts';
 import { handleAchievements } from './achievements.ts';
 import { settingsProjection } from './club-projections.ts';
 import { handleClubRatings } from './club-ratings.ts';
+import { handleDataExports } from './data-exports.ts';
 import { buildHubProjection } from './hub-projections.ts';
 import { handleLibrary } from './library.ts';
 import {
@@ -428,6 +429,7 @@ const api = createServer((request, response) => {
     if (
         [
             handleAccount,
+            handleDataExports,
             handleRatingsCsv,
             handleAchievements,
             handleNotifications,

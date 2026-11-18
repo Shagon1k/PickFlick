@@ -236,7 +236,7 @@ All canonical screens are MVP and approved as direction.
 | Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Active — film, screening facts, historical ratings/comments and permitted nomination breakdowns                           | Exact-SHA hosted preview and owner review pending                                 |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Active — searchable Ratings/Watchlist tables with sortable headers and shared editors; statistics and achievement shelves | Exact-SHA hosted preview and owner review pending                                 |
 | `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player, links, Personal Rating and Watchlist priority editors implemented                                | Details accepted 2026-10-23; editor QA recorded in Phase 15; owner review pending |
-| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Partial — Profile and Appearance implemented; remaining sections Proposed                                                 | Local 390/1440 checks passed; hosted owner review pending                         |
+| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Partial — Profile, Appearance, CSV, privacy/archive and deletion; other panels Proposed                                   | Local 390/1440 checks passed; hosted owner review pending                         |
 | `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                                                               | Not checked                                                                       |
 | `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                                                      | Passed locally                                                                    |
 
@@ -598,8 +598,8 @@ account context, a 218px sidebar, 36px content gap, and one flat bordered card. 
 shared product Settings menu replaces the sidebar. The 72px profile avatar and upload actions
 recompose vertically in this compact layout. Shared form controls provide read-only email/provider
 and English language information, name validation, offline/error feedback and live save status
-beside Save changes without expanding the card. Other Settings sections remain Proposed under
-their owning issues.
+beside Save changes without expanding the card. Notifications and Subscription panels remain
+Proposed under their owning issues.
 
 Appearance saves per-user monochrome film/trailer media, Color reveal, quiet mode,
 Comfortable/Compact spacing and one shared optional-column setup. Quiet mode has an adjacent
@@ -632,9 +632,25 @@ are disabled; recoverable/offline/reauthentication errors stay visible in the di
 returns focus to Delete account. Successful acceptance makes a full navigation to sign-in with
 access-ended and cleanup-pending feedback, dropping signed-in router caches.
 
-This supersedes the prototype's destructive-history/billing fixture claims. Billing and the wider
-privacy surfaces remain separate work. [Working evidence](_docs/phase-19-account-deletion.md) records
+This supersedes the prototype's destructive-history/billing fixture claims. Billing remains
+separate work. [Working evidence](_docs/phase-19-account-deletion.md) records
 render comparisons and the required exact-head hosted owner review; that review remains open.
+
+#### Privacy and archive surfaces
+
+Issue #69 adds concise data summaries through native disclosures, a link to the draft Privacy
+Notice, CSV navigation and a personal-archive panel before the existing deletion danger zone.
+The Settings sidebar/content measure and compact navigation remain the canonical composition.
+Archive actions expose queued, processing, ready, failed, expired, offline and request-error
+feedback; status refresh is explicit. A ready archive shows its fixed availability deadline and
+an authenticated download action. The accepted job address can be reopened without storing its
+content or download signature in browser storage.
+
+Public Privacy/Terms reuse the established legal hero, draft warning and numbered reading panel.
+Copy names operator TODOs and distinguishes implemented behavior from planned retention,
+inactivity and legal decisions. It does not present the draft as approved. The pricing surfaces
+show the approved 180/360-day inactivity policy as planned. [Surface evidence](_docs/phase-19-privacy-surfaces.md)
+holds source comparisons, checks and the remaining exact-head hosted owner and legal/privacy gates.
 
 ### Personal ratings CSV — Partial
 
@@ -1021,7 +1037,7 @@ foundation components; feature-specific wrappers are checked in their built scre
 | Dialog                         | Phase moves, edits, removals, cancellation, destructive actions; typed confirmation (`Modal`).                                                                                                                                                                                                                                                                                                                                                                                                                                   | [Design system](_docs/design/prototypes/design-system.html)              | Partial                                                                       |
 | Stat, leaderboard, table       | Summaries, histories, rankings, usage, admin lists; sorted, filtered, mobile scroll (`Table`).                                                                                                                                                                                                                                                                                                                                                                                                                                   | [Club Hub](_docs/design/prototypes/app.html)                             | Partial                                                                       |
 | Achievement card and filter    | Earned, in-progress, and locked goals.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | [Library](_docs/design/prototypes/library.html)                          | Partial — shelf, filters and evidence explanations; visual acceptance pending |
-| Privacy accordion              | Data summary and rights actions (export, GDPR archive, deletion) in "Privacy & data", linking to the Privacy Notice.                                                                                                                                                                                                                                                                                                                                                                                                             | [Settings](_docs/design/prototypes/settings.html)                        | Not started                                                                   |
+| Privacy accordion              | Data summary and rights actions (export, GDPR archive, deletion) in "Privacy & data", linking to the Privacy Notice.                                                                                                                                                                                                                                                                                                                                                                                                             | [Settings](_docs/design/prototypes/settings.html)                        | Implemented locally; legal/hosted owner review pending                        |
 
 | Pattern              | Behavior                                                                                                                           |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |

@@ -204,3 +204,24 @@ the required exact-head visual review. None of these decisions approves legal co
 personal data inside free text, retained technical references/job metadata, financial exceptions,
 provider copies or backup/restore handling. Update Privacy Notice and aligned terms only after
 owner/privacy review; do not infer that retaining comments is legally settled.
+
+## Owner continuation, 2026-11-18: preview drafts and personal-data surfaces
+
+The bounded predecessor conversation for #69 accepts preview-only operator TODOs, the existing
+public contact, retention clock origins and limited specific-obligation/dispute/incident exceptions.
+It also accepts a manual request process for personal details in preserved shared comments and
+Settings archive request/status/download controls. [Surface evidence](phase-19-privacy-surfaces.md)
+records those decisions and the copy-to-implementation matrix. The successor instruction approves
+engineering delivery while preserving exact-copy legal/privacy and hosted owner-review gates.
+
+Support/privacy correspondence has a 90-day target from request closure. Completed export/deletion
+metadata has a 90-day target without archive contents; shared references remain separate. Backup
+age runs from creation, with deletions reapplied before restored data is used. These decisions
+supersede the corresponding open product proposals above, not their missing implementation or
+legal/privacy approval. The 16+ product age accepted on 2026-11-10 remains the current decision;
+the historical 18+ suggestion is not approved.
+
+Real operator form/identity/registration, reviewer assignment, provider/contracts/transfers,
+deployed browser storage, purpose-specific legal bases and exact public copy remain unresolved.
+The owner authorized preparing drafts with visible TODOs, not publishing an approved policy or
+making the unimplemented cleanup targets unconditional guarantees.

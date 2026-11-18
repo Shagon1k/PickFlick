@@ -128,6 +128,15 @@ WebP without source metadata. Corrupt or oversized decoded content is rejected b
 
 ### How a request flows
 
+Settings privacy tools reuse the existing `data-exports` REST module. Contract-validated server
+actions request jobs, read status and issue authenticated download links through server-only API
+adapters. The accepted job UUID is retained in the Settings page address for status recovery;
+the backend rechecks session ownership independently of that reference. A browser API adapter
+fetches the signed same-origin binary download, checks failures and creates a temporary Blob
+download; archive bytes do not travel through server-action payloads. Status refresh is manual.
+No new persistence, worker, environment variable or export field is introduced. See
+[archive API and boundaries](_docs/gdpr-archives.md) and [surface evidence](_docs/phase-19-privacy-surfaces.md).
+
 ```mermaid
 sequenceDiagram
   actor Browser

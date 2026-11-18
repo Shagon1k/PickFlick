@@ -1,7 +1,6 @@
 'use client';
 
 import type { IAccountProfile } from '@pickflick/contracts';
-import Link from 'next/link';
 import { useState } from 'react';
 
 import Button from '#components/ui/Button/Button';
@@ -78,24 +77,23 @@ export default function AccountDeletion({ account, shouldConfirm }: IAccountDele
 
     return (
         <>
-            <section className={styles.summary} aria-label="Privacy & data">
-                <h2>Privacy &amp; data</h2>
-                <p>
-                    Manage your personal data and account. Read the{' '}
-                    <Link href="/legal/privacy">Privacy Notice</Link> for policy information.
-                </p>
-                <Link href="/settings?tab=import-export">Export personal ratings</Link>
-            </section>
             <section className={styles.danger} aria-labelledby="deletion-heading">
                 <h2 id="deletion-heading">Delete account</h2>
                 <p>
                     This permanently removes your profile, personal Library, Watchlist and private
-                    files. You will lose access immediately.
+                    files. You will lose access immediately. Private-file cleanup targets 24 hours
+                    after confirmation; outages can delay it. Backups and provider-held copies need
+                    separate handling described in the Privacy Notice.
                 </p>
                 <p>
                     Shared Clubs, Sessions, nominations, ballots, ratings and comments remain with
                     the author shown as “Deleted user”. Clubs you administer will have no Admin;
                     members will be notified.
+                </p>
+                <p>
+                    Comment text is preserved and may contain personal details. Write to{' '}
+                    <a href="mailto:hello@pick-flick.app">hello@pick-flick.app</a> about those
+                    details. Removing profile attribution does not guarantee irreversible anonymity.
                 </p>
                 <p>
                     Sign in again to the same account, then type DELETE to confirm. Signing in alone
