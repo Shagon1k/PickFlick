@@ -100,6 +100,20 @@ Local checks use Node 24.15.0 / pnpm 11.25.0 and CI's digest-pinned Playwright 1
   reviewed 2026-11-17; the advisory lists versions through 4.0.7 and no patched release. The
   lockfile/dependencies are unchanged and the production high/critical gate remains intact.
   Dependency remediation or an explicitly reviewed disposition is separate work.
+- On 2026-11-18, Alex explicitly accepted the unpatched `picomatch@4.0.7` advisory for 30 days,
+  until **2026-12-18T13:50:54Z**. The scoped exception and audit-wrapper rules are documented in
+  [Security](security.md#temporary-accepted-risk-picomatch-redos) and
+  `scripts/security-audit-exceptions.json`. This is risk acceptance, not remediation or proof of
+  absent production exposure. The baseline lockfile and library sources remain unchanged; every
+  other high/critical finding and invalid audit evidence must still block delivery.
+  Local verification on Node 24.15.0 / pnpm 11.25.0: frozen install and live wrapped audit pass
+  (the raw audit still reports the accepted high finding); lint, Knip, formatting, all type checks
+  and 765 unit tests in 77 files pass, including 64 exception-validation tests. The initial full
+  verify was blocked by Next.js cache-disclosure advisories `GHSA-mfr8-8qww-v76h` and
+  `GHSA-vc7v-qv4w-wrv8`. The owner then approved their patch remediation and same-branch
+  publication: Next.js and its matching packages now resolve to the first patched release 16.4.5.
+  Full `pnpm verify` passes, including both production builds, without a Next exception.
+  Hosted exact-head CI remains pending publication and observation.
 
 - Exact-head hosted preview and owner mobile/desktop acknowledgment: **pending**. This run
   does not authorize deployment.

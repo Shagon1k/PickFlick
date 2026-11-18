@@ -220,10 +220,14 @@ entry), so a client cannot spoof it with its own `X-Forwarded-For`.
 
 ## Dependencies and supply chain
 
-- CI runs `pnpm security:audit` (`pnpm audit --prod --audit-level high`) in the independent
-  **Dependency security** job, required by the Delivery gate on every event; local `pnpm verify`
-  runs it too. Any high or critical advisory in a production dependency blocks. Development-only
-  advisories stay visible through Dependabot and `pnpm audit` without blocking delivery.
+- CI runs `pnpm security:audit` in the independent **Dependency security** job, required by the
+  Delivery gate on every event; local `pnpm verify` runs it too. The wrapper runs
+  `pnpm audit --prod --audit-level high --json`, preserves its raw output and errors, and rejects
+  high/critical production advisories except an exact, owner-approved, unexpired exception in
+  [`scripts/security-audit-exceptions.json`](../scripts/security-audit-exceptions.json).
+  Malformed audit evidence, inconsistent vulnerability counts, subprocess failures and expired
+  exceptions block delivery. Development-only advisories stay visible through Dependabot and
+  `pnpm audit` without blocking delivery.
 - Dependabot opens weekly grouped updates for npm packages and GitHub Actions, skipping releases
   younger than a week.
 - Prefer narrow lockfile updates within the parent's declared range for transitive fixes. When that
@@ -273,6 +277,38 @@ versioned Better Auth core, adapters and telemetry resolve to 1.7.7. Authenticat
 endpoint restrictions and the production high/critical audit gate are unchanged; no exception
 or override is added. Database-backed OAuth state now uses the `auth-state:` namespace. A sign-in
 started before the upgrade may need to be restarted after rollout; persisted sessions are unchanged.
+
+On 2026-11-18, the official GitHub advisories `GHSA-mfr8-8qww-v76h` and
+`GHSA-vc7v-qv4w-wrv8` confirmed Next.js 16.4.5 as the first patched release for two moderate
+cache-disclosure vulnerabilities. The frontend and Better Auth peer resolution use 16.4.5 with
+matching Next environment/SWC packages. Full local `pnpm verify` passes; no Next exception or
+security-upgrade nudge suppression is used.
+
+### Temporary accepted risk: picomatch ReDoS
+
+Alex approved an **unpatched**, 30-day exception on 2026-11-18 for
+[`GHSA-fc5q-39xc-vjpf`](https://github.com/advisories/GHSA-fc5q-39xc-vjpf), severity **high**,
+package `picomatch`, exact version **4.0.7**. The approval window is
+**2026-11-18T13:50:54Z <= current UTC time < 2026-12-18T13:50:54Z**. The machine-readable
+exception is in `scripts/security-audit-exceptions.json`; each accepted audit emits a warning with
+its identity and expiry. The exception does not authorize other versions, advisories or a critical
+severity reclassification.
+
+The official advisory and npm registry had no patched release at review time. Production audit paths
+include Better Auth's optional Vitest peer and Next's Sass peer through `@parcel/watcher`.
+A crafted repeated-extglob pattern can cause excessive regular-expression backtracking and block
+Node.js's event loop. No library patch is applied, and absence of an exploitable production input
+path or exclusion from production images has **not** been established. A successful check means
+this specific risk was accepted, not that the dependency was fixed or all vulnerabilities removed.
+Vitest and Sass remain installed for development; no dependency graph override is used.
+
+At expiry, the check fails until the exception is removed after remediation or the owner explicitly
+approves a new review window. It does not automatically extend or change the package manager's
+advisory data. Recheck the advisory and registry before expiry; prefer a compatible published fix,
+then remove the exception and verify the raw audit, affected tests and production packaging.
+If the finding disappears earlier, remove this exception rather than keeping an obsolete acceptance.
+The complete raw audit JSON and stderr remain in the check log; other high/critical findings and audit
+transport/schema errors still block delivery. No reminder or upstream monitor is scheduled by this file.
 
 ### Retired braces mitigation
 

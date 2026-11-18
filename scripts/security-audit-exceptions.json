@@ -1,0 +1,10 @@
+{
+    "package": "picomatch",
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "severity": "high",
+    "versions": ["4.0.7"],
+    "approvedAt": "2026-11-18T13:50:54Z",
+    "expiresAt": "2026-12-18T13:50:54Z",
+    "owner": "Alex",
+    "reason": "Owner-approved 30-day unpatched risk acceptance. picomatch 4.0.7 remains vulnerable to ReDoS; no patch or proven absence of runtime exploitation is claimed. Review upstream remediation and remove this exception before expiry."
+}
