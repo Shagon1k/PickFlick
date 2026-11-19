@@ -79,6 +79,9 @@ verification. [Archive reference](gdpr-archives.md) defines its field inventory,
 [Phase 19 account deletion](phase-19-account-deletion.md) records the same-account reauthentication,
 shared-history preservation, durable file cleanup and outstanding visual/privacy checkpoints for #68.
 
+[Phase 19 privacy surfaces](phase-19-privacy-surfaces.md) records #69's owner-approved draft boundary,
+copy-to-implementation matrix, Settings archive controls and outstanding public-copy/hosted-review gates.
+
 ## Historical audits
 
 The [historical simplification audit](simplification-audit.md) preserves the consolidated findings,

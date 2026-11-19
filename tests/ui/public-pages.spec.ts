@@ -176,6 +176,12 @@ test('legal entries expose distinct provisional documents and public contact', a
         ).toBeVisible();
         await expect(page.getByText('Draft for review')).toBeVisible();
         await expect(page.getByText(/final production policy are still pending/i)).toBeVisible();
+        await expect(page.getByRole('article')).toContainText('{TODO_OPERATOR_NAME_HERE}');
+        await expect(page.getByRole('article')).toContainText('seven days');
+        await expect(page.getByRole('article')).toContainText('Deleted user');
+        await expect(page.getByRole('article')).not.toContainText(
+            'No cookie consent banner is required',
+        );
         await expect(page.getByRole('link', { name: 'hello@pick-flick.app' })).toHaveAttribute(
             'href',
             'mailto:hello@pick-flick.app',
@@ -288,6 +294,9 @@ test('pricing publishes corrected limits and keeps checkout unavailable', async 
     await expect(page.getByRole('rowheader', { name: 'Blocking Sessions per Club' })).toBeVisible();
     await expect(page.getByRole('row', { name: /Price €0 €5 \/ month/ })).toBeVisible();
     await expect(page.getByText('Unlimited nomination rounds')).toHaveCount(0);
+    await expect(
+        page.getByRole('row', { name: 'Inactivity grace (planned) 180 days 360 days' }),
+    ).toBeVisible();
 });
 
 test('pricing comparison scroll stays local on mobile', async ({ page }) => {

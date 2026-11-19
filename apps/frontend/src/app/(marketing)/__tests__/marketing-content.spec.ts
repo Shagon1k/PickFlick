@@ -28,7 +28,7 @@ describe('public plan contract', () => {
     it('should mark Free restrictions as limits rather than included features', () => {
         expect(
             freePlanFeatures.filter(({ tone }) => tone === 'limited').map(({ label }) => label),
-        ).toEqual(['90-day inactivity grace']);
+        ).toEqual(['180-day inactivity grace (planned)']);
     });
 
     it('should publish only the monthly Pro offer', () => {

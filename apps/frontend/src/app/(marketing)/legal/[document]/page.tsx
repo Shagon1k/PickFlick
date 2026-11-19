@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import PublicShell from '#components/shells/PublicShell/PublicShell';
@@ -46,8 +47,8 @@ export default async function LegalPage({ params }: ILegalPageProps) {
                             <p className={styles.eyebrow}>{legalDocument.eyebrow}</p>
                             <h1>{legalDocument.title}</h1>
                             <p className={styles.lead}>
-                                A clear entry point while PickFlick&apos;s launch policies are being
-                                completed and reviewed.
+                                Current data tools, service behavior and the policy decisions still
+                                awaiting review before public launch.
                             </p>
                         </div>
                         <BrandImage
@@ -64,7 +65,8 @@ export default async function LegalPage({ params }: ILegalPageProps) {
                         </p>
                         <p>
                             This content is provisional. Legal or privacy review and the final
-                            production policy are still pending.
+                            production policy are still pending. Operator placeholders must be
+                            replaced before public launch.
                         </p>
                     </aside>
 
@@ -85,6 +87,10 @@ export default async function LegalPage({ params }: ILegalPageProps) {
                     </article>
 
                     <p className={styles.contact}>
+                        <Link href={document === 'privacy' ? '/legal/terms' : '/legal/privacy'}>
+                            {document === 'privacy' ? 'Terms of Service' : 'Privacy Notice'}
+                        </Link>
+                        <br />
                         Questions about this draft? Write to{' '}
                         <a href="mailto:hello@pick-flick.app">hello@pick-flick.app</a>.
                     </p>

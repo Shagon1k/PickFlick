@@ -84,9 +84,12 @@ describe('provisional legal entries', () => {
     it.each(Object.values(legalDocuments))('should keep $path visibly provisional', (document) => {
         const copy = document.sections.flatMap(({ body }) => body).join(' ');
 
-        expect(copy).toContain('not the final');
+        expect(copy).toMatch(/not (an approved|the final approved)/i);
         expect(copy).toMatch(/review/i);
-        expect(copy).not.toMatch(/\b\d+\s*(day|week|month|year)s?\b/i);
-        expect(copy).not.toMatch(/cookie/i);
+        expect(copy).toContain('{TODO_OPERATOR_NAME_HERE}');
+        expect(copy).toMatch(/before (public )?launch/i);
+        expect(copy).not.toMatch(
+            /no cookie consent banner is required|fully GDPR.compliant|irreversibly anonymous/i,
+        );
     });
 });

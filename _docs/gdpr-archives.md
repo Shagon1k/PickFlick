@@ -12,6 +12,14 @@ All routes require an active authenticated user, take identity from the session,
 `Cache-Control: private, no-store`. Unknown body/query fields are rejected. Paths below are backend
 paths; the browser uses the `/api` prefix.
 
+Settings → Privacy & data exposes request, manual status refresh and download. The accepted job
+UUID stays in the page's `archive` query parameter, allowing status recovery by reopening that
+address. No browser storage or job-list API is added. Keep the address: an active job requested
+in another tab can only be reopened through its original address, or allowed to finish before a
+new request. An uncertain request retains its UUID for retry while the component stays mounted.
+Signed download URLs are created on demand and consumed in memory, never saved in that address.
+The browser adapter reports HTTP/network failures inside Settings before offering a retry.
+
 | Method and path                                                | Input and result                                                                                                                   |
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `POST /account/data-exports`                                   | `{ "requestId": "<UUID v4>" }`; returns `202` with a job status immediately. Three requests per ten minutes per client address.    |

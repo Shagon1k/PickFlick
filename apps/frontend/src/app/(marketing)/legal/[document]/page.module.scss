@@ -128,6 +128,7 @@
     margin: 0;
     line-height: var(--lh-body);
     color: var(--fg-secondary);
+    overflow-wrap: anywhere;
 }
 
 .section p + p {
