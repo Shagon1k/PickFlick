@@ -44,6 +44,8 @@ separately.
 
 | [ADR-020](#adr-020--dispatch-notification-email-from-postgresql) | Dispatch notification email from PostgreSQL | Accepted — owner decisions in #62 | 2026-10-28 |
 
+| [ADR-021](#adr-021--use-stripe-managed-payments-through-a-billing-adapter) | Use Stripe Managed Payments through a billing adapter | Accepted — Alex approved the decision and staged verification in #70 | 2026-11-23 |
+
 Never reuse or renumber an ID. Never rewrite accepted history to hide a changed decision; append a
 superseding ADR and link both records.
 
@@ -1639,3 +1641,127 @@ Local startup does not require a webhook signing secret. Provider acceptance the
 distinct from delivery confirmation; a signed callback is still required for `DELIVERED`.
 This exception authorizes the owner's scoped local test, not UAT/production configuration changes
 or acceptance of the outstanding hosted review and provider checks.
+
+## ADR-021 — Use Stripe Managed Payments through a billing adapter
+
+- **Status:** Accepted — Alex explicitly approved the five-part decision and staged verification on 2026-11-23.
+- **Date:** 2026-11-23
+- **Decider:** Alex (product owner)
+- **Owning issue:** [#70](https://github.com/Shagon1k/PickFlick/issues/70)
+
+### Context
+
+#70 records the owner's Stripe Managed Payments direction, replacing the unimplemented Paddle
+plan. There is no existing billing adapter, Subscription model or BillingEvent ledger to migrate.
+Alex authorized this proposal and selected explicit writable-Club choice on downgrade; detailed
+recovery is in the [phase reference](../phase-20-billing.md#downgrade-comparison).
+During the guided setup, Alex created the PickFlick account/sandbox and configured the Pro product
+and portal. Dashboard screenshots show Managed Payments Ready to use and enabled by default.
+See the phase reference for configuration evidence and the remaining unverified behavior.
+
+### Decision
+
+Use Stripe Managed Payments as Merchant of Record for Pro: €5 monthly plus applicable tax at
+checkout, with a tax-exclusive EUR price (owner confirmed 2026-11-23). Develop in a
+separate PickFlick sandbox; Alex owns account configuration. Live activation and the eligibility
+review remain #94 gates. This decision supersedes the Paddle planning references, not an accepted
+provider ADR or a working integration. Reopen this decision if Stripe declines live eligibility.
+
+Stripe lists Lithuania and personal-use SaaS as supported categories, but account/product eligibility
+still requires live review. The sandbox product uses `txcd_10103000` (personal-use SaaS) and the
+Dashboard marks it eligible for Managed Payments. See [eligibility](https://docs.stripe.com/payments/managed-payments/eligibility).
+
+Use hosted Checkout Sessions with `mode=subscription` and `managed_payments[enabled]=true`,
+on a pinned API version at least `2025-03-31.basil`. Use the configured monthly price and quantity
+one; no custom checkout domain or custom PaymentIntent/Elements flow.
+See [Managed Payments setup](https://docs.stripe.com/payments/managed-payments/set-up).
+Do not send unsupported payment-method, tax or Adaptive Pricing overrides from ordinary Stripe
+examples. See [unsupported parameters](https://docs.stripe.com/payments/managed-payments/update-checkout#remove-unsupported-parameters).
+
+Link sends receipts/invoices and supports order management. PickFlick offers the Customer Portal
+for billing details, invoices, payment methods and period-end cancellation. Do not update
+`subscription.default_payment_method` through the API. The statement includes `LINK.COM*` and the
+configured descriptor. Stripe handles transaction support/refunds/disputes; Alex owns product
+support and escalations (response needed within 48 hours). Do not promise a PickFlick-only refund
+policy. Alex approved the sandbox setting **Refund without emailing me** on 2026-11-23:
+Stripe processes eligible requests without emailing for approval. Public copy review remains #94.
+See [Managed Payments behavior](https://docs.stripe.com/payments/managed-payments/how-it-works).
+
+### Adapter boundary
+
+Keep one concrete Stripe adapter behind the backend billing injection token, following existing
+external-client conventions. Stripe SDK imports, types, signature verification, payload validation
+and status translation stay in that adapter. No provider registry, runtime provider switch or new
+shared package is needed for one integration. The domain receives PickFlick types and opaque IDs.
+
+| Operation               | Provider-neutral input and output                                                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createCheckoutSession` | Authenticated User reference, optional known customer ID, server-owned return URLs and idempotency key → opaque session ID and redirect URL. Adapter selects the configured Pro monthly price. |
+| `createPortalSession`   | Authorized customer ID and server-owned return URL → redirect URL.                                                                                                                             |
+| `verifyWebhookEvent`    | Raw body bytes and signature header → verified event ID, occurrence time, normalized event kind and affected customer/subscription references, or an explicit ignored-event result.            |
+| `fetchSubscription`     | Opaque subscription ID → normalized subscription snapshot.                                                                                                                                     |
+| `listInvoices`          | Authorized customer ID and pagination cursor → invoice ID, amount in minor units, currency, status, date, provider document links and next cursor.                                             |
+| `cancelSubscription`    | Opaque subscription ID and idempotency key → cancellation snapshot; needed to stop future charges in the existing account-deletion workflow. Refunds are separate.                             |
+
+Use bounded error categories: invalid signature/payload, missing provider resource, and provider
+unavailable. Preserve failures for callers to handle; services map them to Nest errors or durable
+processing failures. Do not expose provider payloads, credentials or customer details in errors/logs.
+Authorize customer ownership before portal/invoice calls; the adapter does not decide Club access.
+#71 owns the concrete TypeScript interfaces; #72 owns webhook handling. Phase 20 must also wire
+the existing account-deletion hook before claiming that future charges stop on deletion.
+
+### Data and state mapping
+
+These are the accepted logical fields and mappings. Concrete schema changes belong to #71/#72;
+this documentation change contains no migration:
+
+| Record         | Mapping                                                                                                                                                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Subscription` | User reference, `provider`, `providerCustomerId`, `providerSubscriptionId`, `providerPriceId`, plan, normalized status, billing-period bounds and cancellation-at-period-end flag. Provider subscription identity is unique within a provider. |
+| `BillingEvent` | `provider`, `providerEventId`, normalized event kind, occurred/received times and processing outcome. Enforce uniqueness on `(provider, providerEventId)`. No `stripe*` or `paddle*` columns.                                                  |
+
+The adapter maps Stripe `incomplete`/`trialing` to pending, `active` to active,
+`past_due`/`unpaid` to payment overdue, `paused` to paused, and `canceled`/`incomplete_expired`
+to ended. Trials are not part of the offer and do not grant Pro through this mapping. A scheduled
+cancellation keeps its current status and period-end flag until it takes effect.
+
+Status alone does not prove payment. Reconcile the paid period and configured Pro price before
+granting entitlements. A browser success return or Checkout completion alone never grants Pro.
+Payment failures do not invent a new paid period; #72/#73 must agree the paid-through behavior
+before enforcement. Refund/dispute events require reconciliation and an approved access policy,
+not an assumed immediate downgrade. See [subscription events](https://docs.stripe.com/billing/subscriptions/webhooks).
+
+#72 verifies signatures over raw bytes and records a provider-scoped event identity. Serialize
+reconciliation per Subscription, fetch current provider state and apply effects transactionally.
+Duplicate/out-of-order events cannot extend paid access or repeat notifications. #73 derives limits through the existing entitlement
+and Club access boundaries; no Stripe type escapes into the domain.
+
+### Alternatives and consequences
+
+- Retaining Paddle would conflict with the provider direction recorded in #70.
+- Direct Stripe types in domain services would couple authorization/data to one SDK.
+- A generic multi-provider framework adds unused selection and configuration paths.
+- Managed Payments constrains checkout, receipts, refunds and support; public copy must match.
+- Sandbox readiness is shown in Dashboard evidence. Checkout tax calculation, actual portal
+  behavior, support ownership and signed delivery remain unverified.
+  See the [owner setup and evidence](../phase-20-billing.md#owner-setup-pickflick-stripe-sandbox).
+
+### Acceptance and staged verification
+
+On 2026-11-23 Alex accepted the provider/adapter/data boundary and the downgrade recovery rules
+now recorded in the Roadmap. Dashboard evidence establishes sandbox readiness and Pro product/portal
+configuration; it does not establish runtime correctness or live eligibility.
+
+The owner explicitly approved moving checkout/tax/anchor/portal behavior checks to #71, webhook
+registration/signature/order/replay checks to #72, and entitlement enforcement to #73. The agreed
+public webhook path is `POST /api/webhooks/stripe`; the backend path is `POST /webhooks/stripe`.
+#71/#72 pin the compatible API/SDK version and register the destination when its handler exists.
+
+Alex owns the account and live activation. Approved targets are `hello@pick-flick.app` for support
+and `PICKFLICK` for the descriptor. Their actual configuration, live eligibility and public-copy
+review are #94 gates. Organization grouping is deferred until the TailorTales account exists.
+These are owner-approved changes to #70 acceptance, not claims that the deferred checks passed.
+
+The #70 decision checkpoint is accepted. Dependent delivery still requires its own owner-started
+run, and this acceptance does not authorize production or secret access. Billing runtime remains
+unimplemented; the environment reference distinguishes the accepted inventory from active variables.

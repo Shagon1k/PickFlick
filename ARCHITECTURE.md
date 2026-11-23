@@ -36,7 +36,7 @@ flowchart LR
   Email -->|signed webhook| API
   API --> Catalog["PoiskKino + TheTVDB / TMDB"]
   Worker["Nomination deadline worker"] --> DB
-  API -. Proposed .-> Paddle["Paddle"]
+  API -. Proposed .-> Stripe["Stripe Managed Payments"]
 ```
 
 | Concern    | Direction                                                                                    | State                                                                                                                                     | ADR               |
@@ -339,17 +339,17 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 
 ## 4. Interfaces
 
-| Interface         | Path                                         | Contract                                                                       | State                                                                             |
-| ----------------- | -------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Browser → API     | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                                | Active for Contact, Clubs, catalog and Sessions through completion                |
-| Errors            | API → callers                                | `{ error: { code, message, requestId, reason? } }`                             | Active                                                                            |
-| OAuth             | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                                           |
-| Email             | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                                            |
-| Club avatar       | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                                            |
-| Live progress     | Frontend → API                               | Authenticated version polling, re-fetch on change                              | Active                                                                            |
-| Catalog providers | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active when configured; provider coverage and media rights remain separate checks |
-| Paddle            | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                                          |
-| CSV               | Frontend ↔ API                               | Version 1 personal ratings CSV; bounded preview and atomic import              | Partial — local implementation; hosted acceptance pending                         |
+| Interface               | Path                                         | Contract                                                                       | State                                                                             |
+| ----------------------- | -------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Browser → API           | Browser → Next server (actions, pages) → API | JSON REST; zod request schemas, typed responses                                | Active for Contact, Clubs, catalog and Sessions through completion                |
+| Errors                  | API → callers                                | `{ error: { code, message, requestId, reason? } }`                             | Active                                                                            |
+| OAuth                   | Browser ↔ API ↔ Google/Apple                 | Better Auth routes behind an allowlist                                         | Partial — Apple dormant                                                           |
+| Email                   | API → Resend                                 | Plain text; environment-specific senders (ADR-009)                             | Partial — Contact only                                                            |
+| Club avatar             | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                                            |
+| Live progress           | Frontend → API                               | Authenticated version polling, re-fetch on change                              | Active                                                                            |
+| Catalog providers       | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active when configured; provider coverage and media rights remain separate checks |
+| Stripe Managed Payments | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                                          |
+| CSV                     | Frontend ↔ API                               | Version 1 personal ratings CSV; bounded preview and atomic import              | Partial — local implementation; hosted acceptance pending                         |
 
 Email sender identities follow ADR-009 and its 2026-10-28 amendment: production uses
 `PickFlick <notifications@pick-flick.app>`, while UAT uses `PickFlick UAT <uat@pick-flick.app>`.
@@ -359,9 +359,23 @@ environment configuration are not changed by repository updates.
 
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
 and transition at most once in one transaction. The deadline worker reads due Sessions directly and
-rechecks each one under its locks. Proposed Paddle flows verify events, store provider
+rechecks each one under its locks. Proposed Stripe Managed Payments flows verify events, store provider
 IDs and apply changes idempotently; account deletion removes shared attribution and revokes
 every authentication session.
+
+### Billing boundary (Proposed)
+
+[ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
+accepts Stripe Managed Payments in place of the unimplemented Paddle plan. A concrete backend
+adapter owns the SDK, signature/payload validation and provider-to-domain translation. Domain
+services consume PickFlick types and opaque provider IDs; existing Club access/entitlement functions
+remain the enforcement boundary. Subscription and BillingEvent are not present in the Prisma schema.
+Planned records use provider-neutral IDs; BillingEvent identity is unique per provider.
+Alex accepted the decision and downgrade recovery on 2026-11-23. Dashboard evidence confirms
+sandbox readiness; #71/#72/#73 own runtime verification and enforcement. The public webhook path
+is `POST /api/webhooks/stripe`, rewritten to backend `POST /webhooks/stripe`, following the existing
+provider webhook convention. Support/descriptor configuration, live activation and eligibility are
+#94 gates. Organization grouping waits for the TailorTales account. No billing runtime is Active.
 
 ## 5. Cross-cutting contracts
 

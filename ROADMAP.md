@@ -108,7 +108,7 @@ out when listed under Out.
 - Profile and avatar, language-ready settings, notification preferences, subscription and billing
   history, billing portal, privacy, data import/export, GDPR archive, and account deletion.
 - In-app and email notifications for lifecycle, inactivity, and billing events.
-- Free and monthly Pro plans through Paddle checkout, portal, and webhooks; downgrade and read-only
+- Free and monthly Pro plans through Stripe Managed Payments checkout, portal, and webhooks; downgrade and read-only
   behavior; recurring billing anchored to the first payment date.
 - App Admin overview, activity, User suspension/reinstatement, Club ownership transfer and deletion,
   registration controls, maintenance mode, catalog refresh settings, and audit retention settings.
@@ -407,25 +407,39 @@ again, while their other metadata remains usable. Silent Era requires a known re
 
 ### Plans and limits
 
-| Feature                          | Free — Screening Room   | Pro — Director's Cut          |
-| -------------------------------- | ----------------------- | ----------------------------- |
-| Price                            | €0                      | €5 per monthly billing period |
-| Clubs you administer             | 1                       | 5                             |
-| Clubs joined as Member/Moderator | Unlimited               | Unlimited                     |
-| Members per Club                 | 8                       | 16                            |
-| Blocking Sessions per Club       | 1                       | 1                             |
-| Open Rating Sessions per Club    | Unlimited               | Unlimited                     |
-| Session history                  | Unlimited               | Unlimited                     |
-| Club customization               | Included                | Included                      |
-| Session visibility settings      | Included                | Included                      |
-| Inactivity grace                 | 180 days                | 360 days                      |
-| Club ratings leaderboard         | Included                | Included                      |
-| Club analytics                   | All Overview statistics | All Overview statistics       |
+| Feature                          | Free — Screening Room   | Pro — Director's Cut                               |
+| -------------------------------- | ----------------------- | -------------------------------------------------- |
+| Price                            | €0                      | €5 per monthly billing period, plus applicable tax |
+| Clubs you administer             | 1                       | 5                                                  |
+| Clubs joined as Member/Moderator | Unlimited               | Unlimited                                          |
+| Members per Club                 | 8                       | 16                                                 |
+| Blocking Sessions per Club       | 1                       | 1                                                  |
+| Open Rating Sessions per Club    | Unlimited               | Unlimited                                          |
+| Session history                  | Unlimited               | Unlimited                                          |
+| Club customization               | Included                | Included                                           |
+| Session visibility settings      | Included                | Included                                           |
+| Inactivity grace                 | 180 days                | 360 days                                           |
+| Club ratings leaderboard         | Included                | Included                                           |
+| Club analytics                   | All Overview statistics | All Overview statistics                            |
 
-- Paddle anchors billing to the first successful payment, not the calendar month.
+- Pro costs €5 per monthly billing period plus applicable tax at checkout (owner decision,
+  2026-11-23). Configure the recurring EUR price as tax-exclusive.
+- Billing is anchored to the first successful payment, not the calendar month.
 - Cancellation or downgrade takes effect at the end of the paid period.
-- Over-limit Clubs and accounts keep their data but become read-only for new rounds and invites
-  until they fit the Free limits. Which Club stays writable is an open question.
+- Over-limit Clubs and accounts keep their data but become read-only for new Sessions and invites
+  until they fit the Free limits. For multiple active administered Clubs, the owner selected explicit
+  Admin choice on 2026-11-23: one chosen Club may accept new work if it meets Free limits. Without
+  a valid choice, restrict new work until selection. Preserve history and existing Session
+  participation. The Admin may choose before expiry and change the selection after downgrade.
+  With at most one active administered Club, no selection is required.
+- A missing or invalid choice among multiple active administered Clubs blocks new Sessions, past
+  Session imports and invitations until selection. The selected Club still needs to fit the Free
+  member limit: more than eight blocks new work; exactly eight blocks invitations, not Sessions.
+  Member removal, leaving and archiving remain available under their normal role/lifecycle checks.
+- Changing the selected Club must preserve at most one Club eligible for new work. Neither
+  selection nor restoring paid Pro automatically reactivates archived Clubs. Paid Pro otherwise
+  removes the downgrade restriction, subject to ordinary limits and lifecycle.
+  Owner approval: [ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter), 2026-11-23.
 - Inactive Clubs are archived after their plan's grace period, with Admin notice. They are never
   deleted automatically and can be reactivated.
 - Members never need Pro to participate; the Admin's plan sets the Club's limits.
@@ -500,8 +514,8 @@ thresholds. These periods do not authorize automatic deletion of inactive person
 | AchievementAward       | key/version, definition snapshot, User or Club, earned progress and time                    | Supports unlocked, in-progress, and not-started views.                          |
 | Notification           | recipient, type, payload reference, read and delivery state                                 | In-app source of truth; payloads reference entities safely.                     |
 | NotificationPreference | User, event type, in-app and email flags                                                    | Billing and service notices may be mandatory.                                   |
-| Subscription           | User, Paddle IDs, plan, status, billing period                                              | Club entitlements derive from the Admin's plan.                                 |
-| BillingEvent           | provider event ID, type, processing state                                                   | Idempotent webhook record and audit trail.                                      |
+| Subscription           | User, provider, provider customer/subscription/price IDs, plan, status, billing period      | Club entitlements derive from the Admin's plan.                                 |
+| BillingEvent           | provider, provider event ID (unique together), type, processing state                       | Idempotent webhook record and audit trail.                                      |
 | AdminAuditEvent        | actor, action, target, safe metadata, time                                                  | Append-only log of sensitive operations with configurable retention.            |
 | DataExportJob          | User, export type, status, expiry                                                           | Produces a personal CSV or GDPR archive without blocking requests.              |
 
@@ -573,16 +587,16 @@ hidden from normal history unless product copy exposes it.
 | Jobs       | Separate backend worker reads due Sessions from PostgreSQL; no job table or queue library.                  | ADR-018           |
 | Deployment | Dokploy UAT and production, source-built Compose, UAT-proven SemVer promotion guarded off.                  | ADR-007, 008      |
 
-| Provider              | Purpose                                                                                            | Status                                                                                   |
-| --------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Google OAuth          | Registered identity.                                                                               | Built; owner sandbox/UAT evidence pending                                                |
-| Apple Sign in         | Registered identity after approved activation.                                                     | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
-| Catalog sources       | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
-| Paddle                | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
-| Resend                | Transactional and opted-in email.                                                                  | Contact and notification delivery built; live sandbox acceptance pending                 |
-| S3-compatible storage | Avatars, catalog images and expiring exports.                                                      | Club/personal avatars, catalog images and private expiring archives implemented          |
-| Sentry                | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
-| IMDb/Wikipedia links  | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
+| Provider                | Purpose                                                                                            | Status                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Google OAuth            | Registered identity.                                                                               | Built; owner sandbox/UAT evidence pending                                                |
+| Apple Sign in           | Registered identity after approved activation.                                                     | Built but dormant; needs owner approval and sandbox/UAT evidence                         |
+| Catalog sources         | PoiskKino search/media/ratings/related titles; TheTVDB English metadata/posters; TMDB alternative. | Partial — adapter, canonical cache, search and read-only details; refresh worker pending |
+| Stripe Managed Payments | Merchant of record, checkout, subscriptions, invoices, portal, tax.                                | Planned                                                                                  |
+| Resend                  | Transactional and opted-in email.                                                                  | Contact and notification delivery built; live sandbox acceptance pending                 |
+| S3-compatible storage   | Avatars, catalog images and expiring exports.                                                      | Club/personal avatars, catalog images and private expiring archives implemented          |
+| Sentry                  | Error and performance visibility with privacy-safe context.                                        | Planned                                                                                  |
+| IMDb/Wikipedia links    | IMDb from stored identifiers; explicit Wikipedia title search, with no inferred article.           | Active read-only surface                                                                 |
 
 ## 8. Phase plan
 
@@ -1271,7 +1285,7 @@ non-blocking Rating views
 **Scope:**
 
 - [ ] Implement Club statistics, the rating leaderboard, sorting, and basic and extended plan views
-      without depending on Paddle.
+      without depending on Stripe Managed Payments.
 - [ ] Implement personal statistics: counts, yearly activity, average, watch time, Watchlist count,
       favorite genre, top director, and top actor.
 - [ ] Implement versioned personal and Club achievement definitions, awards, and progress for every
@@ -1297,7 +1311,7 @@ non-blocking Rating views
 billing events.
 
 **Dependencies:** Events from Phases 7–16; the background job foundation; Phase 4 identity; Phase 20
-adds Paddle events later.
+adds Stripe Managed Payments events later.
 
 **Tickets:** [#60](https://github.com/Shagon1k/PickFlick/issues/60) notifications, preferences,
 event mapping · [#61](https://github.com/Shagon1k/PickFlick/issues/61) inbox, bell, read state, SSE ·
@@ -1344,7 +1358,7 @@ decisions remain fixed at event creation; provider suppression also blocks manda
 the inbox remains available. Live sandbox delivery, exact-head hosted preview and final owner visual
 acknowledgement remain acceptance gates. Phase 18 below summarizes the verification evidence.
 
-**Out of scope:** Web push and Paddle events before Phase 20.
+**Out of scope:** Web push and Stripe Managed Payments events before Phase 20.
 
 ### Phase 18 — Human Verification & Bug Fixing III · Done
 
@@ -1497,22 +1511,33 @@ legal-copy policy · [#65](https://github.com/Shagon1k/PickFlick/issues/65) pers
 
 **Out of scope:** Non-English UI and ownership recovery beyond the adminless state.
 
-### Phase 20 — Subscription & Entitlements · Not started
+### Phase 20 — Subscription & Entitlements · In progress
 
 **Goal:** Run the €5 monthly Pro offer while keeping data through every billing change.
 
+Preparation is documented in [Phase 20 billing](_docs/phase-20-billing.md).
+[ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
+records the accepted Stripe Managed Payments direction replacing the unimplemented Paddle plan,
+with a provider-neutral adapter. Dashboard evidence confirms sandbox readiness and the Pro
+product/portal configuration. The owner accepted the discovery decision and staged verification:
+checkout/tax/anchor/portal behavior in #71, webhook registration/delivery in #72, and entitlements
+in #73. Runtime billing is not built. Alex owns account configuration; support/descriptor setup and
+live review remain #94 gates. Organization grouping waits until the TailorTales account exists.
+Live activation and the Managed Payments eligibility review belong to #94. The owner confirmed
+€5 plus applicable tax at checkout; sandbox price configuration must use tax-exclusive behavior.
+
 **Dependencies:** Phase 19 account hooks; Phase 5 entitlement interfaces; Phase 17 notifications;
-confirmed Paddle configuration.
+confirmed Stripe Managed Payments configuration.
 
 **Tickets:** [#70](https://github.com/Shagon1k/PickFlick/issues/70) downgrade Club selection and
-Paddle configuration · [#71](https://github.com/Shagon1k/PickFlick/issues/71) checkout, portal,
+Stripe Managed Payments configuration · [#71](https://github.com/Shagon1k/PickFlick/issues/71) checkout, portal,
 billing history, Subscription UI · [#72](https://github.com/Shagon1k/PickFlick/issues/72) idempotent
 webhooks · [#73](https://github.com/Shagon1k/PickFlick/issues/73) subscription-derived entitlements ·
 [#74](https://github.com/Shagon1k/PickFlick/issues/74) inactive Club archiving
 
 **Scope:**
 
-- [ ] Implement Paddle checkout, success, cancel, and failure returns, portal access, and the monthly
+- [ ] Implement Stripe Managed Payments checkout, success, cancel, and failure returns, portal access, and the monthly
       anchor.
 - [ ] Verify raw-body webhook signatures and keep an idempotent BillingEvent ledger with
       out-of-order reconciliation.
@@ -1528,7 +1553,7 @@ webhooks · [#73](https://github.com/Shagon1k/PickFlick/issues/73) subscription-
 
 - [ ] Duplicate, out-of-order, or invalid webhooks cannot grant access or duplicate effects.
 - [ ] Billing anchor, cancel-at-period-end, payment failure, downgrade, reactivation, and portal
-      state match the Paddle sandbox.
+      state match the Stripe Managed Payments sandbox.
 - [ ] Downgrade never deletes Club or Session data and has a resolved writable-Club policy.
 - [ ] The entitlement matrix and billing UI pass API, E2E, and design checks.
 
@@ -1674,7 +1699,7 @@ drain · [#85](https://github.com/Shagon1k/PickFlick/issues/85) threat model and
       set, owners, and a severity-classified register.
 - [ ] Run every public, auth, Club, Session, Library, Settings, Billing, Admin, and PWA flow across
       roles, devices, and failure states.
-- [ ] Verify real OAuth, catalog providers, the Paddle sandbox, Resend, storage, jobs and deadlines, SSE,
+- [ ] Verify real OAuth, catalog providers, the Stripe Managed Payments sandbox, Resend, storage, jobs and deadlines, SSE,
       monitoring, backup and restore, and rollback.
 - [ ] Run the production-like edge drill through the chosen proxy: client identity, abuse handling,
       drain, public crawlers, and release and rollback handoffs.
@@ -1707,7 +1732,7 @@ the MVP
 **Scope:**
 
 - [ ] Provision and verify production configuration, secrets, domains and TLS, OAuth callbacks,
-      Paddle webhooks, the Resend sender, storage, monitoring, and backups.
+      Stripe Managed Payments webhooks, the Resend sender, storage, monitoring, and backups.
 - [ ] Apply migrations in the rehearsed order and deploy the approved release tag.
 - [ ] Record the release owner, deployed revision, readiness decision, and rollback authority before
       traffic moves.
@@ -1735,6 +1760,7 @@ the MVP
 
 | Decision                           | Owner         | Resolution                                                                                                                                                                                                                                                                                    | Evidence                                                                                                                                          |
 | ---------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Billing provider and downgrade     | Product owner | Stripe Managed Payments through one provider-neutral adapter; explicit writable-Club choice on Free, with non-destructive recovery. Runtime/provider checks are assigned to #71–#73 and #94; Organization grouping waits for TailorTales.                                                     | [ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter), owner approval 2026-11-23.                   |
 | UAT and production domains         | Product owner | `https://uat.pick-flick.app` and `https://pick-flick.app`; no other environment aliases.                                                                                                                                                                                                      | Developer decision, 2026-08-24.                                                                                                                   |
 | Proportional deployment baseline   | Developer     | Dokploy-managed data services and one application Compose resource per environment; source-built UAT traced by full revision. (Redis later removed by ADR-014; digests deferred by ADR-008.)                                                                                                  | [ADR-007](_docs/decisions/README.md#adr-007--use-a-proportional-dokploy-deployment-baseline), 2026-09-07.                                         |
 | Source-built production promotion  | Developer     | Promote only current `main` with successful UAT evidence, pinned to an immutable SemVer tag; production disabled by default; digests wait for separate build and deployment hosts.                                                                                                            | [ADR-008](_docs/decisions/README.md#adr-008--promote-source-built-production-from-uat-proven-semver-tags), 2026-09-11.                            |
@@ -1775,7 +1801,6 @@ Source: owner decision in [#193 review](https://github.com/Shagon1k/PickFlick/pu
 
 | Question                                                                                                                                   | Owner                            | Needed by     | Next step                                                                                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| Which administered Club stays writable when a Pro User with several Clubs downgrades to Free?                                              | Product owner                    | Phase 20      | Design the choice and default before entitlement work.                                               |
 | How are external crawler caches refreshed after production cutover?                                                                        | Product owner                    | Phase 23      | Define and rehearse the procedure before final metadata validation.                                  |
 | Which deletion, export, audit, inactive-data, and backup retention periods are legally approved, and which legal actions are launch gates? | Product owner + privacy reviewer | Phase 19 / 23 | Reconcile shipped behavior, backups, published copy, and legal disposition before release readiness. |
 | Which service-worker approach and browser and device matrix will be maintained?                                                            | Developer                        | Phase 22      | Confirm framework support and finalize before PWA work.                                              |
@@ -1807,7 +1832,7 @@ Source: owner decision in [#193 review](https://github.com/Shagon1k/PickFlick/pu
 | Russian localization              | Reaches intended users.                                     | Externalized strings and locale QA.                                    | Medium   | [#101](https://github.com/Shagon1k/PickFlick/issues/101) |
 | Web push                          | Faster phase participation.                                 | PWA permission strategy and reliable notifications.                    | Medium   | [#102](https://github.com/Shagon1k/PickFlick/issues/102) |
 | Offline writes                    | Works during poor-connectivity movie nights.                | Conflict resolution and a stale-phase protocol.                        | Low      | [#103](https://github.com/Shagon1k/PickFlick/issues/103) |
-| Annual Pro plan                   | Lower churn and pricing flexibility.                        | Monthly validation and Paddle pricing design.                          | Low      | [#104](https://github.com/Shagon1k/PickFlick/issues/104) |
+| Annual Pro plan                   | Lower churn and pricing flexibility.                        | Monthly validation and Stripe Managed Payments pricing design.         | Low      | [#104](https://github.com/Shagon1k/PickFlick/issues/104) |
 | Adminless Club ownership recovery | Restores owner actions without corrupting history.          | Support evidence and an approved recovery policy.                      | Low      | [#105](https://github.com/Shagon1k/PickFlick/issues/105) |
 
 ## 11. Progress
@@ -1835,7 +1860,8 @@ unimplemented feature. Phase 8 keeps its missing refresh-work acceptance explici
 | 14–17                                                  | In progress | Past imports, Library, analytics/achievements and notifications are built; hosted/sandbox acceptance remains open. |
 | 18 — Human Verification & Bug Fixing III               | Done        | #63, PRs #199 and #205: owner-accepted verification and fixes for Phases 13–17 (2026-11-06).                       |
 | 19 — Profile, Privacy, Import/Export & Deletion        | In progress | Policy preparation; owner and legal/privacy disposition remains required before dependent implementation.          |
-| 20–22                                                  | Not started |                                                                                                                    |
+| 20 — Subscription & Entitlements                       | In progress | Accepted billing decision and sandbox setup; runtime checks remain in the delivery issues.                         |
+| 21–22                                                  | Not started |                                                                                                                    |
 | 23 — Security, SEO, Observability & Release Readiness  | Not started | Release candidate, including retention cleanup under #87.                                                          |
 | 24 — Human Verification & Bug Fixing IV                | Not started | Final UAT and Go/No-Go.                                                                                            |
 | 25 — Production Deploy                                 | Not started | Needs the Phase 24 Go.                                                                                             |
