@@ -4,6 +4,24 @@ Reference for PickFlick's configuration, runtime contracts, CI, images, and Comp
 the app, see [Develop locally](local-development.md); for deployed environments, see the
 [UAT](uat-operations.md) and [production](production-operations.md) guides.
 
+## Billing configuration (Proposed)
+
+Billing is unimplemented. These names are the accepted adapter inventory under
+[ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter),
+not yet implemented runtime variables. No secret values are installed by this documentation change.
+
+| Variable                      | Planned runtime contract                                                                                                                            | Secret |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `STRIPE_SECRET_KEY`           | PickFlick sandbox account key for server-side adapter calls during development; live configuration belongs to #94.                                  | Yes    |
+| `STRIPE_WEBHOOK_SECRET`       | Signing secret for the specific webhook destination or local forwarding session; values cannot be shared between destinations.                      | Yes    |
+| `STRIPE_PRO_MONTHLY_PRICE_ID` | Price in the same PickFlick sandbox: Pro, EUR 500 minor units, recurring monthly, quantity one, tax-exclusive (€5 plus applicable tax at checkout). | No     |
+
+#71/#72 must add these names together to `.env.example`, typed startup validation and the actual
+environment wiring when implementing the adapter. Neither secret is browser-facing. Existing
+public origins supply server-owned checkout/portal return URLs; no extra return-URL variable or
+publishable browser key is proposed for hosted redirect checkout. [Owner setup](phase-20-billing.md#owner-setup-pickflick-stripe-sandbox)
+records Dashboard evidence and the accepted verification handoff without secret values.
+
 ## Runtime variables
 
 The backend validates these at startup with one zod schema (`@pickflick/config`). Errors name the

@@ -9,7 +9,7 @@ Start here before non-trivial product, design, architecture, implementation, or 
 | [ROADMAP.md](../ROADMAP.md)                       | Scope, business rules, routes, phases and their evidence, and the Decision Log.        |
 | [DESIGN.md](../DESIGN.md)                         | Experience direction, screens and states, components, and design QA.                   |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)             | Deployables, modules, data, interfaces, runtime, and delivery.                         |
-| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-020).                         |
+| [ADR registry](decisions/README.md)               | Rationale for significant technical choices (ADR-001–ADR-021).                         |
 | [Develop locally](local-development.md)           | How-to: run the app, work with the database, run the checks, fix common problems.      |
 | [Add a feature end to end](adding-a-feature.md)   | How-to: schema, backend module, frontend call, form, and tests, using Contact.         |
 | [Authentication and sessions](authentication.md)  | Explanation: sign-in, sessions, the auth guard, and abuse limits.                      |
@@ -81,6 +81,11 @@ shared-history preservation, durable file cleanup and outstanding visual/privacy
 
 [Phase 19 privacy surfaces](phase-19-privacy-surfaces.md) records #69's owner-approved draft boundary,
 copy-to-implementation matrix, Settings archive controls and outstanding public-copy/hosted-review gates.
+
+[Phase 20 billing preparation](phase-20-billing.md) compares downgrade policies and records the
+accepted recovery, sandbox setup evidence and the owner-approved verification handoff.
+[ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
+records the accepted Stripe Managed Payments adapter and provider-neutral data boundary.
 
 ## Historical audits
 

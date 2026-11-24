@@ -198,7 +198,7 @@ flowchart LR
   Nomination -. "one film" .-> Watching
   Hub --> Past["Log Past Session"] --> Completed
   Search["Global Search"] --> Movie["Movie Details"] --> Library["My Library"]
-  Pricing["Pricing or Settings"] --> Checkout["Paddle Checkout"] --> Subscription["Subscription state"]
+  Pricing["Pricing or Settings"] --> Checkout["Stripe Managed Payments Checkout"] --> Subscription["Subscription state"]
 ```
 
 Nomination closes automatically when every active Club member has joined and nominated, with at
@@ -206,6 +206,20 @@ least two accepted participants, or when its deadline passes; Selection
 closes when all accepted participants submit. Operators can close either phase early. Watching
 moves to Rating only by hand; Rating closes when everyone has rated or an operator
 finishes it.
+
+Billing integration remains Proposed under
+[ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter).
+`pricing.html`, the Subscription panel in `settings.html`, and `app.html` retain their composition
+and responsive authority. Their Paddle/payment-method fixture copy is superseded by the accepted
+Stripe Managed Payments contract; it is not evidence of supported payment methods or refund rules.
+The owner confirmed €5 monthly plus applicable tax at checkout on 2026-11-23. Pricing and billing
+copy must disclose the additional tax; reconciling the rendered copy belongs to #71.
+The explicit Club-choice approach selected by the owner has no control in the current prototypes.
+Its interaction needs review before UI implementation; use shared components and compare both
+reference and implementation at 390 and 1440 pixels. Keep history and existing participation
+visible, explain restrictions on new work, and give the Admin a recovery action. Accepted recovery
+rules live in the [Roadmap](ROADMAP.md#plans-and-limits); the
+[Phase 20 reference](_docs/phase-20-billing.md#downgrade-comparison) records the compared options.
 
 The [UX flow map](_docs/design/prototypes/ux-flow-map.html) is the visual source; edge rules live in
 the [Roadmap](ROADMAP.md#3-business-rules).
