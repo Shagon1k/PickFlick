@@ -207,3 +207,16 @@ The #70 product/architecture checkpoint is owner-accepted, including the explici
 unperformed checks. Repository delivery and tracker reconciliation remain separate from that
 acceptance. Phase 20 stays In progress; this decision does not claim passing runtime checks or
 authorize starting dependent runs, production activation or access to secrets.
+
+## Dependency security follow-up — 2026-11-24
+
+Alex authorized fixing the audit blocker in PR #212 without exceptions or CI changes.
+Prisma's config package pins `effect@3.20.0`, so a scoped
+`@prisma/config@7.10.0>effect` override selects the first patched release, `3.22.1`.
+The lockfile changes only Effect's version/integrity and that override; Prisma and other
+dependency versions stay unchanged. See the [dependency security reference](security.md#dependencies-and-supply-chain).
+
+Frozen installation and Prisma client generation pass. The production security audit reports
+zero High and zero Critical advisories; the previous Effect blocker is resolved.
+Full `pnpm verify` passes on Node 24.15.0 / pnpm 11.25.0: audit, lint, Knip, formatting,
+typecheck, all 765 unit tests in 77 files and build. Hosted CI remains a separate delivery gate.

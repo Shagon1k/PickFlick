@@ -284,6 +284,11 @@ cache-disclosure vulnerabilities. The frontend and Better Auth peer resolution u
 matching Next environment/SWC packages. Full local `pnpm verify` passes; no Next exception or
 security-upgrade nudge suppression is used.
 
+For [GHSA-7589-6fvf-x4pw](https://github.com/advisories/GHSA-7589-6fvf-x4pw),
+`@prisma/config@7.10.0` pins vulnerable `effect@3.20.0`. A parent-specific override resolves
+`effect@3.22.1`, the first patched release, without changing Prisma or adding an audit exception.
+Remove the override when Prisma's config package accepts a patched Effect version.
+
 ### Temporary accepted risk: picomatch ReDoS
 
 Alex approved an **unpatched**, 30-day exception on 2026-11-18 for
