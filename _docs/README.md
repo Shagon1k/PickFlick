@@ -82,8 +82,7 @@ shared-history preservation, durable file cleanup and outstanding visual/privacy
 [Phase 19 privacy surfaces](phase-19-privacy-surfaces.md) records #69's owner-approved draft boundary,
 copy-to-implementation matrix, Settings archive controls and outstanding public-copy/hosted-review gates.
 
-[Phase 20 billing preparation](phase-20-billing.md) compares downgrade policies and records the
-accepted recovery, sandbox setup evidence and the owner-approved verification handoff.
+[Phase 20 billing preparation](phase-20-billing.md) records the accepted downgrade policy, sandbox setup, #71 checkout/portal/history implementation and its verification handoff.
 [ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
 records the accepted Stripe Managed Payments adapter and provider-neutral data boundary.
 

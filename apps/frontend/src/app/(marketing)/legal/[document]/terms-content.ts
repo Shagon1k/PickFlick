@@ -32,7 +32,7 @@ export const termsSections = [
     {
         title: 'Plans and payments',
         body: [
-            'Free features are available in the preview. Pro checkout, subscriptions, charges and billing cancellation are not implemented. Displayed Pro pricing describes a planned offering and is not an active checkout. No payment information is required for the current Free preview.',
+            'Free features are available without payment details. Where sandbox billing is configured, Pro checkout and subscription management use Link and the hosted billing portal. The monthly offer is €5 plus applicable tax at checkout, billed from the first successful payment. Period-end cancellation is managed in the portal. Live paid-service activation and these draft terms still require review.',
             'Payment-provider selection, renewal, cancellation, refunds, financial retention and commercial terms must be approved before paid service is enabled. No paid-service cancellation or refund guarantee is established by this draft.',
         ],
     },

@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
 import { formatViolations } from './axe';
-import { openAt, settle } from './settle';
+import { holdRoute, openAt, settle } from './settle';
 import { canonicalViewports, gapViewports, screenshotViewports } from './viewports';
 
 const pages = [
@@ -289,7 +289,9 @@ test('pricing publishes corrected limits and keeps checkout unavailable', async 
 
     const upgrade = page.getByRole('button', { name: 'Upgrade to Pro', exact: true });
     await expect(upgrade).toBeDisabled();
-    await expect(page.getByText('Pro checkout is coming soon.', { exact: true })).toBeVisible();
+    await expect(
+        page.getByText('Pro checkout is unavailable. You can start on Free.', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('row', { name: /Blocking Sessions per Club 1 1/ })).toBeVisible();
     await expect(page.getByRole('rowheader', { name: 'Blocking Sessions per Club' })).toBeVisible();
     await expect(page.getByRole('row', { name: /Price €0 €5 \/ month/ })).toBeVisible();
@@ -389,12 +391,16 @@ test('contact prevents edits while a submission is in flight', async ({ page }) 
     const name = page.getByRole('textbox', { name: 'Your name' });
     const email = page.getByRole('textbox', { name: 'Your email' });
     await message.fill('Slow Contact response');
+    const release = await holdRoute(page, '**/contact', (request) => request.method() === 'POST');
     await page.getByRole('button', { name: 'Send message' }).click();
-
-    await expect(message).toBeDisabled();
-    await expect(name).toBeDisabled();
-    await expect(email).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
+    try {
+        await expect(message).toBeDisabled();
+        await expect(name).toBeDisabled();
+        await expect(email).toBeDisabled();
+        await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
+    } finally {
+        release();
+    }
 
     await expect(page.getByRole('status')).toHaveText(
         "Message received — we'll get back to you soon.",

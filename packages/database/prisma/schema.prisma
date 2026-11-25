@@ -89,6 +89,7 @@ enum SessionParticipantStatus {
 }
 
 model User {
+  subscription             Subscription?
   accountDeletion          AccountDeletion?
   dataExportJobs           DataExportJob[]
   notifications            Notification[]
@@ -120,6 +121,55 @@ model User {
   clubAuditEventsAsSubject ClubAuditEvent[]         @relation("ClubAuditSubject")
 }
 
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  PAYMENT_OVERDUE
+  PAUSED
+  ENDED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+model Subscription {
+  id                     String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String              @unique @db.Uuid
+  provider               String              @default("stripe")
+  providerCustomerId     String?
+  providerSubscriptionId String?
+  providerPriceId        String?
+  plan                   SubscriptionPlan    @default(FREE)
+  status                 SubscriptionStatus?
+  periodStart            DateTime?           @db.Timestamptz(3)
+  periodEnd              DateTime?           @db.Timestamptz(3)
+  paidThrough            DateTime?           @db.Timestamptz(3)
+  cancelAtPeriodEnd      Boolean             @default(false)
+  checkoutRequestId      String?             @db.Uuid
+  checkoutStartedAt      DateTime?           @db.Timestamptz(3)
+  providerCheckoutId     String?
+  createdAt              DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime            @updatedAt @db.Timestamptz(3)
+  user                   User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  auditEvents            BillingAuditEvent[]
+
+  @@unique([provider, providerCustomerId])
+  @@unique([provider, providerSubscriptionId])
+  @@unique([provider, providerCheckoutId])
+}
+
+model BillingAuditEvent {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionId String       @db.Uuid
+  action         String
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+
+  @@index([subscriptionId, createdAt])
+}
+
 enum AccountDeletionStatus {
   AWAITING_REAUTH
   PENDING
@@ -137,7 +187,7 @@ model AccountDeletion {
   attemptCount  Int                   @default(0)
   failure       String?
   avatarKey     String?
-  billing       String                @default("NOT_IMPLEMENTED")
+  billing       String                @default("PENDING")
   user          User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([status, nextAttemptAt])

@@ -62,6 +62,27 @@ function failuresOf(source: Record<string, string>): string[] {
 }
 
 describe('parseRuntimeEnvironment', () => {
+    it('should disable absent billing configuration and require a complete sandbox pair', () => {
+        expect(parseRuntimeEnvironment(local).billing).toEqual({ secretKey: '', priceId: '' });
+        expect(failuresOf({ ...local, STRIPE_PRO_MONTHLY_PRICE_ID: 'price_fixture' })).toEqual([
+            'STRIPE_PRO_MONTHLY_PRICE_ID must be supplied together with STRIPE_SECRET_KEY',
+        ]);
+        expect(
+            failuresOf({
+                ...local,
+                STRIPE_SECRET_KEY: 'synthetic-live-key',
+                STRIPE_PRO_MONTHLY_PRICE_ID: 'price_fixture',
+            }),
+        ).toContain('STRIPE_SECRET_KEY must be a sandbox key outside production');
+        expect(
+            failuresOf({
+                ...local,
+                STRIPE_SECRET_KEY: 'rk_test_synthetic',
+                STRIPE_PRO_MONTHLY_PRICE_ID: 'price_fixture',
+            }),
+        ).toEqual([]);
+    });
+
     it('should validate the notification Redis URL without exposing its value', () => {
         expect(parseRuntimeEnvironment(local).redisUrl).toBe('redis://127.0.0.1:16379');
         expect(

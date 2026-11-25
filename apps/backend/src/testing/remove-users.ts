@@ -26,5 +26,9 @@ export async function removeUsers(prisma: PrismaClient, userIds: string[]): Prom
     await prisma.session.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.membership.deleteMany({ where: { clubId: { in: clubIds } } });
     await prisma.club.deleteMany({ where: { id: { in: clubIds } } });
+    await prisma.billingAuditEvent.deleteMany({
+        where: { subscription: { userId: { in: userIds } } },
+    });
+    await prisma.subscription.deleteMany({ where: { userId: { in: userIds } } });
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
 }

@@ -18,6 +18,7 @@ import PrivacyData from './_components/PrivacyData/PrivacyData';
 import ProfileForm from './_components/ProfileForm/ProfileForm';
 import RatingsCsv from './_components/RatingsCsv/RatingsCsv';
 import SettingsSignOut from './_components/SettingsSignOut';
+import Subscription from './_components/Subscription/Subscription';
 import styles from './page.module.scss';
 
 export const metadata: Metadata = {
@@ -42,7 +43,7 @@ export default async function SettingsPage({
 }: {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-    const { tab, deletion, archive } = await searchParams;
+    const { tab, deletion, archive, checkout } = await searchParams;
     if ((await getSessionState()) === 'anonymous') redirect(buildLoginPath('/settings'));
     let account = null;
     try {
@@ -114,6 +115,7 @@ export default async function SettingsPage({
                         <SettingsContent
                             account={account}
                             archiveId={archive}
+                            checkout={checkout}
                             shouldConfirm={deletion === 'confirm'}
                             tab={tab}
                             title={items.find((item) => item.current)?.label ?? 'Settings'}
@@ -131,12 +133,14 @@ function SettingsContent({
     tab,
     title,
     shouldConfirm,
+    checkout,
 }: {
     account: IAccountProfile | null;
     archiveId?: string | string[];
     tab: string | string[] | undefined;
     title: string;
     shouldConfirm: boolean;
+    checkout?: string | string[];
 }) {
     if (!account)
         return (
@@ -155,6 +159,7 @@ function SettingsContent({
         );
     if (tab === 'appearance') return <AppearanceForm appearance={account.appearance} />;
     if (tab === 'import-export') return <RatingsCsv />;
+    if (tab === 'subscription') return <Subscription checkout={checkout} />;
     if (!tab || tab === 'profile') return <ProfileForm account={account} />;
     return (
         <section className={styles.card}>

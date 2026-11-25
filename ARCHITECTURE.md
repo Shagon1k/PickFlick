@@ -36,7 +36,7 @@ flowchart LR
   Email -->|signed webhook| API
   API --> Catalog["PoiskKino + TheTVDB / TMDB"]
   Worker["Nomination deadline worker"] --> DB
-  API -. Proposed .-> Stripe["Stripe Managed Payments"]
+  API --> Stripe["Stripe Managed Payments (sandbox adapter)"]
 ```
 
 | Concern    | Direction                                                                                    | State                                                                                                                                     | ADR               |
@@ -76,22 +76,23 @@ domain code, extract a focused package instead of importing one app from another
 storage come from global modules; feature modules are non-global and export only what another
 module uses. A global `AuthGuard` protects every route unless it is marked `@Public()`.
 
-| Module                           | Owns                                                                                                                                                                                | State                                                                                         |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| account                          | Own profile, read-only provider/email projection, personal Appearance and private avatar lifecycle.                                                                                 | Implemented locally; hosted acceptance pending                                                |
-| data-exports                     | Durable own-data archive jobs, manifest, private attempt objects, signed authenticated downloads and expiry cleanup.                                                                | Active — engineering verified; legal/privacy checkpoints remain separate                      |
-| auth                             | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
-| clubs                            | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
-| contact                          | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
-| email                            | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
-| storage                          | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
-| health                           | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
-| movies                           | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
-| sessions                         | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
-| library                          | My Library: Personal Ratings (`personal-rating/`), the Watchlist (`watchlist/`), and searchable, paginated views of both.                                                           | Active                                                                                        |
-| achievements                     | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
-| notifications                    | Durable per-recipient events and their write transactions (root), `preferences/`, `inbox/` (projection, read state, refresh stream) and `email-delivery/`.                          | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
-| Billing, Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
+| Module                  | Owns                                                                                                                                                                                | State                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| account                 | Own profile, read-only provider/email projection, personal Appearance and private avatar lifecycle.                                                                                 | Implemented locally; hosted acceptance pending                                                |
+| data-exports            | Durable own-data archive jobs, manifest, private attempt objects, signed authenticated downloads and expiry cleanup.                                                                | Active — engineering verified; legal/privacy checkpoints remain separate                      |
+| auth                    | Better Auth (Google, Apple behind a gate), database sessions, suspension, App roles.                                                                                                | Partial — Apple not activated                                                                 |
+| clubs                   | Club creation, Hub projection, members, settings, avatar, roles, removal, archive/reactivate, leave, delete, audit.                                                                 | Active                                                                                        |
+| contact                 | `POST /contact`, rate-limited, sent directly through the email module.                                                                                                              | Active                                                                                        |
+| email                   | Resend client; a logging stub when delivery is disabled.                                                                                                                            | Active                                                                                        |
+| storage                 | S3 put/get/delete/ping (AWS SDK).                                                                                                                                                   | Active                                                                                        |
+| health                  | `/health/live` (revision) and `/health/ready` (database, object storage).                                                                                                           | Active                                                                                        |
+| movies                  | Configurable catalog adapters, canonical UUID/external-ID resolution, one cached projection per search and Movie, and explicit failure states.                                      | Partial — authenticated search/details and stored catalog images; refresh worker pending      |
+| sessions                | Live and past Session creation, detail, versioned edits, cancellation, member-only self-join and shared links, roster, nominations, personal suggestions, early closure, and audit. | Active — Nomination, Selection, Watching, Session Rating, completion and partial past imports |
+| library                 | My Library: Personal Ratings (`personal-rating/`), the Watchlist (`watchlist/`), and searchable, paginated views of both.                                                           | Active                                                                                        |
+| achievements            | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
+| notifications           | Durable per-recipient events and their write transactions (root), `preferences/`, `inbox/` (projection, read state, refresh stream) and `email-delivery/`.                          | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
+| billing                 | Own checkout, portal, subscription projection, invoice history and account-deletion cancellation.                                                                                   | Implemented locally; sandbox and hosted acceptance pending                                    |
+| Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
 holds the conventions.
@@ -168,13 +169,13 @@ calls the backend Movie endpoint. [Add a feature end to end](_docs/adding-a-feat
 | S3-compatible storage | Club/personal avatars, catalog images and expiring archives under private opaque keys. | Active — archives are served through signed authenticated application downloads |
 | Bundled assets        | Brand imagery, versioned with the frontend build.                                      | Active                                                                          |
 
-The schema (`packages/database/prisma/schema.prisma`, forty-five migrations) holds `User`,
+The schema (`packages/database/prisma/schema.prisma` and its reviewed migrations) holds `User`,
 `AccountAvatarObject`, `ProviderAccount`, `AuthSession`, `AuthVerification`, `AuthRateLimit`, `Club`, `Membership`,
 `ClubAuditEvent`, `ClubInvite`, `Session`, `SessionParticipant`, `Nomination`,
 `SelectionBallot`, `SelectionScore`, `SessionRating`, `NominationDeadlineDecision`,
 `SessionProgressEvent`, `Movie`, `MovieExternalId`, `MovieDetailsCache`, `MovieSearchCache`,
 `PersonalMovieRating`, `WatchlistItem`, `AchievementAward`, `Notification`, `NotificationPreference`
-and `NotificationEmailDelivery`. Database-enforced invariants:
+and `NotificationEmailDelivery`, plus `Subscription` and `BillingAuditEvent`. Database-enforced invariants:
 
 - one active Membership per User and Club, and at most one active Admin per Club;
 - at most one Nomination/Selection/Watching Session per Club;
@@ -363,19 +364,40 @@ rechecks each one under its locks. Proposed Stripe Managed Payments flows verify
 IDs and apply changes idempotently; account deletion removes shared attribution and revokes
 every authentication session.
 
-### Billing boundary (Proposed)
+### Billing boundary (Partial)
 
-[ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
-accepts Stripe Managed Payments in place of the unimplemented Paddle plan. A concrete backend
-adapter owns the SDK, signature/payload validation and provider-to-domain translation. Domain
-services consume PickFlick types and opaque provider IDs; existing Club access/entitlement functions
-remain the enforcement boundary. Subscription and BillingEvent are not present in the Prisma schema.
-Planned records use provider-neutral IDs; BillingEvent identity is unique per provider.
-Alex accepted the decision and downgrade recovery on 2026-11-23. Dashboard evidence confirms
-sandbox readiness; #71/#72/#73 own runtime verification and enforcement. The public webhook path
-is `POST /api/webhooks/stripe`, rewritten to backend `POST /webhooks/stripe`, following the existing
-provider webhook convention. Support/descriptor configuration, live activation and eligibility are
-#94 gates. Organization grouping waits for the TailorTales account. No billing runtime is Active.
+The `billing` backend module implements checkout, portal, provider invoice history and manual
+subscription refresh under [ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter).
+Its provider folder owns Stripe SDK 23.2.0 and the pinned `2026-11-18.endive` API. Domain services
+use PickFlick snapshots and opaque IDs. The disabled stub is the runtime default without configuration;
+tests inject an enabled stub. No SDK code reaches the frontend or Club authorization.
+
+`Subscription` has one row per User, provider-scoped unique customer/subscription/checkout IDs,
+paid-period data and a durable checkout request identity. The random row identity isolates local,
+preview and UAT customers in their shared sandbox, including databases with identical seed Users.
+`BillingAuditEvent` records checkout creation, portal handoff, state changes and deletion cancellation.
+The API serializes billing with account deletion on the User row. A lost response reuses its
+committed identity; an unresolved request older than 23 hours fails for reconciliation before
+Stripe's minimum 24-hour idempotency retention can expire.
+
+`GET /billing/offer` exposes availability only. Authenticated `GET /billing`, `POST /billing/checkout`,
+`POST /billing/portal` and `GET /billing/invoices?cursor=...` use the caller's account, never a
+browser-supplied Customer, price, Subscription or return URL. Return URLs come from `AUTH_BASE_URL`.
+Only matching provider price/quantity and a paid invoice period can show Pro. Browser return
+parameters grant nothing. History cursors are checked against the same customer in the adapter.
+An outage remains an explicit unavailable state. Customer-facing URLs are HTTPS Stripe/Link URLs.
+
+The deletion worker expires unfinished checkout and cancels the subscription before marking billing
+complete. Provider failure retains the existing durable job for retry, without restoring account access.
+Subscription and minimal billing audit remain linked to the history User; their financial/privacy
+retention and external provider deletion remain separate legal/privacy gates. Own-data archives
+include the stored subscription projection and audit actions, excluding internal retry identities.
+
+Webhook signatures and BillingEvent remain #72; subscription-derived Club enforcement remains #73.
+The existing Club access/entitlement functions continue to enforce limits. The proposed public
+webhook path is `POST /api/webhooks/stripe`; it is not registered by #71. Actual sandbox
+checkout/tax/anchor/portal checks and exact-SHA hosted owner review remain unverified.
+Support/descriptor configuration, live activation and eligibility remain #94 gates.
 
 ## 5. Cross-cutting contracts
 
@@ -993,7 +1015,7 @@ leases plus the thirty-second upload deadline; export generation rechecks active
 claim before upload. Completion removes export-job metadata after all tracked objects are gone.
 No queue dependency, environment variable or extra deployable is introduced.
 
-The minimal job records `billing=NOT_IMPLEMENTED`; payment cancellation remains Phase 20.
+The billing hook records `PENDING`, `NOT_REQUIRED` or `CANCELLED`. Its provider failure retains the job for retry; see the [billing boundary](#billing-boundary-partial).
 The history User UUID, Membership/audit references and job evidence remain; this is attribution
 removal, not proof of irreversible legal anonymization. Unattached avatar uploads use the existing
 orphan sweep. Comment text, residual linkability, audit/job retention and restore handling still

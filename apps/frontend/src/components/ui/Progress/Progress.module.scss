@@ -42,3 +42,32 @@
 .progress[data-compact] progress {
     height: 8px;
 }
+
+.progress[data-variant='usage'] .progress__copy {
+    flex-direction: column;
+    gap: var(--gap-xs);
+}
+
+.progress[data-variant='usage'] .progress__copy > span {
+    font-size: var(--fs-caption);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+}
+
+.progress[data-variant='usage'] .progress__copy strong {
+    font-size: var(--fs-app-section);
+    color: var(--fg);
+}
+
+.progress[data-variant='usage'] progress {
+    height: 8px;
+    background: var(--border);
+}
+
+.progress[data-variant='usage'] progress::-webkit-progress-value {
+    background: var(--accent);
+}
+
+.progress[data-variant='usage'] progress::-moz-progress-bar {
+    background: var(--accent);
+}

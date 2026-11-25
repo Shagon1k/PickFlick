@@ -13,6 +13,7 @@ import type {
 
 import { handleAccount, isDeletedAccountSession } from './account.ts';
 import { handleAchievements } from './achievements.ts';
+import { handleBilling } from './billing.ts';
 import { settingsProjection } from './club-projections.ts';
 import { handleClubRatings } from './club-ratings.ts';
 import { handleDataExports } from './data-exports.ts';
@@ -429,6 +430,7 @@ const api = createServer((request, response) => {
     if (
         [
             handleAccount,
+            handleBilling,
             handleDataExports,
             handleRatingsCsv,
             handleAchievements,

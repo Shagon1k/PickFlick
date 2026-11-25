@@ -2,6 +2,7 @@ import { createPrivateKey } from 'node:crypto';
 
 import { z } from 'zod';
 
+import { billingEnvironmentSchema, validateBillingEnvironment } from './billing-environment.js';
 import { getLocalEmailDelivery, validateEmailEnvironment } from './email-environment.js';
 
 export const APP_ENVIRONMENTS = ['local', 'test', 'uat', 'production'] as const;
@@ -92,6 +93,7 @@ const movieCredential = z.string().trim().max(8192).regex(/^\S*$/u).optional();
 
 const rawRuntimeEnvironmentSchema = z.object({
     APP_ENV: z.enum(APP_ENVIRONMENTS),
+    ...billingEnvironmentSchema.shape,
     SOURCE_REVISION: z
         .string()
         .trim()
@@ -205,6 +207,7 @@ const RUNTIME_ENVIRONMENT_RULES: {
 export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     .superRefine((env, context) => {
         validateEmailEnvironment(env, context);
+        validateBillingEnvironment(env, context);
         for (const rule of RUNTIME_ENVIRONMENT_RULES) {
             if (rule.broken(env)) {
                 context.addIssue({ code: 'custom', path: [rule.variable], message: rule.message });
@@ -213,6 +216,7 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     })
     .transform((env) => ({
         appEnvironment: env.APP_ENV,
+        billing: { secretKey: env.STRIPE_SECRET_KEY, priceId: env.STRIPE_PRO_MONTHLY_PRICE_ID },
         sourceRevision: env.SOURCE_REVISION,
         backendHost: env.BACKEND_HOST,
         backendPort: env.BACKEND_PORT,

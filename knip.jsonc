@@ -15,7 +15,12 @@
             "playwright": false,
         },
         "apps/backend": {
-            "entry": ["src/main.ts", "src/deadline-worker.ts", "src/email-worker.ts"],
+            "entry": [
+                "src/main.ts",
+                "src/deadline-worker.ts",
+                "src/email-worker.ts",
+                "src/testing/journey-api.ts",
+            ],
         },
         "packages/config": {
             // The shared Next.js tsconfig names the `next` plugin; the frontend that extends it installs next.

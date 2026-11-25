@@ -40,29 +40,31 @@ SessionParticipant, recipient or contribution. Shared IDs provide context withou
 attribution. `SelectionScore` and `PastSelectionScore` are the requester's responses, including
 when the referenced nomination belongs to a peer. Session Ratings and Personal Ratings stay separate.
 
-| `data` section            | Included fields                                                                                                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `profile`                 | `id`, `email`, `emailVerified`, `displayName`, `locale`, `appRole`, `status`, `isAvatarRemoved`, validated personal `appearance`, `createdAt`, `updatedAt`        |
-| `providers`               | Own `provider`, `providerSubject`, `scope`, `createdAt`, `updatedAt`                                                                                              |
-| `authSessions`            | Own `id`, `ipAddress`, `userAgent`, `createdAt`, `updatedAt`, `expiresAt`; no tokens                                                                              |
-| `personalRatings`         | `movieId`, `score`, `source`, `updatedAt`                                                                                                                         |
-| `watchlist`               | `movieId`, `priority`, `addedAt`                                                                                                                                  |
-| `memberships`             | Own `id`, `clubId`, `role`, `status`, `joinedAt`, `leftAt`, `updatedAt`                                                                                           |
-| `participation`           | Own `id`, `sessionId`, `clubId`, `membershipId`, `status`, `attended`, `createdAt`, `updatedAt`                                                                   |
-| `nominations`             | Own `id`, `sessionId`, `movieId`, `submittedAt`, `isInSelection`                                                                                                  |
-| `ballots`                 | Own `id`, `sessionId`, `submittedAt`; own nested `scores` contain `nominationId`, `score`, `nomination.movieId`                                                   |
-| `pastNominations`         | Own attributed `id`, `sessionId`, `movieId`                                                                                                                       |
-| `pastScores`              | Own `nominationId`, `sessionId`, `score`, `nomination.movieId`                                                                                                    |
-| `sessionRatings`          | Own `id`, `sessionId`, `score`, authored `comment`, `submittedAt`                                                                                                 |
-| `achievements`            | Personal awards only: `id`, `key`, `version`, `title`, `description`, `target`, `progress`, `private`, `awardedAt`                                                |
-| `notifications`           | Recipient's `id`, `event`, `inApp`, `email`, `readAt`, `createdAt`; optional `emailDelivery` contains `status`, `attemptCount`, `firstAttemptAt`, `nextAttemptAt` |
-| `notificationPreferences` | Own `event`, `inApp`, `email`                                                                                                                                     |
-| `invitations`             | Invitations created by, targeted at or answered by the requester: `id`, `clubId`, `createdAt`, `expiresAt`, `revokedAt`; no identities, secrets or peer responses |
-| `invitationResponses`     | Only responses made by the requester: `id`, `clubId`, `respondedAt`, `accepted`                                                                                   |
-| `auditEvents`             | Events involving the requester as actor or subject: `id`, `clubId`, `sessionId`, `action`, `changed`, `createdAt`; no peer attribution                            |
-| `roleChanges`             | Events with the requester as subject: `id`, `clubId`, `action`, `previousRole`, `nextRole`, `createdAt`                                                           |
-| `exportJobs`              | Own `id`, `status`, `attemptCount`, `createdAt`, `completedAt`, `expiresAt`, `failure` at snapshot time                                                           |
-| `avatar`                  | Current uploaded personal avatar as `contentType` and `base64`, or `null`; no provider photo fetch                                                                |
+| `data` section            | Included fields                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profile`                 | `id`, `email`, `emailVerified`, `displayName`, `locale`, `appRole`, `status`, `isAvatarRemoved`, validated personal `appearance`, `createdAt`, `updatedAt`                |
+| `providers`               | Own `provider`, `providerSubject`, `scope`, `createdAt`, `updatedAt`                                                                                                      |
+| `authSessions`            | Own `id`, `ipAddress`, `userAgent`, `createdAt`, `updatedAt`, `expiresAt`; no tokens                                                                                      |
+| `personalRatings`         | `movieId`, `score`, `source`, `updatedAt`                                                                                                                                 |
+| `watchlist`               | `movieId`, `priority`, `addedAt`                                                                                                                                          |
+| `memberships`             | Own `id`, `clubId`, `role`, `status`, `joinedAt`, `leftAt`, `updatedAt`                                                                                                   |
+| `participation`           | Own `id`, `sessionId`, `clubId`, `membershipId`, `status`, `attended`, `createdAt`, `updatedAt`                                                                           |
+| `nominations`             | Own `id`, `sessionId`, `movieId`, `submittedAt`, `isInSelection`                                                                                                          |
+| `ballots`                 | Own `id`, `sessionId`, `submittedAt`; own nested `scores` contain `nominationId`, `score`, `nomination.movieId`                                                           |
+| `pastNominations`         | Own attributed `id`, `sessionId`, `movieId`                                                                                                                               |
+| `pastScores`              | Own `nominationId`, `sessionId`, `score`, `nomination.movieId`                                                                                                            |
+| `sessionRatings`          | Own `id`, `sessionId`, `score`, authored `comment`, `submittedAt`                                                                                                         |
+| `achievements`            | Personal awards only: `id`, `key`, `version`, `title`, `description`, `target`, `progress`, `private`, `awardedAt`                                                        |
+| `notifications`           | Recipient's `id`, `event`, `inApp`, `email`, `readAt`, `createdAt`; optional `emailDelivery` contains `status`, `attemptCount`, `firstAttemptAt`, `nextAttemptAt`         |
+| `notificationPreferences` | Own `event`, `inApp`, `email`                                                                                                                                             |
+| `invitations`             | Invitations created by, targeted at or answered by the requester: `id`, `clubId`, `createdAt`, `expiresAt`, `revokedAt`; no identities, secrets or peer responses         |
+| `invitationResponses`     | Only responses made by the requester: `id`, `clubId`, `respondedAt`, `accepted`                                                                                           |
+| `auditEvents`             | Events involving the requester as actor or subject: `id`, `clubId`, `sessionId`, `action`, `changed`, `createdAt`; no peer attribution                                    |
+| `roleChanges`             | Events with the requester as subject: `id`, `clubId`, `action`, `previousRole`, `nextRole`, `createdAt`                                                                   |
+| `subscription`            | Own provider/customer/subscription/price IDs, plan/status, period bounds, paid-through date, scheduled cancellation and created/updated timestamps; null before checkout. |
+| `billingAudit`            | Own billing action and event timestamp; no checkout request identities or authenticated provider URLs.                                                                    |
+| `exportJobs`              | Own `id`, `status`, `attemptCount`, `createdAt`, `completedAt`, `expiresAt`, `failure` at snapshot time                                                                   |
+| `avatar`                  | Current uploaded personal avatar as `contentType` and `base64`, or `null`; no provider photo fetch                                                                        |
 
 The database snapshot uses Repeatable Read. Avatar bytes are read from its captured current object
 key; an unavailable captured upload fails generation rather than silently omitting it. The manifest

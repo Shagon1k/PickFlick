@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { BillingModule } from '../billing/billing.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { AccountController } from './account.controller.js';
 import { AccountService } from './account.service.js';
@@ -11,7 +12,7 @@ import { AccountDeletionWorkerService } from './account-deletion-worker.service.
 import { AvatarCleanupService } from './avatar-cleanup.service.js';
 
 @Module({
-    imports: [NotificationsModule],
+    imports: [NotificationsModule, BillingModule],
     controllers: [AccountController, AccountAvatarController, AccountDeletionController],
     providers: [
         AccountService,

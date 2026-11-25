@@ -5,7 +5,7 @@ const BACKEND_PORT = '42741';
 const WEB_PORT = '41740';
 const WEB_ORIGIN = `http://127.0.0.1:${WEB_PORT}`;
 
-const backend = spawn(process.execPath, ['apps/backend/dist/main.js'], {
+const backend = spawn(process.execPath, ['apps/backend/dist/testing/journey-api.js'], {
     env: {
         ...process.env,
         AUTH_BASE_URL: WEB_ORIGIN,

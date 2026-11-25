@@ -2,6 +2,8 @@ import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@ne
 import type { Prisma } from '@pickflick/database';
 
 import { PrismaService } from '../../database/prisma.service.js';
+import { BillingService } from '../billing/billing.service.js';
+import { BillingProviderError } from '../billing/billing.types.js';
 import { StorageService } from '../storage/storage.service.js';
 
 const SWEEP_INTERVAL_MS = 5000;
@@ -20,6 +22,7 @@ export class AccountDeletionWorkerService implements OnModuleInit, OnModuleDestr
     constructor(
         private readonly prisma: PrismaService,
         private readonly storage: StorageService,
+        private readonly billing: BillingService,
     ) {}
 
     onModuleInit() {
@@ -69,12 +72,21 @@ export class AccountDeletionWorkerService implements OnModuleInit, OnModuleDestr
                 } catch (error) {
                     // SQL errors abort this transaction; the outer catch logs and the row stays due.
                     // Storage errors carry no SQL failure and can persist a scheduled retry.
-                    if (!(error instanceof StorageDeletionError)) throw error;
+                    if (
+                        !(
+                            error instanceof StorageDeletionError ||
+                            error instanceof BillingProviderError
+                        )
+                    )
+                        throw error;
                     await tx.accountDeletion.update({
                         where: { userId: job.userId },
                         data: {
                             attemptCount: { increment: 1 },
-                            failure: 'OBJECT_CLEANUP_FAILED',
+                            failure:
+                                error instanceof BillingProviderError
+                                    ? error.reason
+                                    : 'OBJECT_CLEANUP_FAILED',
                             nextAttemptAt: new Date(now.getTime() + RETRY_DELAY_MS),
                         },
                     });
@@ -86,6 +98,10 @@ export class AccountDeletionWorkerService implements OnModuleInit, OnModuleDestr
     }
 
     private async cleanup(tx: Prisma.TransactionClient, job: TDeletion, now: Date) {
+        if (!['CANCELLED', 'NOT_REQUIRED'].includes(job.billing)) {
+            const billing = await this.billing.cancelForDeletion(tx, job.userId);
+            await tx.accountDeletion.update({ where: { userId: job.userId }, data: { billing } });
+        }
         if (job.avatarKey) {
             await this.removeObject(job.avatarKey);
             await tx.accountAvatarObject.deleteMany({ where: { key: job.avatarKey, user: null } });

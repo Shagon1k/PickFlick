@@ -3,6 +3,7 @@ export * from './account/account-deletion.schema.js';
 export * from './account/data-export.schema.js';
 export * from './achievements/achievement.schema.js';
 export * from './auth/return-target.js';
+export * from './billing/billing.schema.js';
 export * from './clubs/club.schema.js';
 export * from './clubs/club.types.js';
 export * from './clubs/invitation.schema.js';

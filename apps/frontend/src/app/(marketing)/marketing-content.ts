@@ -114,13 +114,13 @@ export const comparisonRows = [
     { feature: 'Inactivity grace (planned)', free: '180 days', pro: '360 days' },
     { feature: 'Club ratings leaderboard', free: 'Included', pro: 'Included' },
     { feature: 'Analytics', free: 'Basic counters', pro: 'Extended deterministic' },
-    { feature: 'Price', free: '€0', pro: '€5 / month' },
+    { feature: 'Price', free: '€0', pro: '€5 / month + tax' },
 ] as const;
 
 export const pricingFaqs = [
     {
         question: 'Can I switch plans anytime?',
-        answer: 'Once billing launches, you can upgrade to Pro at any time. Cancellation or downgrade takes effect at the end of the paid monthly billing period. Data stays in place, while over-limit Clubs become read-only for new rounds and invitations until they are within Free limits.',
+        answer: 'When checkout is available, any registered user can subscribe to Pro, even before creating a Club. Cancellation or downgrade takes effect at the end of the paid monthly billing period. Data stays in place, while over-limit Clubs keep their history and existing participation. After downgrade, choose one eligible Club for new Sessions and invitations when it fits Free limits.',
     },
     {
         question: 'What happens when I downgrade?',
@@ -139,7 +139,7 @@ export const pricingFaqs = [
         answer: 'The planned policy archives inactive Clubs after 180 days on Free or 360 days on Pro, after notifying the Admin. Archiving preserves data and allows reactivation. Automatic inactivity archiving is not implemented yet.',
     },
     {
-        question: 'Can I upgrade to Pro now?',
-        answer: 'Not yet. Pro checkout is coming soon. Until then, you can start on Free without entering payment details.',
+        question: 'How are payments handled?',
+        answer: 'Available payment methods are shown in the Link checkout. Purchases are sold through Link, which calculates applicable tax and sends receipts and invoice emails. You can start on Free without payment details.',
     },
 ] as const;

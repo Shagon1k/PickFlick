@@ -30,7 +30,7 @@ free text, financial exceptions and backup/restore handling remain separate rele
   retains intent and retries after one minute. Export leases and upload deadlines fence cleanup;
   the export worker rechecks account and claim before uploading. Completion follows object cleanup
   and export-job removal. The 24-hour cleanup target is operational, not a guarantee during outages.
-- Billing is recorded as `NOT_IMPLEMENTED`; no paid subscription is claimed to be cancelled.
+- #71 adds a billing hook: expiry of unfinished checkout and cancellation precede cleanup completion. `PENDING` retries on provider failure; `NOT_REQUIRED` or `CANCELLED` records completion. This does not delete provider-held financial records or accept their retention policy.
 
 ## Retained data and limitations
 

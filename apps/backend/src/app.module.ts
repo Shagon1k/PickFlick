@@ -11,6 +11,7 @@ import { DatabaseModule } from './database/database.module.js';
 import { AccountModule } from './modules/account/account.module.js';
 import { AchievementsModule } from './modules/achievements/achievements.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { BillingModule } from './modules/billing/billing.module.js';
 import { ClubsModule } from './modules/clubs/clubs.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
 import { DataExportsModule } from './modules/data-exports/data-exports.module.js';
@@ -65,6 +66,7 @@ export class AppModule {
                 DatabaseModule,
                 StorageModule,
                 AuthModule,
+                BillingModule,
                 AccountModule,
                 AchievementsModule,
                 ClubsModule,
