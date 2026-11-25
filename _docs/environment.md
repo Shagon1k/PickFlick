@@ -10,10 +10,10 @@ The backend adapter uses the following server-only configuration under
 [ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter).
 Both values are optional together; omission disables checkout. A partial pair fails startup validation.
 
-| Variable                      | Runtime contract                                                                                                                                                                     | Secret |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| `STRIPE_SECRET_KEY`           | Sandbox server key with Customers, Checkout Sessions, Customer Portal and Subscriptions Write, and Products, Prices and Invoices Read. Nonproduction rejects live keys.              | Yes    |
-| `STRIPE_PRO_MONTHLY_PRICE_ID` | Active tax-exclusive EUR 500 monthly, interval count one, per-unit price for the active personal-use SaaS product (`txcd_10103000`). The adapter verifies the offer before checkout. | No     |
+| Variable                      | Runtime contract                                                                                                                                                                                 | Secret |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| `STRIPE_SECRET_KEY`           | Sandbox server key with Customers, Checkout Sessions, Customer Portal and Subscriptions Write, and Products, Prices and Invoices Read. Nonproduction rejects live keys.                          | Yes    |
+| `STRIPE_PRO_MONTHLY_PRICE_ID` | Active tax-exclusive €5 monthly (500 euro cents), interval count one, per-unit price for the active personal-use SaaS product (`txcd_10103000`). The adapter verifies the offer before checkout. | No     |
 
 The adapter pins Stripe SDK `23.2.0` and API `2026-11-18.endive`. Hosted redirects need no browser
 publishable key. Return URLs use the environment's `AUTH_BASE_URL`; no request-supplied return URL

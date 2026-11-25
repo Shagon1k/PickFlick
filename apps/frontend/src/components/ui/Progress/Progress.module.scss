@@ -55,12 +55,12 @@
 }
 
 .progress[data-variant='usage'] .progress__copy strong {
-    font-size: var(--fs-app-section);
+    font-size: var(--fs-usage-value);
     color: var(--fg);
 }
 
 .progress[data-variant='usage'] progress {
-    height: 8px;
+    height: 6px;
     background: var(--border);
 }
 

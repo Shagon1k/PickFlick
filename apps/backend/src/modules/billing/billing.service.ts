@@ -6,6 +6,7 @@ import type { Prisma } from '@pickflick/database';
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { BILLING_PROVIDER, BillingProviderError, type IBillingProvider } from './billing.types.js';
+import { buildCheckoutRequest } from './billing-checkout.js';
 import {
     assertRetryWindow,
     auditBilling,
@@ -113,14 +114,14 @@ export class BillingService {
         this.assertEnabled();
         // Reissue a lost Checkout response using its durable identity before closing it.
         if (account.checkoutRequestId && !account.providerCheckoutId) {
-            const base = `${this.environment.auth.baseUrl}/settings?tab=subscription`;
             assertRetryWindow(account.checkoutStartedAt!);
-            const checkout = await this.provider.createCheckoutSession({
-                customerId: account.providerCustomerId!,
-                requestId: account.checkoutRequestId,
-                successUrl: `${base}&checkout=returned`,
-                cancelUrl: `${base}&checkout=cancelled`,
-            });
+            const checkout = await this.provider.createCheckoutSession(
+                buildCheckoutRequest(
+                    account.providerCustomerId!,
+                    account.checkoutRequestId,
+                    this.environment.auth.baseUrl,
+                ),
+            );
             account = { ...account, providerCheckoutId: checkout.id };
         }
         if (account.providerCheckoutId) {

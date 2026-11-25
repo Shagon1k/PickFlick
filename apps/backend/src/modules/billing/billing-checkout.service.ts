@@ -6,6 +6,7 @@ import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { BILLING_PROVIDER, BillingProviderError, type IBillingProvider } from './billing.types.js';
+import { buildCheckoutRequest } from './billing-checkout.js';
 import {
     assertRetryWindow,
     auditBilling,
@@ -50,13 +51,13 @@ export class BillingCheckoutService {
             )
                 throw new ConflictException({ reason: 'CHECKOUT_RETRY' });
             assertRetryWindow(account.checkoutStartedAt);
-            const base = `${this.environment.auth.baseUrl}/settings?tab=subscription`;
-            const checkout = await this.provider.createCheckoutSession({
-                customerId: account.providerCustomerId,
-                requestId: account.checkoutRequestId,
-                successUrl: `${base}&checkout=returned`,
-                cancelUrl: `${base}&checkout=cancelled`,
-            });
+            const checkout = await this.provider.createCheckoutSession(
+                buildCheckoutRequest(
+                    account.providerCustomerId,
+                    account.checkoutRequestId,
+                    this.environment.auth.baseUrl,
+                ),
+            );
             if (
                 !checkout.url ||
                 checkout.status !== 'open' ||

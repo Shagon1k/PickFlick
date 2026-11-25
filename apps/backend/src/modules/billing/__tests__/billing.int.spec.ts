@@ -163,6 +163,28 @@ describe('BillingController', () => {
         expect(provider.checkouts.size).toBe(1);
     });
 
+    it('should replay the original checkout request during deletion after a lost response', async () => {
+        const create = provider.createCheckoutSession.bind(provider);
+        const checkoutSpy = vi
+            .spyOn(provider, 'createCheckoutSession')
+            .mockImplementationOnce(async (input) => {
+                await create(input);
+                throw new BillingProviderError();
+            });
+        expect((await checkout()).status).toBe(503);
+        expect((await account()).providerCheckoutId).toBeNull();
+        await prisma.user.update({ where: { id: userId }, data: { status: 'ANONYMIZED' } });
+        await prisma.accountDeletion.create({ data: { userId, status: 'PENDING' } });
+        await app.get(AccountDeletionWorkerService).sweep();
+        expect(checkoutSpy).toHaveBeenCalledTimes(2);
+        expect(checkoutSpy.mock.calls[1]).toEqual(checkoutSpy.mock.calls[0]);
+        expect(provider.checkouts.size).toBe(1);
+        expect([...provider.checkouts.values()][0]?.status).toBe('expired');
+        expect((await prisma.accountDeletion.findUniqueOrThrow({ where: { userId } })).status).toBe(
+            'COMPLETE',
+        );
+    });
+
     it('should confirm payment from stored provider truth and block a second active subscription', async () => {
         expect((await checkout()).status).toBe(201);
         expect((await readSummary()).plan).toBe('FREE');

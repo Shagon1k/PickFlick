@@ -72,7 +72,7 @@
 
 .usage__card {
     min-width: 0;
-    padding: var(--gap-md);
+    padding: calc(2 * var(--gap-xs));
     overflow-wrap: anywhere;
     border: 1px solid var(--border);
     border-radius: var(--radius);

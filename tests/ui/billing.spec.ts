@@ -109,6 +109,28 @@ test(
 );
 
 test(
+    'Successful status refresh replaces exhausted invoice history after payment',
+    { tag: '@smoke' },
+    async ({ page, context }) => {
+        await signInMock(context, 'valid-billing-pending-refresh');
+        await page.goto('/settings?tab=subscription');
+        const history = page.getByRole('region', { name: 'Billing history', exact: true });
+        await expect(page.getByRole('heading', { name: 'Free Payment pending' })).toBeVisible();
+        await expect(history.getByRole('cell', { name: 'open', exact: true })).toHaveCount(1);
+        await page.getByRole('button', { name: 'Load more invoices' }).click();
+        await expect(history.getByRole('cell', { name: 'open', exact: true })).toHaveCount(2);
+        await expect(page.getByRole('button', { name: 'Load more invoices' })).toHaveCount(0);
+
+        await signInMock(context, 'valid-billing-pro-refresh');
+        await page.getByRole('button', { name: 'Refresh subscription status' }).click();
+        await expect(page.getByRole('heading', { name: 'Pro Active' })).toBeVisible();
+        await expect(history.getByRole('cell', { name: 'paid', exact: true })).toHaveCount(1);
+        await expect(history.getByRole('cell', { name: 'open', exact: true })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Load more invoices' })).toBeVisible();
+    },
+);
+
+test(
     'Pricing sends signed-in users to checkout and preserves offline feedback',
     { tag: '@smoke' },
     async ({ page, context }) => {

@@ -36,6 +36,7 @@ export default function SubscriptionPanel({
     checkout?: string;
 }) {
     const [summary, setSummary] = useState(initial);
+    const [historyVersion, setHistoryVersion] = useState(0);
     const [message, setMessage] = useState('');
     const [isPending, startTransition] = useTransition();
     function handleRefresh() {
@@ -47,6 +48,7 @@ export default function SubscriptionPanel({
                 const result = await refreshSubscription();
                 if (!result.ok) return setMessage(result.message);
                 setSummary(result.data);
+                setHistoryVersion((previous) => previous + 1);
             } catch {
                 setMessage('Subscription status could not be refreshed. Try again.');
             }
@@ -70,7 +72,11 @@ export default function SubscriptionPanel({
             {notice ? <Alert tone="warning">{notice}</Alert> : null}
             <CurrentPlan summary={summary} isPending={isPending} onRefresh={handleRefresh} />
             <SubscriptionUsage summary={summary} />
-            <BillingHistory isEnabled={summary.isEnabled} hasCustomer={summary.hasCustomer} />
+            <BillingHistory
+                key={historyVersion}
+                isEnabled={summary.isEnabled}
+                hasCustomer={summary.hasCustomer}
+            />
             <section aria-labelledby="billing-portal-title" className={styles.card}>
                 <h2 id="billing-portal-title">Billing portal</h2>
                 <p>

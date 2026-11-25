@@ -241,7 +241,7 @@ history, not a successful runtime payment. No values or secret files were read o
 
 - One provider-neutral billing module, Stripe SDK `23.2.0`, API `2026-11-18.endive`, and an injectable
   stub. Runtime omission disables billing; a partial configuration or nonproduction live key fails
-  startup. The offer is verified before Checkout: active personal-use SaaS, EUR 500, monthly,
+  startup. The offer is verified before Checkout: active personal-use SaaS, €5 (500 euro cents), monthly,
   quantity one, tax-exclusive. Only the approved Managed Payments parameters are sent.
 - One `Subscription` row per User with random durable customer/checkout identities. User locking
   serializes checkout and account deletion. Open attempts are reused; new attempts require provider
@@ -305,3 +305,28 @@ and its [unsupported parameters](https://docs.stripe.com/payments/managed-paymen
 - Webhooks/BillingEvent remain #72; Club entitlements/downgrade choice remain #73. Live activation,
   support/descriptor and eligibility remain #94. Financial/privacy and public-copy sign-offs stay
   open. Phase 20 and issue acceptance are not marked Done.
+
+### Review fixes — 2026-11-25
+
+- Checkout creation and deletion recovery share one pure request builder; retry-window checks,
+  provider calls and transaction order are preserved. The lost-response deletion regression
+  verifies identical request inputs and expiry of the original checkout.
+- Successful subscription refresh resets invoice history to its first page, replacing cached
+  pages even when billing availability and customer presence stay unchanged.
+- Usage restores the canonical 28px counters, 6px bars and 16px card padding. The environment
+  reference states the offer as €5 monthly (500 euro cents).
+- Focused PostgreSQL/API checks pass: 24 tests across billing, account deletion and archives,
+  using a disposable local `pickflick_test` database.
+- `pnpm verify` passes, including the production dependency audit, lint, Knip, formatting,
+  type checks, 775 unit tests and production builds.
+- All 12 billing browser checks pass in the pinned Playwright image, including the unpaid-to-paid
+  invoice transition after exhausting pagination. The four Subscription baselines were updated
+  and inspected against canonical `settings.html` at 390/1440; only the usage metrics changed.
+- The full smoke/visual selection with four workers reports 262 passed and one flaky check:
+  `selection-outcome-visible` at 390px passes on retry after a 661-pixel film-metadata spacing
+  difference. The flaky-test gate fails this run. The Selection implementation, baseline and
+  screenshot tolerance are unchanged by this review fix.
+- Single-worker diagnosis reports two passes and one failure, followed by five passes with the
+  exact source frontend restored temporarily and five passes after restoring the reviewed fixes.
+  The cause remains unconfirmed; the full-run flaky-test failure is retained as a verification
+  limitation rather than changing Selection behavior or accepting a different baseline.

@@ -55,7 +55,7 @@ function buildHistory(request: TMockRequest, token: string): IBillingHistory {
                       id: cursor ? 'invoice_previous' : 'invoice_latest',
                       amount: 605,
                       currency: 'eur',
-                      status: 'paid',
+                      status: summary(token).status === 'PENDING' ? 'open' : 'paid',
                       createdAt: '2026-11-25T12:00:00.000Z',
                       documentUrl: 'https://invoice.stripe.com/test-fixture',
                   },

@@ -639,11 +639,13 @@ visual acceptance.
 Issue #71 implements the canonical `settings.html` Subscription composition: current-plan inset,
 usage cards, locally scrolling invoice table, provider portal and cancellation section. Usage stacks
 below 768px; the shared Settings shell replaces its sidebar below 1024px. The shared Progress
-usage variant keeps the actual count visible above a bounded monochrome progress bar.
+usage variant keeps the actual count visible at 28px above a bounded 6px monochrome progress bar;
+usage cards have 16px padding, matching the canonical metrics.
 
 The server confirms the paid period independently of browser return parameters. Pending payment,
 overdue/paused status, scheduled cancellation, unavailable billing/history, retry, offline and empty
-states are explicit. A user can subscribe before creating a Club. Pricing discloses tax and Link;
+states are explicit. A successful status refresh also reloads the first invoice page, replacing
+cached history. A user can subscribe before creating a Club. Pricing discloses tax and Link;
 checkout is disabled when configuration is absent. Payment methods and final cancellation live in
 the hosted portal; PickFlick does not send duplicate receipt emails.
 
