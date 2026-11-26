@@ -18,6 +18,7 @@ import { DataExportWorkerService } from '../../data-exports/data-export-worker.s
 import { StorageService } from '../../storage/storage.service.js';
 import { BILLING_PROVIDER, BillingProviderError } from '../billing.types.js';
 import { StubBillingProvider } from '../provider/stub-billing.provider.js';
+import { BillingWorkerService } from '../webhooks/billing-worker.service.js';
 
 describe('BillingController', () => {
     const provider = new StubBillingProvider(true);
@@ -81,6 +82,7 @@ describe('BillingController', () => {
         await app.listen(0, '127.0.0.1');
         baseUrl = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}`;
         prisma = app.get(PrismaService);
+        await app.get(BillingWorkerService).onModuleDestroy();
         await app.get(AccountDeletionWorkerService).onModuleDestroy();
         await app.get(DataExportWorkerService).onModuleDestroy();
         // Better Auth's test plugin augments context at runtime.

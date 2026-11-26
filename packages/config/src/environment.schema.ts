@@ -216,7 +216,11 @@ export const runtimeEnvironmentSchema = rawRuntimeEnvironmentSchema
     })
     .transform((env) => ({
         appEnvironment: env.APP_ENV,
-        billing: { secretKey: env.STRIPE_SECRET_KEY, priceId: env.STRIPE_PRO_MONTHLY_PRICE_ID },
+        billing: {
+            secretKey: env.STRIPE_SECRET_KEY,
+            priceId: env.STRIPE_PRO_MONTHLY_PRICE_ID,
+            webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+        },
         sourceRevision: env.SOURCE_REVISION,
         backendHost: env.BACKEND_HOST,
         backendPort: env.BACKEND_PORT,

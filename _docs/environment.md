@@ -26,10 +26,61 @@ allow independent revocation but do not isolate provider data. Random persisted 
 separate customers and idempotency keys across databases and preview slots; email and seed UUID
 are never used to merge customers. Preserve the billing row when restarting the same runtime.
 
-Webhook signing-secret configuration (`STRIPE_WEBHOOK_SECRET`) belongs to #72's actual handler.
-It remains absent from runtime validation and Compose until then; signing secrets must be specific
-to each hosted endpoint or local forwarding session. Live eligibility, support/descriptor setup
+`STRIPE_WEBHOOK_SECRET` is the server-only signing secret for this exact destination. It is optional
+to keep checkout independently configurable, but callbacks return 503 until it is installed. A supplied
+secret requires billing configuration and must have the `whsec_` format. Deploy and preview Compose
+pass it only to the backend; local forwarding has a different signing secret from the hosted endpoint.
+Dispute reconciliation also requires **Charges Read** on the sandbox key. This is an operator setup
+requirement; implementation does not grant provider permissions or install secrets.
+Live eligibility, support/descriptor setup
 and activation remain #94 gates. See [billing preparation](phase-20-billing.md#owner-setup-pickflick-stripe-sandbox).
+
+### Billing webhook operations
+
+After the handler is deployed and owner-approved sandbox setup is available, register
+`https://uat.pick-flick.app/api/webhooks/stripe` as a snapshot-event destination for the account,
+with API `2026-11-18.endive`. Subscribe to `checkout.session.completed`,
+`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
+`customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`,
+`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, `charge.refunded` and
+`charge.dispute.created`. Store the destination's signing secret in its secure backend environment.
+Never paste it into tickets, logs or fixtures. See [Stripe's webhook guide](https://docs.stripe.com/webhooks).
+Registration, secret installation and actual signed sandbox deliveries are not verified by local tests.
+
+The API accepts at most 100 KB of JSON and returns 204 after recording a verified event once.
+Missing/invalid/stale signatures return 401; signed invalid data or an incompatible API version
+returns 400. Unavailable signing configuration returns 503. A successful duplicate receipt does not
+reset its processing state. The ledger holds identifiers and processing metadata, never raw payloads.
+
+While billing is enabled, each API replica polls every five seconds. A cycle processes one due event
+and one due account, without overlapping its own previous cycle. PostgreSQL locks coordinate replicas.
+Successful account checks schedule reconciliation in 15 minutes; failures retry after one minute.
+These are bounded MVP processing rates, not a delivery-latency guarantee under a large backlog.
+
+Inspect `billing.backlog` for `pending`, oldest `lagMs` and `reconciliationFailures`.
+`billing.event.retry` and `billing.reconciliation.retry` expose only local IDs and bounded failure
+codes. `billing.reconciled` reports `hasMismatch` when provider truth repairs local state.
+The ledger's `attemptCount`, `failure`, `nextAttemptAt` and `processedAt` preserve processing evidence.
+Subscription stores corresponding reconciliation attempts, failure and last/next check timestamps.
+
+To repair an outage or configuration error, restore the approved provider configuration and let the
+due retry run. For an inspected local ledger ID, an authorized operator can bring a retry forward:
+
+```sql
+UPDATE "BillingEvent" SET "nextAttemptAt" = CURRENT_TIMESTAMP
+WHERE id = '<inspected-local-event-id>'::uuid AND state = 'PENDING';
+
+UPDATE "Subscription" SET "nextReconcileAt" = CURRENT_TIMESTAMP
+WHERE id = '<inspected-local-subscription-id>'::uuid;
+```
+
+Reconciliation re-fetches current state rather than replaying old payloads. Do not delete ledger
+receipts, reset checkout identities or edit paid-through/plan fields to hide failures. A lost Checkout
+response without a stored provider ID reports `BILLING_INVALID_DATA` for operator reconciliation;
+the worker never creates a purchase to recover it. Refunds and disputes request reconciliation,
+without an assumed immediate revocation policy. Anonymized accounts are skipped. Own archives
+include minimal customer-scoped ledger metadata; financial/audit retention and external provider
+deletion remain separate privacy gates.
 
 ## Runtime variables
 

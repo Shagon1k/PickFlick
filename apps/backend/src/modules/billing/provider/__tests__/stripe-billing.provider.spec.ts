@@ -1,5 +1,6 @@
 import { BillingProviderError } from '../../billing.types.js';
-import { STRIPE_API_VERSION, StripeBillingProvider } from '../stripe-billing.provider.js';
+import { StripeBillingProvider } from '../stripe-billing.provider.js';
+import { STRIPE_API_VERSION } from '../stripe-webhook.js';
 
 const price = {
     id: 'price_pro',
@@ -70,6 +71,14 @@ describe('StripeBillingProvider', () => {
     });
     afterEach(() => {
         vi.unstubAllGlobals();
+    });
+
+    it('should resolve disputed payment ownership inside the adapter without exposing charge data', async () => {
+        respond({ id: 'ch_fixture', customer: 'customer_own' });
+        await expect(provider.fetchPaymentCustomer('ch_fixture')).resolves.toBe('customer_own');
+        expect(fetch.mock.calls[0]?.[0]).toEqual(expect.stringContaining('/charges/ch_fixture'));
+        respond({ id: 'ch_fixture', customer: null });
+        await expect(provider.fetchPaymentCustomer('ch_fixture')).resolves.toBeNull();
     });
 
     it('should create the exact Managed Payments offer without tax, method, trial or anchor overrides', async () => {

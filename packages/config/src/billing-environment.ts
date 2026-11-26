@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 export const billingEnvironmentSchema = z.object({
+    STRIPE_WEBHOOK_SECRET: z
+        .string()
+        .trim()
+        .max(8192)
+        .regex(/^(?:whsec_\S+)?$/u)
+        .default(''),
     STRIPE_SECRET_KEY: z.string().trim().max(8192).regex(/^\S*$/u).default(''),
     STRIPE_PRO_MONTHLY_PRICE_ID: z
         .string()
@@ -13,6 +19,12 @@ export function validateBillingEnvironment(
     env: z.infer<typeof billingEnvironmentSchema> & { APP_ENV: string },
     context: z.RefinementCtx,
 ) {
+    if (env.STRIPE_WEBHOOK_SECRET && !env.STRIPE_SECRET_KEY)
+        context.addIssue({
+            code: 'custom',
+            path: ['STRIPE_WEBHOOK_SECRET'],
+            message: 'requires billing configuration',
+        });
     if (Boolean(env.STRIPE_SECRET_KEY) !== Boolean(env.STRIPE_PRO_MONTHLY_PRICE_ID))
         context.addIssue({
             code: 'custom',

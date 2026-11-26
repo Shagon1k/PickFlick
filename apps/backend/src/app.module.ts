@@ -35,6 +35,7 @@ export const HTTP_LOG_REDACTIONS = [
     'req.headers.cookie',
     'req.headers.authorization',
     'req.headers["svix-signature"]',
+    'req.headers["stripe-signature"]',
     'res.headers["set-cookie"]',
 ];
 

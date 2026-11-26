@@ -1,6 +1,6 @@
 # Phase 20 billing preparation
 
-Working reference for [#70](https://github.com/Shagon1k/PickFlick/issues/70) and [#71](https://github.com/Shagon1k/PickFlick/issues/71). Project 3 owns live
+Working reference for [#70](https://github.com/Shagon1k/PickFlick/issues/70), [#71](https://github.com/Shagon1k/PickFlick/issues/71) and [#72](https://github.com/Shagon1k/PickFlick/issues/72). Project 3 owns live
 status. [Roadmap](../ROADMAP.md#phase-20--subscription--entitlements--in-progress) owns phase
 acceptance; [ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
 holds the accepted integration boundary.
@@ -20,7 +20,7 @@ the eligibility review belong to #94.
 
 Club access still uses fixture entitlements in `apps/backend/src/modules/clubs/access/club-tiers.ts`.
 `club-access.ts` already separates new-work permission from existing participation, lifecycle and
-member limits. Subscription is implemented in #71 below; BillingEvent remains #72.
+member limits. Subscription is implemented in #71 below; BillingEvent and reconciliation are implemented in #72 below.
 Reuse these boundaries in #73; do not build a second authorization mechanism.
 
 ## Downgrade comparison
@@ -330,3 +330,67 @@ and its [unsupported parameters](https://docs.stripe.com/payments/managed-paymen
   exact source frontend restored temporarily and five passes after restoring the reviewed fixes.
   The cause remains unconfirmed; the full-run flaky-test failure is retained as a verification
   limitation rather than changing Selection behavior or accepting a different baseline.
+
+## #72 implementation — 2026-11-26
+
+Run `r_348c5147daf2c3ed079b` is the owner-started autonomous #72 run on the managed branch.
+Its authorization covers scoped repository implementation, commits, a normal branch push and one
+Draft PR. External billing operations, permission changes, secret installation, deployment and merge
+are excluded. The earlier preparation-only boundary does not authorize those external actions.
+
+### Delivered boundaries
+
+- Raw-byte `POST /webhooks/stripe`, exposed by the existing Next rewrite at
+  `POST /api/webhooks/stripe`. The adapter verifies `Stripe-Signature` with a five-minute tolerance,
+  checks API `2026-11-18.endive` and test/live mode, validates the boundary, and emits neutral events.
+- One unique `(provider, providerEventId)` receipt per valid event. The ledger is the durable work
+  queue: intake returns 204 after insertion without provider reads. No raw payload, signature,
+  signing-secret value, address or card data is stored. Unsupported events are explicitly ignored.
+- A five-second worker in the API process, using the existing Nest worker lifecycle, User lock,
+  provider adapter and paid-period projection. It processes one event and one due account per cycle.
+  Subscription re-fetches happen inside the User lock, so event order cannot overwrite newer truth.
+- Projection, audit and Phase 17 billing notification effects are atomic. Failed attempts roll back
+  those writes before recording a bounded failure and a one-minute retry. Notifications use the
+  committed state-transition audit identity; unchanged refreshes produce no extra notification.
+- Scheduled reconciliation persists last/next check times and failure/attempt metadata. A successful
+  check schedules the next in 15 minutes. Logs expose backlog, lag, failures and repaired mismatches.
+  The [operations reference](environment.md#billing-webhook-operations) explains inspection/retry.
+- Refunds/disputes re-fetch Subscription truth without assuming immediate revocation. Disputes resolve
+  payment ownership inside the adapter and need operator-approved Charges Read permission. Foreign
+  sandbox customers and anonymized Users cannot gain access through reconciliation.
+- Own-data archives include customer-scoped minimal ledger metadata. Retention and external provider
+  deletion remain privacy gates. An unresolved Checkout response without a stored provider ID stays
+  an explicit operator-repair case; background reconciliation never creates a purchase.
+
+### Verification and remaining acceptance
+
+- `pnpm verify` passes on Node 24.15.0 / pnpm 11.25.0: production dependency audit (zero
+  High/Critical), ESLint/Stylelint, Knip, formatting, all type checks, 782 unit tests in 79 files,
+  and production builds.
+- The full 49-migration chain, including the additive ledger/reconciliation migration, replays on a
+  fresh disposable PostgreSQL database. Shared databases are untouched.
+- All 49 focused PostgreSQL/API tests pass across the billing worker (14), existing billing API (14),
+  account deletion (8) and archives (13). They cover raw-body intake, duplicate and concurrent events,
+  out-of-order convergence, Checkout completion, cancel/reversal, paid-through preservation, failed
+  acknowledgement, transaction rollback, retry, drift repair, refund/dispute handling, anonymized
+  accounts, own-ledger export isolation and real S3-compatible storage cleanup/download.
+- All 59 focused adapter/configuration unit tests pass, including the 11 agreed event kinds,
+  invalid/stale/modified signatures, wrong API version/live mode, ignored events and Charge ownership.
+- `pnpm deploy:check` and `git diff --check` pass; nothing is deployed.
+- All 263 selected smoke/visual checks pass in the digest-pinned Playwright 1.63.0 noble image
+  with Node 24.15.0 / pnpm 11.25.0 and one worker. CI retry/flaky rejection stays enabled;
+  no test retries or baseline changes occur. The shared configuration change selects both full
+  PR UI selections, despite introducing no frontend source changes.
+- Staged gitleaks 8.30.1 scanning finds no leaks. Disposable database/storage containers are removed;
+  the browser container removes itself after completion. The managed worktree remains for review.
+
+Test fixtures are synthetic and schema-derived; they do not satisfy the requested recorded Managed
+Payments sandbox evidence. No UI behavior changes, design baselines or Club entitlement replacement
+are included.
+
+The actual destination must be registered only after its handler is deployed, with the agreed event
+set and exact pinned API version. Destination-specific signing-secret installation, Charges Read
+permission, real signed delivery, recorded/redacted replay/order fixtures and Link/portal
+cancel-at-period-end/reversal delivery remain unverified. Those actions require an owner-controlled
+external setup/deployment continuation. #72 must remain open across this partial implementation PR;
+local tests and Draft PR creation do not close its post-deployment acceptance gate.

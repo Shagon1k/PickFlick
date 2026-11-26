@@ -2,6 +2,25 @@ import type { IBillingHistory, TSubscriptionStatus } from '@pickflick/contracts'
 
 export const BILLING_PROVIDER = Symbol('BILLING_PROVIDER');
 
+export interface IBillingWebhookEvent {
+    providerEventId: string;
+    kind:
+        | 'CHECKOUT_CHANGED'
+        | 'SUBSCRIPTION_CHANGED'
+        | 'PAYMENT_CHANGED'
+        | 'PAYMENT_REVIEW'
+        | 'IGNORED';
+    occurredAt: Date;
+    customerId: string | null;
+    paymentId: string | null;
+}
+
+export class BillingWebhookError extends Error {
+    constructor(readonly reason: 'INVALID_SIGNATURE' | 'INVALID_EVENT') {
+        super(reason);
+    }
+}
+
 export interface ISubscriptionSnapshot {
     id: string;
     customerId: string;
@@ -23,6 +42,8 @@ export interface ICheckoutSnapshot {
 
 export interface IBillingProvider {
     isEnabled: boolean;
+    verifyWebhookEvent(payload: Buffer, signature: string): IBillingWebhookEvent;
+    fetchPaymentCustomer(paymentId: string): Promise<string | null>;
     createCustomer(reference: string): Promise<string>;
     createCheckoutSession(input: {
         customerId: string;

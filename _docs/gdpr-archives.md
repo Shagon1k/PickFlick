@@ -63,6 +63,7 @@ when the referenced nomination belongs to a peer. Session Ratings and Personal R
 | `roleChanges`             | Events with the requester as subject: `id`, `clubId`, `action`, `previousRole`, `nextRole`, `createdAt`                                                                   |
 | `subscription`            | Own provider/customer/subscription/price IDs, plan/status, period bounds, paid-through date, scheduled cancellation and created/updated timestamps; null before checkout. |
 | `billingAudit`            | Own billing action and event timestamp; no checkout request identities or authenticated provider URLs.                                                                    |
+| `billingEvents`           | Own customer-scoped event ID, normalized kind, occurrence/receipt/processing times, state and bounded failure code. No provider payload or peer records.                  |
 | `exportJobs`              | Own `id`, `status`, `attemptCount`, `createdAt`, `completedAt`, `expiresAt`, `failure` at snapshot time                                                                   |
 | `avatar`                  | Current uploaded personal avatar as `contentType` and `base64`, or `null`; no provider photo fetch                                                                        |
 

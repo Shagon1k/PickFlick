@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@pickflick/database';
 
+import { recordNotification } from '../notifications/notification-store.js';
 import {
     BillingProviderError,
     type IBillingProvider,
@@ -60,8 +61,14 @@ export async function saveSnapshot(
         account.plan !== updated.plan ||
         account.cancelAtPeriodEnd !== updated.cancelAtPeriodEnd ||
         account.paidThrough?.getTime() !== updated.paidThrough?.getTime()
-    )
-        await auditBilling(tx, account.id, 'SUBSCRIPTION_REFRESHED');
+    ) {
+        const audit = await auditBilling(tx, account.id, 'SUBSCRIPTION_REFRESHED');
+        await recordNotification(tx, {
+            recipientId: account.userId,
+            event: 'BILLING_SERVICE',
+            sourceId: audit.id,
+        });
+    }
     return updated;
 }
 
