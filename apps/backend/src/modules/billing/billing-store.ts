@@ -28,6 +28,15 @@ export function auditBilling(tx: Prisma.TransactionClient, subscriptionId: strin
     return tx.billingAuditEvent.create({ data: { subscriptionId, action } });
 }
 
+export function hasSubscriptionChanged(before: TSubscription, after: TSubscription) {
+    return (
+        before.status !== after.status ||
+        before.plan !== after.plan ||
+        before.cancelAtPeriodEnd !== after.cancelAtPeriodEnd ||
+        before.paidThrough?.getTime() !== after.paidThrough?.getTime()
+    );
+}
+
 export async function saveSnapshot(
     tx: Prisma.TransactionClient,
     account: TSubscription,
@@ -56,12 +65,7 @@ export async function saveSnapshot(
             plan,
         },
     });
-    if (
-        account.status !== updated.status ||
-        account.plan !== updated.plan ||
-        account.cancelAtPeriodEnd !== updated.cancelAtPeriodEnd ||
-        account.paidThrough?.getTime() !== updated.paidThrough?.getTime()
-    ) {
+    if (hasSubscriptionChanged(account, updated)) {
         const audit = await auditBilling(tx, account.id, 'SUBSCRIPTION_REFRESHED');
         await recordNotification(tx, {
             recipientId: account.userId,

@@ -5,6 +5,7 @@ import type { TRuntimeEnvironment } from '@pickflick/config/environment';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { Transactions } from '../notifications/transactions.js';
 import { BILLING_PROVIDER, BillingProviderError, type IBillingProvider } from './billing.types.js';
 import { buildCheckoutRequest } from './billing-checkout.js';
 import {
@@ -21,6 +22,7 @@ export class BillingCheckoutService {
         private readonly prisma: PrismaService,
         @Inject(BILLING_PROVIDER) private readonly provider: IBillingProvider,
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
+        private readonly transactions: Transactions,
     ) {}
 
     async create(userId: string) {
@@ -29,7 +31,7 @@ export class BillingCheckoutService {
         // Commit identities before calling Stripe so a lost response can replay the same request.
         await this.prepare(userId);
         await this.prepareAttempt(userId);
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.write(async (tx) => {
             await lockBillingUser(tx, userId);
             const account = await refreshBilling(
                 tx,
@@ -81,7 +83,7 @@ export class BillingCheckoutService {
     }
 
     private prepareAttempt(userId: string) {
-        return this.prisma.$transaction(async (tx) => {
+        return this.transactions.write(async (tx) => {
             await lockBillingUser(tx, userId);
             let account = await tx.subscription.findUniqueOrThrow({ where: { userId } });
             if (!account.providerCustomerId) {

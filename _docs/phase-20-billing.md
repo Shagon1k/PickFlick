@@ -394,3 +394,22 @@ permission, real signed delivery, recorded/redacted replay/order fixtures and Li
 cancel-at-period-end/reversal delivery remain unverified. Those actions require an owner-controlled
 external setup/deployment continuation. #72 must remain open across this partial implementation PR;
 local tests and Draft PR creation do not close its post-deployment acceptance gate.
+
+### Review fix round 1 — 2026-11-26
+
+- Settings and both checkout refresh transactions now use `Transactions.write`, so new billing
+  notifications publish recipient refresh signals after commit. Existing locks, timeouts and
+  transaction order are preserved.
+- Snapshot persistence and reconciliation share `hasSubscriptionChanged`; both callers retain
+  their original arguments and evaluation points, including Checkout's intermediate state and
+  date/null comparison semantics.
+- All three new publication regressions fail on the source snapshot and pass with the fix.
+  Separate database reads during publication confirm the projection and notification are committed.
+  Unchanged Settings refreshes and subsequent worker reconciliation publish no duplicate signal.
+- All 39 focused PostgreSQL/API checks pass across billing (17), reconciliation (14) and account
+  deletion (8), including cancellation/reversal, scheduled repair and rollback cases. The existing
+  migration chain replays on a fresh disposable local `pickflick_test` database; no schema changes
+  are included.
+- `pnpm verify` passes on Node 24.15.0 / pnpm 11.25.0: the dependency audit, lint, Knip,
+  formatting, type checks, 782 unit tests and production builds. Staged gitleaks scanning and
+  `git diff --check` pass. Disposable database/storage containers are removed.

@@ -5,6 +5,7 @@ import type { Prisma } from '@pickflick/database';
 
 import { RUNTIME_ENVIRONMENT } from '../../config/runtime.module.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { Transactions } from '../notifications/transactions.js';
 import { BILLING_PROVIDER, BillingProviderError, type IBillingProvider } from './billing.types.js';
 import { buildCheckoutRequest } from './billing-checkout.js';
 import {
@@ -29,6 +30,7 @@ export class BillingService {
         private readonly prisma: PrismaService,
         @Inject(BILLING_PROVIDER) private readonly provider: IBillingProvider,
         @Inject(RUNTIME_ENVIRONMENT) private readonly environment: TRuntimeEnvironment,
+        private readonly transactions: Transactions,
     ) {}
 
     getOffer() {
@@ -36,7 +38,7 @@ export class BillingService {
     }
 
     async get(userId: string): Promise<IBillingSummary> {
-        const account = await this.prisma.$transaction(async (tx) => {
+        const account = await this.transactions.write(async (tx) => {
             await lockBillingUser(tx, userId);
             const current = await tx.subscription.findUnique({ where: { userId } });
             if (!current) return null;

@@ -410,6 +410,8 @@ the adapter; refund/dispute events do not imply immediate revocation.
 Projection, audit and notification writes share a transaction. A savepoint rolls them back before
 recording a bounded failure and a one-minute retry. State changes record one mandatory
 `BILLING_SERVICE` notification through Phase 17; unchanged projections create no new notification.
+Request-driven Settings and checkout refreshes use the notification transaction wrapper to publish
+recipient refresh signals after commit, as worker reconciliation does.
 Successful reconciliation schedules the next check in 15 minutes. Persisted failures, attempt counts,
 processing lag/backlog and mismatch-repair logs support operation and retry; see the
 [environment reference](_docs/environment.md#billing-webhook-operations).

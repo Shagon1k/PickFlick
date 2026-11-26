@@ -1,7 +1,7 @@
 import type { Prisma } from '@pickflick/database';
 
 import { BillingProviderError, type IBillingProvider } from '../billing.types.js';
-import { refreshBilling, type TSubscription } from '../billing-store.js';
+import { hasSubscriptionChanged, refreshBilling, type TSubscription } from '../billing-store.js';
 
 const RECONCILE_INTERVAL_MS = 15 * 60_000;
 export const BILLING_RETRY_MS = 60_000;
@@ -25,12 +25,7 @@ export async function reconcileAccount(
             reconcileFailure: null,
         },
     });
-    return (
-        account.plan !== updated.plan ||
-        account.status !== updated.status ||
-        account.cancelAtPeriodEnd !== updated.cancelAtPeriodEnd ||
-        account.paidThrough?.getTime() !== updated.paidThrough?.getTime()
-    );
+    return hasSubscriptionChanged(account, updated);
 }
 
 export async function lockAccount(tx: Prisma.TransactionClient, userId: string) {
