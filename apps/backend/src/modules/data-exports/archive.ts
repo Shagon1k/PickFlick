@@ -97,6 +97,28 @@ async function collectPersonalData(tx: Prisma.TransactionClient, userId: string)
             where: { userId },
             select: { event: true, inApp: true, email: true },
         }),
+        subscription: await tx.subscription.findUnique({
+            where: { userId },
+            select: {
+                provider: true,
+                providerCustomerId: true,
+                providerSubscriptionId: true,
+                providerPriceId: true,
+                plan: true,
+                status: true,
+                periodStart: true,
+                periodEnd: true,
+                paidThrough: true,
+                cancelAtPeriodEnd: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        }),
+        billingAudit: await tx.billingAuditEvent.findMany({
+            where: { subscription: { userId } },
+            select: { action: true, createdAt: true },
+            orderBy: { createdAt: 'asc' },
+        }),
         exportJobs: await tx.dataExportJob.findMany({
             where: { userId },
             select: {
@@ -165,11 +187,12 @@ export async function buildArchive(
                     'Shared catalog caches and media, Club avatars and Club achievements are not personal contributions.',
                     'Provider-hosted photos and external provider/mailbox/log/backup copies are not fetched. Uploaded current personal avatar is included.',
                     'Address hashes, abuse counters, webhook/suppression records and internal delivery IDs/reasons are excluded security/operational records.',
-                    'Billing is not implemented. Job metadata retention and backup/provider policies remain subject to separate review.',
+                    'Checkout retry identities and authenticated provider URLs are excluded. Billing audit/job metadata retention and backup/provider policies remain subject to separate review.',
                 ],
                 providers: [
                     'Google OAuth; Apple remains gated. Own linked-provider subjects are included without credentials.',
                     'Hosting/PostgreSQL/private S3-compatible storage and Cloudflare process service data.',
+                    'Stripe Managed Payments / Link hold billing, invoice and payment-method records outside this archive.',
                     'Resend and Google Workspace may hold notification/contact/support copies outside this archive.',
                     'Configured PoiskKino/TheTVDB or TMDB/media services receive server-side catalog requests; YouTube connects after Play.',
                 ],

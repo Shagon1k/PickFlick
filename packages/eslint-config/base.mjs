@@ -173,6 +173,7 @@ export default [
                 },
                 {
                     ignoreWords: [
+                        'billing',
                         'clubs',
                         'achievements',
                         'movies',

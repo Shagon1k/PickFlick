@@ -422,6 +422,7 @@ again, while their other metadata remains usable. Silent Era requires a known re
 | Club ratings leaderboard         | Included                | Included                                           |
 | Club analytics                   | All Overview statistics | All Overview statistics                            |
 
+- Pro is a personal User subscription. Any registered User may buy it before creating a Club and manage it regardless of Club roles (owner clarification handed to the #71 continuation).
 - Pro costs €5 per monthly billing period plus applicable tax at checkout (owner decision,
   2026-11-23). Configure the recurring EUR price as tax-exclusive.
 - Billing is anchored to the first successful payment, not the calendar month.
@@ -1521,7 +1522,7 @@ records the accepted Stripe Managed Payments direction replacing the unimplement
 with a provider-neutral adapter. Dashboard evidence confirms sandbox readiness and the Pro
 product/portal configuration. The owner accepted the discovery decision and staged verification:
 checkout/tax/anchor/portal behavior in #71, webhook registration/delivery in #72, and entitlements
-in #73. Runtime billing is not built. Alex owns account configuration; support/descriptor setup and
+in #73. #71 implements the checkout/portal/history adapter and Subscription UI; real sandbox behavior and exact-SHA hosted owner review remain unverified. Alex owns account configuration; support/descriptor setup and
 live review remain #94 gates. Organization grouping waits until the TailorTales account exists.
 Live activation and the Managed Payments eligibility review belong to #94. The owner confirmed
 €5 plus applicable tax at checkout; sandbox price configuration must use tax-exclusive behavior.

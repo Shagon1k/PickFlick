@@ -1,6 +1,8 @@
+import { getSessionState } from '#api/auth-session.server';
+import { getBillingOffer } from '#api/billing.server';
+import BillingButton from '#components/billing/BillingButton/BillingButton';
 import PublicShell from '#components/shells/PublicShell/PublicShell';
 import BrandImage from '#components/ui/BrandImage/BrandImage';
-import Button from '#components/ui/Button/Button';
 import ButtonLink from '#components/ui/Button/ButtonLink';
 import HorizontalScroll from '#components/ui/HorizontalScroll/HorizontalScroll';
 import { createPublicMetadata } from '#lib/public-metadata';
@@ -46,7 +48,19 @@ function PlanFeatures({ features }: { features: readonly IPlanFeature[] }) {
     );
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+    let isEnabled = false;
+    let isUnavailable = false;
+    try {
+        isEnabled = (await getBillingOffer()).isEnabled;
+    } catch {
+        isUnavailable = true;
+        console.error('Billing offer could not be loaded.');
+    }
+    const isAnonymous = (await getSessionState()) === 'anonymous';
+    let checkoutNote = 'Pro checkout is unavailable. You can start on Free.';
+    if (isUnavailable) checkoutNote = 'Pro checkout is temporarily unavailable. Try again later.';
+    if (isEnabled) checkoutNote = '';
     return (
         <PublicShell currentPage="pricing">
             <div className={styles.page}>
@@ -105,12 +119,18 @@ export default function PricingPage() {
                                     <strong>€5</strong>
                                     <span>/ month</span>
                                 </div>
-                                <Button aria-describedby="pro-checkout-note" disabled>
-                                    Upgrade to Pro
-                                </Button>
+                                <BillingButton
+                                    isEnabled={isEnabled}
+                                    isAnonymous={isAnonymous}
+                                    isFullWidth
+                                />
                                 <p className={styles.checkoutNote} id="pro-checkout-note">
-                                    Pro checkout is coming soon.
+                                    Plus applicable tax at checkout. Purchases are sold through
+                                    Link.
                                 </p>
+                                {checkoutNote ? (
+                                    <p className={styles.checkoutNote}>{checkoutNote}</p>
+                                ) : null}
                                 <hr className={styles.planRule} />
                                 <PlanFeatures features={proPlanFeatures} />
                             </article>

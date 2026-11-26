@@ -4,6 +4,7 @@ import { libraryQuerySchema } from '../movies/library.schema.js';
 export const DEFAULT_AUTH_RETURN_TARGET = '/app';
 
 const allowedReturnTargets = [
+    /^\/settings\?tab=subscription$/u,
     /^\/settings\?tab=privacy&deletion=confirm$/u,
     /^\/movies\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u,
     /^\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u,

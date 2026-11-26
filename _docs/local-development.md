@@ -68,6 +68,15 @@ running, use `pnpm --filter @pickflick/database build`; the existing watcher res
 workers. `prisma generate` alone updates the source client, which can leave readiness healthy while
 real API reads fail with unknown-field errors.
 
+## Enable sandbox billing
+
+The optional server-only `STRIPE_SECRET_KEY` and `STRIPE_PRO_MONTHLY_PRICE_ID` pair enables
+checkout through the normal `pnpm dev` startup. Use the same PickFlick sandbox and the local key
+selected by the owner; see the [billing environment contract](environment.md#billing-configuration).
+Return URLs use the local `AUTH_BASE_URL`. Without the pair, Free remains available and checkout
+is disabled. Tests inject a stub and need no Stripe credentials. Webhooks and Club entitlement
+replacement remain #72/#73; configuring the pair does not establish paid-service readiness.
+
 ## Enable the movie catalog
 
 The example environment disables external catalog calls. In the ignored root `.env`, set

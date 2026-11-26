@@ -69,6 +69,9 @@ export class AccountDeletionService {
                     sessionId: null,
                     avatarKey: account.avatarObjectKey,
                     nextAttemptAt: now,
+                    billing: (await tx.subscription.findUnique({ where: { userId: user.id } }))
+                        ? 'PENDING'
+                        : 'NOT_REQUIRED',
                 },
             });
             await endMemberships(tx, user.id, now);

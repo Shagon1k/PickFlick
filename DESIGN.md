@@ -207,13 +207,13 @@ closes when all accepted participants submit. Operators can close either phase e
 moves to Rating only by hand; Rating closes when everyone has rated or an operator
 finishes it.
 
-Billing integration remains Proposed under
+Billing checkout, portal, history and Subscription UI are implemented locally under
 [ADR-021](_docs/decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter).
 `pricing.html`, the Subscription panel in `settings.html`, and `app.html` retain their composition
 and responsive authority. Their Paddle/payment-method fixture copy is superseded by the accepted
 Stripe Managed Payments contract; it is not evidence of supported payment methods or refund rules.
 The owner confirmed €5 monthly plus applicable tax at checkout on 2026-11-23. Pricing and billing
-copy must disclose the additional tax; reconciling the rendered copy belongs to #71.
+copy discloses the additional tax and that purchases are sold through Link. Runtime and hosted owner acceptance remain separate #71 gates.
 The explicit Club-choice approach selected by the owner has no control in the current prototypes.
 Its interaction needs review before UI implementation; use shared components and compare both
 reference and implementation at 390 and 1440 pixels. Keep history and existing participation
@@ -231,7 +231,7 @@ All canonical screens are MVP and approved as direction.
 | Route / view                        | Purpose                                                                                                                                                                                                                                                                               | Source                                                                                   | Build                                                                                                                     | QA                                                                                |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `/`                                 | Explain the ritual and lead visitors to sign up.                                                                                                                                                                                                                                      | [landing.html](_docs/design/prototypes/landing.html)                                     | Done                                                                                                                      | Passed locally                                                                    |
-| `/pricing`                          | Compare Free and Pro; enter checkout.                                                                                                                                                                                                                                                 | [pricing.html](_docs/design/prototypes/pricing.html)                                     | Done; checkout disabled until billing                                                                                     | Passed locally                                                                    |
+| `/pricing`                          | Compare Free and Pro; enter checkout.                                                                                                                                                                                                                                                 | [pricing.html](_docs/design/prototypes/pricing.html)                                     | Checkout handoff implemented; disabled without configuration                                                              | Passed locally                                                                    |
 | `/contact`                          | Send a short message with stable validation and success feedback.                                                                                                                                                                                                                     | [contact.html](_docs/design/prototypes/contact.html)                                     | Done                                                                                                                      | Passed locally                                                                    |
 | `/legal/privacy`, `/legal/terms`    | Public entries that never present draft policy as approved.                                                                                                                                                                                                                           | Shared public shell                                                                      | Done; final legal copy pending                                                                                            | Passed locally                                                                    |
 | `/login`                            | Sign in with an enabled provider and continue; signed-in Users go to `/app`. Apple is hidden while gated.                                                                                                                                                                             | [login.html](_docs/design/prototypes/login.html)                                         | Done for Google; Apple built but gated                                                                                    | Passed locally with Apple off                                                     |
@@ -250,7 +250,7 @@ All canonical screens are MVP and approved as direction.
 | Session — Completed                 | Keep the screening, ratings, rivals, attendees, and notes.                                                                                                                                                                                                                            | [session-detail.html](_docs/design/prototypes/session-detail.html)                       | Active — film, screening facts, historical ratings/comments and permitted nomination breakdowns                           | Exact-SHA hosted preview and owner review pending                                 |
 | `/library`                          | Search personal Ratings and Watchlist; personal statistics and achievements.                                                                                                                                                                                                          | [library.html](_docs/design/prototypes/library.html)                                     | Active — searchable Ratings/Watchlist tables with sortable headers and shared editors; statistics and achievement shelves | Exact-SHA hosted preview and owner review pending                                 |
 | `/movies/[movieId]`                 | Inspect a film, edit Personal Rating and Watchlist, discover related films.                                                                                                                                                                                                           | [movie-details.html](_docs/design/prototypes/movie-details.html)                         | Details, trailer player, links, Personal Rating and Watchlist priority editors implemented                                | Details accepted 2026-10-23; editor QA recorded in Phase 15; owner review pending |
-| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Partial — Profile, Appearance, CSV, privacy/archive and deletion; other panels Proposed                                   | Local 390/1440 checks passed; hosted owner review pending                         |
+| `/settings`                         | Profile, notifications, subscription, Privacy & data, import/export.                                                                                                                                                                                                                  | [settings.html](_docs/design/prototypes/settings.html)                                   | Partial — Profile, Appearance, CSV, privacy/archive, deletion and Subscription; Notifications Proposed                    | Local 390/1440 checks passed; hosted owner review pending                         |
 | `/admin`                            | Operate Users, Clubs, metrics, and settings.                                                                                                                                                                                                                                          | [admin-panel.html](_docs/design/prototypes/admin-panel.html)                             | Not started                                                                                                               | Not checked                                                                       |
 | `not-found`, `error`                | Recover from missing routes and failures. Signed-in visitors get the product shell with Back to Hub (500 adds Try again); signed-out visitors get the public shell with Back to main. If the root layout itself fails, a plain Projector Malfunction page with Try again replaces it. | [error.html](_docs/design/prototypes/error.html)                                         | Done                                                                                                                      | Passed locally                                                                    |
 
@@ -612,8 +612,7 @@ account context, a 218px sidebar, 36px content gap, and one flat bordered card. 
 shared product Settings menu replaces the sidebar. The 72px profile avatar and upload actions
 recompose vertically in this compact layout. Shared form controls provide read-only email/provider
 and English language information, name validation, offline/error feedback and live save status
-beside Save changes without expanding the card. Notifications and Subscription panels remain
-Proposed under their owning issues.
+beside Save changes without expanding the card. Notifications remains Proposed; Subscription is implemented under #71.
 
 Appearance saves per-user monochrome film/trailer media, Color reveal, quiet mode,
 Comfortable/Compact spacing and one shared optional-column setup. Quiet mode has an adjacent
@@ -635,6 +634,25 @@ and the remaining verification are tracked in [Phase 19 Settings](_docs/phase-19
 The exact-head hosted preview still requires owner acknowledgment; local evidence is not final
 visual acceptance.
 
+#### Subscription — Partial
+
+Issue #71 implements the canonical `settings.html` Subscription composition: current-plan inset,
+usage cards, locally scrolling invoice table, provider portal and cancellation section. Usage stacks
+below 768px; the shared Settings shell replaces its sidebar below 1024px. The shared Progress
+usage variant keeps the actual count visible at 28px above a bounded 6px monochrome progress bar;
+usage cards have 16px padding, matching the canonical metrics.
+
+The server confirms the paid period independently of browser return parameters. Pending payment,
+overdue/paused status, scheduled cancellation, unavailable billing/history, retry, offline and empty
+states are explicit. A successful status refresh also reloads the first invoice page, replacing
+cached history. A user can subscribe before creating a Club. Pricing discloses tax and Link;
+checkout is disabled when configuration is absent. Payment methods and final cancellation live in
+the hosted portal; PickFlick does not send duplicate receipt emails.
+
+The reference and implementation comparisons, local checks and remaining exact-head hosted owner
+review are recorded in [Phase 20 billing](_docs/phase-20-billing.md). Club-choice UI and enforcement
+remain #73; existing product, privacy and legal checkpoints are not accepted by this delivery.
+
 #### Account deletion
 
 Settings → Privacy & data follows the canonical Settings shell and danger-zone composition.
@@ -646,8 +664,7 @@ are disabled; recoverable/offline/reauthentication errors stay visible in the di
 returns focus to Delete account. Successful acceptance makes a full navigation to sign-in with
 access-ended and cleanup-pending feedback, dropping signed-in router caches.
 
-This supersedes the prototype's destructive-history/billing fixture claims. Billing remains
-separate work. [Working evidence](_docs/phase-19-account-deletion.md) records
+This supersedes the prototype's destructive-history fixture claims. #71 adds durable checkout expiry and subscription cancellation before cleanup can finish. [Working evidence](_docs/phase-19-account-deletion.md) records
 render comparisons and the required exact-head hosted owner review; that review remains open.
 
 #### Privacy and archive surfaces

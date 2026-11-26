@@ -4,23 +4,32 @@ Reference for PickFlick's configuration, runtime contracts, CI, images, and Comp
 the app, see [Develop locally](local-development.md); for deployed environments, see the
 [UAT](uat-operations.md) and [production](production-operations.md) guides.
 
-## Billing configuration (Proposed)
+## Billing configuration
 
-Billing is unimplemented. These names are the accepted adapter inventory under
-[ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter),
-not yet implemented runtime variables. No secret values are installed by this documentation change.
+The backend adapter uses the following server-only configuration under
+[ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter).
+Both values are optional together; omission disables checkout. A partial pair fails startup validation.
 
-| Variable                      | Planned runtime contract                                                                                                                            | Secret |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `STRIPE_SECRET_KEY`           | PickFlick sandbox account key for server-side adapter calls during development; live configuration belongs to #94.                                  | Yes    |
-| `STRIPE_WEBHOOK_SECRET`       | Signing secret for the specific webhook destination or local forwarding session; values cannot be shared between destinations.                      | Yes    |
-| `STRIPE_PRO_MONTHLY_PRICE_ID` | Price in the same PickFlick sandbox: Pro, EUR 500 minor units, recurring monthly, quantity one, tax-exclusive (€5 plus applicable tax at checkout). | No     |
+| Variable                      | Runtime contract                                                                                                                                                                                 | Secret |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| `STRIPE_SECRET_KEY`           | Sandbox server key with Customers, Checkout Sessions, Customer Portal and Subscriptions Write, and Products, Prices and Invoices Read. Nonproduction rejects live keys.                          | Yes    |
+| `STRIPE_PRO_MONTHLY_PRICE_ID` | Active tax-exclusive €5 monthly (500 euro cents), interval count one, per-unit price for the active personal-use SaaS product (`txcd_10103000`). The adapter verifies the offer before checkout. | No     |
 
-#71/#72 must add these names together to `.env.example`, typed startup validation and the actual
-environment wiring when implementing the adapter. Neither secret is browser-facing. Existing
-public origins supply server-owned checkout/portal return URLs; no extra return-URL variable or
-publishable browser key is proposed for hosted redirect checkout. [Owner setup](phase-20-billing.md#owner-setup-pickflick-stripe-sandbox)
-records Dashboard evidence and the accepted verification handoff without secret values.
+The adapter pins Stripe SDK `23.2.0` and API `2026-11-18.endive`. Hosted redirects need no browser
+publishable key. Return URLs use the environment's `AUTH_BASE_URL`; no request-supplied return URL
+is accepted. `compose.preview.yaml` and `compose.deploy.yaml` pass the optional pair only to the
+backend. Local `pnpm dev` uses the normal repository environment loader. The test suite injects a
+stub instead of contacting Stripe. No credentials are installed or changed by the implementation.
+
+The owner selected one PickFlick sandbox for local, preview and UAT. Separate keys
+allow independent revocation but do not isolate provider data. Random persisted billing identities
+separate customers and idempotency keys across databases and preview slots; email and seed UUID
+are never used to merge customers. Preserve the billing row when restarting the same runtime.
+
+Webhook signing-secret configuration (`STRIPE_WEBHOOK_SECRET`) belongs to #72's actual handler.
+It remains absent from runtime validation and Compose until then; signing secrets must be specific
+to each hosted endpoint or local forwarding session. Live eligibility, support/descriptor setup
+and activation remain #94 gates. See [billing preparation](phase-20-billing.md#owner-setup-pickflick-stripe-sandbox).
 
 ## Runtime variables
 

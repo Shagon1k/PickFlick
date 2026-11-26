@@ -1,6 +1,6 @@
 # Phase 20 billing preparation
 
-Working reference for [#70](https://github.com/Shagon1k/PickFlick/issues/70). Project 3 owns live
+Working reference for [#70](https://github.com/Shagon1k/PickFlick/issues/70) and [#71](https://github.com/Shagon1k/PickFlick/issues/71). Project 3 owns live
 status. [Roadmap](../ROADMAP.md#phase-20--subscription--entitlements--in-progress) owns phase
 acceptance; [ADR-021](decisions/README.md#adr-021--use-stripe-managed-payments-through-a-billing-adapter)
 holds the accepted integration boundary.
@@ -18,9 +18,9 @@ Alex performs sandbox configuration interactively; this document does not author
 to credentials, runtime billing code, migrations or dependent implementation. Live activation and
 the eligibility review belong to #94.
 
-Current code uses fixture entitlements in `apps/backend/src/modules/clubs/access/club-tiers.ts`.
+Club access still uses fixture entitlements in `apps/backend/src/modules/clubs/access/club-tiers.ts`.
 `club-access.ts` already separates new-work permission from existing participation, lifecycle and
-member limits. Subscription and BillingEvent are planned entities, absent from the Prisma schema.
+member limits. Subscription is implemented in #71 below; BillingEvent remains #72.
 Reuse these boundaries in #73; do not build a second authorization mechanism.
 
 ## Downgrade comparison
@@ -176,7 +176,7 @@ interaction before implementing that addition, using the shared UI kit.
 
 For UI delivery inspect both reference and implementation at 390 and 1440 pixels; check hierarchy,
 mobile composition, keyboard/focus behavior, pending choice, read-only, error and recovery states.
-This change creates no UI and claims no rendered comparison.
+#70 created no UI. #71 rendered comparison and evidence are recorded below.
 
 ## Preparation verification — 2026-11-23
 
@@ -220,3 +220,113 @@ Frozen installation and Prisma client generation pass. The production security a
 zero High and zero Critical advisories; the previous Effect blocker is resolved.
 Full `pnpm verify` passes on Node 24.15.0 / pnpm 11.25.0: audit, lint, Knip, formatting,
 typecheck, all 765 unit tests in 77 files and build. Hosted CI remains a separate delivery gate.
+
+## #71 implementation — 2026-11-25
+
+The owner approved the implementation, Stripe SDK, minimal migration, account-deletion integration
+and routine scoped commits/pushes in the managed continuation. This supersedes the earlier
+preparation-only boundary for #71. He clarified that Pro belongs to a User: any registered User
+may subscribe before creating a Club and manage their subscription regardless of Club roles.
+The last preparation messages retained `human-control` and `preview-required`; owner visual
+acknowledgment is still required. No new product or legal/privacy sign-off is inferred.
+
+The owner selected one existing PickFlick sandbox for local, preview and UAT after the Dashboard
+blocked additional sandboxes behind business verification. He confirmed saving separate keys for
+each environment and the common monthly Price ID. All six transferred screenshots were reviewed
+in source order: account restriction, key listing/unification notice, own-integration choice,
+custom permissions, resource selector and final seven-permission review. They establish setup
+history, not a successful runtime payment. No values or secret files were read or changed here.
+
+### Delivered boundaries
+
+- One provider-neutral billing module, Stripe SDK `23.2.0`, API `2026-11-18.endive`, and an injectable
+  stub. Runtime omission disables billing; a partial configuration or nonproduction live key fails
+  startup. The offer is verified before Checkout: active personal-use SaaS, €5 (500 euro cents), monthly,
+  quantity one, tax-exclusive. Only the approved Managed Payments parameters are sent.
+- One `Subscription` row per User with random durable customer/checkout identities. User locking
+  serializes checkout and account deletion. Open attempts are reused; new attempts require provider
+  expiry. Missing responses replay the same committed identity. After 23 hours, an unresolved
+  request stops for operator reconciliation rather than risking another purchase after Stripe's
+  minimum 24-hour idempotency retention. Do not delete or reset that row to retry.
+- Self-only summary, checkout, portal and paginated invoice API. No request accepts provider/customer,
+  price or redirect selectors. The server reads stored Checkout/Subscription references, verifies
+  the configured price and paid invoice period, and never trusts browser return parameters.
+- Pricing and Settings Subscription use the existing shells/UI kit. Tax and Link disclosures,
+  unavailable/pending/overdue/paused/ended/cancellation, usage, invoice loading/empty/error/pagination,
+  offline and refresh states are implemented. Provider receipts are not duplicated by PickFlick.
+- Deletion seals account access immediately. Its existing durable worker expires open checkout and
+  cancels the subscription before billing completes. A payment racing expiry is reconciled on retry;
+  provider failure retains the job. Minimal provider identities and billing audit remain under the
+  anonymized history User, with financial/audit retention and external provider deletion still gated.
+  Own archives include stored billing state and audit actions without internal retry identifiers.
+
+Canonical references: [Architecture](../ARCHITECTURE.md#billing-boundary-partial),
+[environment](environment.md#billing-configuration), [Design](../DESIGN.md#subscription--partial),
+[archive inventory](gdpr-archives.md#version-1-inventory), and [security](security.md#billing).
+The SDK pin follows the [official release](https://github.com/stripe/stripe-node/releases/tag/v23.2.0);
+Checkout follows [Managed Payments setup](https://docs.stripe.com/payments/managed-payments/set-up)
+and its [unsupported parameters](https://docs.stripe.com/payments/managed-payments/update-checkout#remove-unsupported-parameters).
+
+### Verification and remaining acceptance
+
+- The exact migration replays on an isolated test PostgreSQL database; shared environments are untouched.
+- `pnpm verify` passes: production dependency audit (zero High/Critical), ESLint/Stylelint,
+  Knip, formatting, all package/root type checks, 775 unit tests in 78 files, and production builds.
+  Later focused ESLint/Stylelint checks pass for the final cancellation guard, initial-history
+  loading state and Subscription/Pricing composition.
+- Focused PostgreSQL/API checks: 23 tests pass across billing (13), account deletion (8) and
+  archives (2), including concurrency, lost responses, paid/unpaid state, cancellation failure/race,
+  the bounded idempotency window and own-data export excluding peer/retry identifiers.
+- `pnpm deploy:check` passes without deploying anything.
+- The real-API billing browser journey passes with the injected test provider: a registered User
+  without Clubs upgrades, returns to the confirmed plan, opens portal, and cannot expose billing
+  to a second User. Production bootstrap never imports the test provider entrypoint.
+- The pinned Playwright 1.63.0 noble image with Node 24.15.0 passes all 45 selected billing/public
+  checks without retry, including keyboard/axe, offline/failure/retry, pagination, anonymous sign-in,
+  forged/replayed returns and strict screenshots. Ten new/changed baselines were inspected: Free
+  and Pro Subscription, Pricing and the factual draft Privacy/Terms updates, each at 390/1440.
+- Direct reference/implementation review retained the plan inset, two-column/stacked usage,
+  local table scrolling, portal/cancellation sections, shared chrome and tokens. It corrected the
+  new CTA wrapper's width and left-aligned the empty history row; required tax/Link/anchor text
+  supplements the prototype's superseded provider fixtures.
+- One earlier selected run failed the existing Contact in-flight check because its 300ms response
+  completed between assertions. The test now uses the existing request barrier; the final 45-check
+  run passes with flaky-test rejection enabled. No product Contact behavior or gate was weakened.
+- An ad hoc Prisma schema diff reports FK differences on ten existing tables. Comparing the same
+  database against the original HEAD schema produces identical FK differences; neither new billing
+  table has drift. Historical FK changes are outside #71 and were not applied.
+- Canonical `pricing.html`, `settings.html` Subscription panel and responsive baselines were
+  rendered and inspected at 390/1440 before implementation. The obsolete Subscription study and
+  Paddle fixture behavior were not used as requirements.
+- Real sandbox checkout/tax/first-payment anchor and actual portal behavior remain **unverified**.
+  The continuation forbids secrets/billing operations; no provider resources were mutated.
+- Hosted preview of the exact head SHA and the owner's acknowledgment remain **pending**. The
+  continuation does not authorize deployment. Local screenshots do not satisfy this criterion.
+- Webhooks/BillingEvent remain #72; Club entitlements/downgrade choice remain #73. Live activation,
+  support/descriptor and eligibility remain #94. Financial/privacy and public-copy sign-offs stay
+  open. Phase 20 and issue acceptance are not marked Done.
+
+### Review fixes — 2026-11-25
+
+- Checkout creation and deletion recovery share one pure request builder; retry-window checks,
+  provider calls and transaction order are preserved. The lost-response deletion regression
+  verifies identical request inputs and expiry of the original checkout.
+- Successful subscription refresh resets invoice history to its first page, replacing cached
+  pages even when billing availability and customer presence stay unchanged.
+- Usage restores the canonical 28px counters, 6px bars and 16px card padding. The environment
+  reference states the offer as €5 monthly (500 euro cents).
+- Focused PostgreSQL/API checks pass: 24 tests across billing, account deletion and archives,
+  using a disposable local `pickflick_test` database.
+- `pnpm verify` passes, including the production dependency audit, lint, Knip, formatting,
+  type checks, 775 unit tests and production builds.
+- All 12 billing browser checks pass in the pinned Playwright image, including the unpaid-to-paid
+  invoice transition after exhausting pagination. The four Subscription baselines were updated
+  and inspected against canonical `settings.html` at 390/1440; only the usage metrics changed.
+- The full smoke/visual selection with four workers reports 262 passed and one flaky check:
+  `selection-outcome-visible` at 390px passes on retry after a 661-pixel film-metadata spacing
+  difference. The flaky-test gate fails this run. The Selection implementation, baseline and
+  screenshot tolerance are unchanged by this review fix.
+- Single-worker diagnosis reports two passes and one failure, followed by five passes with the
+  exact source frontend restored temporarily and five passes after restoring the reviewed fixes.
+  The cause remains unconfirmed; the full-run flaky-test failure is retained as a verification
+  limitation rather than changing Selection behavior or accepting a different baseline.

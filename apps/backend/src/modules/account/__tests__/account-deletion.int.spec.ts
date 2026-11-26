@@ -17,6 +17,7 @@ import {
 } from '../../../testing/integration.js';
 import { removeUsers } from '../../../testing/remove-users.js';
 import { AuthService } from '../../auth/auth.service.js';
+import { BillingService } from '../../billing/billing.service.js';
 import { claimExport, getExportObjectKey } from '../../data-exports/data-export-store.js';
 import { DataExportWorkerService } from '../../data-exports/data-export-worker.service.js';
 import { DataExportsService } from '../../data-exports/data-exports.service.js';
@@ -302,7 +303,7 @@ describe('AccountDeletionController and worker', () => {
                 select: { recipientId: true, inApp: true, email: true },
             }),
         ).toEqual([{ recipientId: peer, inApp: true, email: true }]);
-        expect((await getJob()).billing).toBe('NOT_IMPLEMENTED');
+        expect((await getJob()).billing).toBe('NOT_REQUIRED');
         expect((await request('/account', initial)).status).toBe(401);
         expect((await request('/account', reauthenticated)).status).toBe(401);
         await expect(login(owner)).rejects.toMatchObject({ body: { code: 'ACCOUNT_INACTIVE' } });
@@ -414,7 +415,11 @@ describe('AccountDeletionController and worker', () => {
         expect((await getJob()).failure).toBe('OBJECT_CLEANUP_FAILED');
         expect((await getJob()).avatarKey).toBe(key);
         expect(objects.has(key)).toBe(true);
-        const restarted = new AccountDeletionWorkerService(prisma, app.get(StorageService));
+        const restarted = new AccountDeletionWorkerService(
+            prisma,
+            app.get(StorageService),
+            app.get(BillingService),
+        );
         const later = new Date(Date.now() + 120_000);
         await restarted.sweep(later);
         expect(objects.has(key)).toBe(false);
@@ -453,7 +458,11 @@ describe('AccountDeletionController and worker', () => {
             expect(await realStorage.exists(key)).toBe(true);
             await prepare();
             expect((await accept()).status).toBe(202);
-            const realWorker = new AccountDeletionWorkerService(prisma, realStorage);
+            const realWorker = new AccountDeletionWorkerService(
+                prisma,
+                realStorage,
+                app.get(BillingService),
+            );
             await realWorker.sweep();
             await realWorker.sweep(new Date(Date.now() + 10_000));
             expect(await realStorage.exists(key)).toBe(false);

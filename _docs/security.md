@@ -330,6 +330,20 @@ backend deploy/prune does not include that package or its plugins. This separati
 runtime tool inclusion; it does not replace full-workspace audit or claim every production dependency
 is vulnerability-free.
 
+## Billing
+
+Billing actions require the authenticated account and reject Customer, Subscription, price and
+redirect selectors from the browser. The server serializes checkout and account deletion on the
+User row. Paid status comes from the configured offer and provider invoice period; success/cancel
+query parameters never grant access. Provider URLs are restricted to HTTPS Stripe/Link domains.
+Invoice pagination checks cursor ownership before requesting the next page. Responses use private,
+no-store caching. SDK failures become bounded reason codes without provider bodies or credentials.
+
+The sandbox key stays in the backend environment. No browser SDK, external script, card form or
+CSP exception is added. Deletion first closes checkout and cancels billing; provider failure retains
+a durable retry without restoring account access. Webhook signature/ledger processing remains #72;
+Club entitlement replacement remains #73. See the [billing boundary](../ARCHITECTURE.md#billing-boundary-partial).
+
 ## Infrastructure
 
 - Only the frontend has public application routing; application Compose publishes no host ports.
