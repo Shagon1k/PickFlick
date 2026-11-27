@@ -413,3 +413,18 @@ local tests and Draft PR creation do not close its post-deployment acceptance ga
 - `pnpm verify` passes on Node 24.15.0 / pnpm 11.25.0: the dependency audit, lint, Knip,
   formatting, type checks, 782 unit tests and production builds. Staged gitleaks scanning and
   `git diff --check` pass. Disposable database/storage containers are removed.
+
+### CI repair attempt 1 — 2026-11-27
+
+- CI run `45907106037` on PR head `df6706be304c429bfefda250b7be80ab5f9d62f7` fails
+  UI smoke because the Library recovery test's page-wide text locator matches both hidden
+  streamed markup and the visible Watchlist alert. Delivery fails on that UI result; the other
+  quality jobs pass.
+- Scope the existing alert-text and retry-link assertions to the accessible `Watchlist unavailable`
+  region. The anonymous redirect assertion and application behavior remain unchanged.
+- The original test passes ten local repetitions without retries; the CI log and trace retain
+  the observed strict-mode failure.
+- All seven Watchlist smoke checks pass three repetitions (21/21) with `--retries 0`, including
+  the recovery message, retry link, anonymous redirect, responsive edits and removal focus.
+- `pnpm verify` passes on Node 24.15.0 / pnpm 11.25.0, including all 782 unit tests and production
+  builds. No baseline, dependency, application policy or check-coverage changes are included.
