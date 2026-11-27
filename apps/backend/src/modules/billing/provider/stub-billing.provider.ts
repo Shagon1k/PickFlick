@@ -17,6 +17,14 @@ export class StubBillingProvider implements IBillingProvider {
     private readonly requests = new Map<string, string>();
     constructor(readonly isEnabled = false) {}
 
+    verifyWebhookEvent: IBillingProvider['verifyWebhookEvent'] = () => {
+        throw new BillingProviderError();
+    };
+
+    fetchPaymentCustomer: IBillingProvider['fetchPaymentCustomer'] = () => {
+        throw new BillingProviderError();
+    };
+
     createCustomer(reference: string): Promise<string> {
         const customer = this.customers.get(reference) ?? `customer_${randomUUID()}`;
         this.customers.set(reference, customer);

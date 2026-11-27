@@ -1523,7 +1523,10 @@ with a provider-neutral adapter. Dashboard evidence confirms sandbox readiness a
 product/portal configuration. The owner accepted the discovery decision and staged verification:
 checkout/tax/anchor/portal behavior in #71, webhook registration/delivery in #72, and entitlements
 in #73. #71 implements the checkout/portal/history adapter and Subscription UI; real sandbox behavior and exact-SHA hosted owner review remain unverified. Alex owns account configuration; support/descriptor setup and
-live review remain #94 gates. Organization grouping waits until the TailorTales account exists.
+live review remain #94 gates. #72 adds raw-body signature verification, a durable BillingEvent ledger,
+current-state projection and scheduled reconciliation with atomic notification effects. Local
+verification uses synthetic fixtures; destination registration, recorded real signed deliveries and
+external cancel/reversal evidence remain open. Organization grouping waits until the TailorTales account exists.
 Live activation and the Managed Payments eligibility review belong to #94. The owner confirmed
 €5 plus applicable tax at checkout; sandbox price configuration must use tax-exclusive behavior.
 

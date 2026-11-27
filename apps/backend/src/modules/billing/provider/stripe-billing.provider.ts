@@ -4,13 +4,15 @@ import { z } from 'zod';
 
 import {
     BillingProviderError,
+    BillingWebhookError,
     type IBillingProvider,
     type ICheckoutSnapshot,
 } from '../billing.types.js';
 import { toSubscriptionSnapshot } from './stripe-subscription.js';
+import { STRIPE_API_VERSION, toWebhookEvent } from './stripe-webhook.js';
 
-export const STRIPE_API_VERSION = '2026-11-18.endive';
 const PROVIDER_TIMEOUT_MS = 8000;
+const SIGNATURE_TOLERANCE_SECONDS = 300;
 const MONTHLY_PRICE = 500;
 const MILLISECONDS = 1000;
 const HISTORY_LIMIT = 10;
@@ -35,12 +37,37 @@ export class StripeBillingProvider implements IBillingProvider {
     readonly isEnabled = true;
     private readonly client: Stripe;
 
-    constructor(private readonly config: { secretKey: string; priceId: string }) {
+    constructor(
+        private readonly config: { secretKey: string; priceId: string; webhookSecret?: string },
+    ) {
         this.client = new Stripe(config.secretKey, {
             apiVersion: STRIPE_API_VERSION,
             timeout: PROVIDER_TIMEOUT_MS,
             maxNetworkRetries: 0,
             httpClient: Stripe.createFetchHttpClient(),
+        });
+    }
+
+    verifyWebhookEvent(payload: Buffer, signature: string) {
+        if (!this.config.webhookSecret) throw new BillingProviderError();
+        let verified: unknown;
+        try {
+            verified = this.client.webhooks.constructEvent(
+                payload,
+                signature,
+                this.config.webhookSecret,
+                SIGNATURE_TOLERANCE_SECONDS,
+            );
+        } catch {
+            throw new BillingWebhookError('INVALID_SIGNATURE');
+        }
+        return toWebhookEvent(verified, /^(?:sk|rk)_live_/u.test(this.config.secretKey));
+    }
+
+    fetchPaymentCustomer(paymentId: string) {
+        return this.call(async () => {
+            const charge = await this.client.charges.retrieve(paymentId);
+            return z.string().min(1).nullable().parse(charge.customer);
         });
     }
 

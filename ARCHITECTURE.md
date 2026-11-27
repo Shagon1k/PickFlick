@@ -91,7 +91,7 @@ module uses. A global `AuthGuard` protects every route unless it is marked `@Pub
 | library                 | My Library: Personal Ratings (`personal-rating/`), the Watchlist (`watchlist/`), and searchable, paginated views of both.                                                           | Active                                                                                        |
 | achievements            | Versioned Club/personal definitions, computed progress and immutable earned evidence.                                                                                               | Partial — hosted visual acceptance remains open                                               |
 | notifications           | Durable per-recipient events and their write transactions (root), `preferences/`, `inbox/` (projection, read state, refresh stream) and `email-delivery/`.                          | Implemented inbox, Redis invalidation and email dispatcher; provider acceptance gates open    |
-| billing                 | Own checkout, portal, subscription projection, invoice history and account-deletion cancellation.                                                                                   | Implemented locally; sandbox and hosted acceptance pending                                    |
+| billing                 | Own checkout, portal, subscription projection, invoice history, signed webhook ledger, reconciliation and account-deletion cancellation.                                            | Implemented locally; sandbox and hosted acceptance pending                                    |
 | Privacy, Administration | See the Roadmap phases.                                                                                                                                                             | Proposed                                                                                      |
 
 Copy `apps/backend/src/modules/contact` for a new module; [apps/backend/AGENTS.md](apps/backend/AGENTS.md)
@@ -349,7 +349,7 @@ Remaining entities in the [Roadmap domain model](ROADMAP.md#5-domain-model) are 
 | Club avatar             | Next → API → S3                              | Raw image ≤512 KiB, PNG/JPEG/WebP signature checked                            | Active                                                                            |
 | Live progress           | Frontend → API                               | Authenticated version polling, re-fetch on change                              | Active                                                                            |
 | Catalog providers       | Backend → provider                           | PoiskKino + TheTVDB or TMDB; verified IDs, normalized metadata and safe media. | Active when configured; provider coverage and media rights remain separate checks |
-| Stripe Managed Payments | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Proposed                                                                          |
+| Stripe Managed Payments | API → provider; provider → API webhook       | Signed, idempotent webhooks                                                    | Implemented locally; actual sandbox delivery remains unverified                   |
 | CSV                     | Frontend ↔ API                               | Version 1 personal ratings CSV; bounded preview and atomic import              | Partial — local implementation; hosted acceptance pending                         |
 
 Email sender identities follow ADR-009 and its 2026-10-28 amendment: production uses
@@ -360,8 +360,8 @@ environment configuration are not changed by repository updates.
 
 Active Session flows serialize Club → Session updates, persist submissions, evaluate completion
 and transition at most once in one transaction. The deadline worker reads due Sessions directly and
-rechecks each one under its locks. Proposed Stripe Managed Payments flows verify events, store provider
-IDs and apply changes idempotently; account deletion removes shared attribution and revokes
+rechecks each one under its locks. Stripe Managed Payments flows verify events, store provider
+IDs and project current state idempotently; account deletion removes shared attribution and revokes
 every authentication session.
 
 ### Billing boundary (Partial)
@@ -393,9 +393,32 @@ Subscription and minimal billing audit remain linked to the history User; their 
 retention and external provider deletion remain separate legal/privacy gates. Own-data archives
 include the stored subscription projection and audit actions, excluding internal retry identities.
 
-Webhook signatures and BillingEvent remain #72; subscription-derived Club enforcement remains #73.
-The existing Club access/entitlement functions continue to enforce limits. The proposed public
-webhook path is `POST /api/webhooks/stripe`; it is not registered by #71. Actual sandbox
+`POST /webhooks/stripe` (public `POST /api/webhooks/stripe`) verifies raw bytes through the adapter,
+with a five-minute signature tolerance and the pinned API version. Missing signing configuration
+refuses callbacks. `BillingEvent` stores unique `(provider, providerEventId)` receipts, normalized
+kind, opaque customer/payment references, timestamps and processing state; it never stores payloads.
+The API acknowledges after insertion, before provider reads. Unsupported events are recorded as ignored.
+
+The billing worker runs in the API process, following the existing deletion-worker lifecycle.
+Every five seconds it processes one due receipt with `FOR UPDATE SKIP LOCKED` and one due
+Subscription reconciliation. It locks the User before re-reading local state and fetching current
+provider truth through the existing projection. Transactions serialize with checkout and deletion;
+anonymized accounts are skipped. Customers absent from this database are ignored because the
+nonproduction environments share a sandbox. Disputes resolve their opaque payment reference inside
+the adapter; refund/dispute events do not imply immediate revocation.
+
+Projection, audit and notification writes share a transaction. A savepoint rolls them back before
+recording a bounded failure and a one-minute retry. State changes record one mandatory
+`BILLING_SERVICE` notification through Phase 17; unchanged projections create no new notification.
+Request-driven Settings and checkout refreshes use the notification transaction wrapper to publish
+recipient refresh signals after commit, as worker reconciliation does.
+Successful reconciliation schedules the next check in 15 minutes. Persisted failures, attempt counts,
+processing lag/backlog and mismatch-repair logs support operation and retry; see the
+[environment reference](_docs/environment.md#billing-webhook-operations).
+
+Subscription-derived Club enforcement remains #73. The existing Club access/entitlement functions
+continue to enforce limits. Sandbox destination registration and real signed delivery remain
+unverified under #72; its test fixtures are synthetic. Actual sandbox
 checkout/tax/anchor/portal checks and exact-SHA hosted owner review remain unverified.
 Support/descriptor configuration, live activation and eligibility remain #94 gates.
 

@@ -218,8 +218,14 @@ test(
     async ({ context, page }) => {
         await signInMock(context, 'valid-watchlist-unavailable');
         await page.goto('/library?tab=watchlist');
-        await expect(page.getByText('Your Watchlist is temporarily unavailable.')).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Try again' })).toBeVisible();
+        const unavailable = page.getByRole('region', {
+            name: 'Watchlist unavailable',
+            exact: true,
+        });
+        await expect(
+            unavailable.getByText('Your Watchlist is temporarily unavailable.'),
+        ).toBeVisible();
+        await expect(unavailable.getByRole('link', { name: 'Try again' })).toBeVisible();
         await context.clearCookies();
         await page.goto('/library?tab=watchlist');
         await expect(page).toHaveURL(/\/login\?returnTo=/u);

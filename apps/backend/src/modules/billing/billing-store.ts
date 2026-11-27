@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@pickflick/database';
 
+import { recordNotification } from '../notifications/notification-store.js';
 import {
     BillingProviderError,
     type IBillingProvider,
@@ -25,6 +26,15 @@ export function assertRetryWindow(startedAt: Date) {
 
 export function auditBilling(tx: Prisma.TransactionClient, subscriptionId: string, action: string) {
     return tx.billingAuditEvent.create({ data: { subscriptionId, action } });
+}
+
+export function hasSubscriptionChanged(before: TSubscription, after: TSubscription) {
+    return (
+        before.status !== after.status ||
+        before.plan !== after.plan ||
+        before.cancelAtPeriodEnd !== after.cancelAtPeriodEnd ||
+        before.paidThrough?.getTime() !== after.paidThrough?.getTime()
+    );
 }
 
 export async function saveSnapshot(
@@ -55,13 +65,14 @@ export async function saveSnapshot(
             plan,
         },
     });
-    if (
-        account.status !== updated.status ||
-        account.plan !== updated.plan ||
-        account.cancelAtPeriodEnd !== updated.cancelAtPeriodEnd ||
-        account.paidThrough?.getTime() !== updated.paidThrough?.getTime()
-    )
-        await auditBilling(tx, account.id, 'SUBSCRIPTION_REFRESHED');
+    if (hasSubscriptionChanged(account, updated)) {
+        const audit = await auditBilling(tx, account.id, 'SUBSCRIPTION_REFRESHED');
+        await recordNotification(tx, {
+            recipientId: account.userId,
+            event: 'BILLING_SERVICE',
+            sourceId: audit.id,
+        });
+    }
     return updated;
 }
 

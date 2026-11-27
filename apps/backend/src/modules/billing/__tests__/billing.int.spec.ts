@@ -15,12 +15,15 @@ import { AccountDeletionWorkerService } from '../../account/account-deletion-wor
 import { AuthService } from '../../auth/auth.service.js';
 import { buildArchive } from '../../data-exports/archive.js';
 import { DataExportWorkerService } from '../../data-exports/data-export-worker.service.js';
+import { NotificationSignals } from '../../notifications/notification-signals.js';
 import { StorageService } from '../../storage/storage.service.js';
 import { BILLING_PROVIDER, BillingProviderError } from '../billing.types.js';
 import { StubBillingProvider } from '../provider/stub-billing.provider.js';
+import { BillingWorkerService } from '../webhooks/billing-worker.service.js';
 
 describe('BillingController', () => {
     const provider = new StubBillingProvider(true);
+    const signals = { publish: vi.fn<(recipients: Set<string>) => Promise<void>>() };
     let app: NestExpressApplication;
     let prisma: PrismaService;
     let baseUrl: string;
@@ -65,6 +68,8 @@ describe('BillingController', () => {
         })
             .overrideProvider(BILLING_PROVIDER)
             .useValue(provider)
+            .overrideProvider(NotificationSignals)
+            .useValue(signals)
             .overrideProvider(AuthService)
             .useFactory({
                 factory: (database: PrismaService) =>
@@ -81,6 +86,7 @@ describe('BillingController', () => {
         await app.listen(0, '127.0.0.1');
         baseUrl = `http://127.0.0.1:${(app.getHttpServer().address() as AddressInfo).port}`;
         prisma = app.get(PrismaService);
+        await app.get(BillingWorkerService).onModuleDestroy();
         await app.get(AccountDeletionWorkerService).onModuleDestroy();
         await app.get(DataExportWorkerService).onModuleDestroy();
         // Better Auth's test plugin augments context at runtime.
@@ -90,6 +96,7 @@ describe('BillingController', () => {
         login = (id) => context.test.login({ userId: id });
     });
     beforeEach(async () => {
+        signals.publish.mockReset().mockResolvedValue(undefined);
         userId = await createUser(prisma);
         otherId = await createUser(prisma);
         cookie = (await login(userId)).headers.get('cookie')!;
@@ -210,6 +217,53 @@ describe('BillingController', () => {
         expect(summary.status).toBe('PAYMENT_OVERDUE');
         expect(summary.plan).toBe('FREE');
     });
+
+    it('should publish a Settings refresh notification after commit and ignore unchanged refreshes', async () => {
+        expect((await checkout()).status).toBe(201);
+        await complete();
+        signals.publish.mockImplementation(async (recipients) => {
+            expect(recipients).toEqual(new Set([userId]));
+            expect((await account()).plan).toBe('PRO');
+            expect(
+                await prisma.notification.count({
+                    where: { recipientId: userId, event: 'BILLING_SERVICE' },
+                }),
+            ).toBe(1);
+        });
+
+        expect((await readSummary()).plan).toBe('PRO');
+        expect(signals.publish).toHaveBeenCalledTimes(1);
+        await readSummary();
+        await app.get(BillingWorkerService).sweep();
+        expect(signals.publish).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['preparation', 'creation'])(
+        'should publish a checkout %s refresh notification after commit',
+        async (stage) => {
+            expect((await checkout()).status).toBe(201);
+            const id = await complete();
+            const snapshot = provider.subscriptions.get(id)!;
+            snapshot.status = 'ENDED';
+            await readSummary();
+            signals.publish.mockClear();
+            if (stage === 'creation')
+                vi.spyOn(provider, 'fetchSubscription').mockResolvedValueOnce({ ...snapshot });
+            snapshot.cancelAtPeriodEnd = true;
+            signals.publish.mockImplementation(async (recipients) => {
+                expect(recipients).toEqual(new Set([userId]));
+                expect((await account()).cancelAtPeriodEnd).toBe(true);
+                expect(
+                    await prisma.notification.count({
+                        where: { recipientId: userId, event: 'BILLING_SERVICE' },
+                    }),
+                ).toBe(2);
+            });
+
+            expect((await checkout()).status).toBe(201);
+            expect(signals.publish).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it('should create a new attempt only after the provider confirms expiry', async () => {
         expect((await checkout()).status).toBe(201);

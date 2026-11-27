@@ -150,6 +150,10 @@ model Subscription {
   checkoutRequestId      String?             @db.Uuid
   checkoutStartedAt      DateTime?           @db.Timestamptz(3)
   providerCheckoutId     String?
+  nextReconcileAt        DateTime            @default(now()) @db.Timestamptz(3)
+  lastReconciledAt       DateTime?           @db.Timestamptz(3)
+  reconcileAttempts      Int                 @default(0)
+  reconcileFailure       String?
   createdAt              DateTime            @default(now()) @db.Timestamptz(3)
   updatedAt              DateTime            @updatedAt @db.Timestamptz(3)
   user                   User                @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -158,6 +162,26 @@ model Subscription {
   @@unique([provider, providerCustomerId])
   @@unique([provider, providerSubscriptionId])
   @@unique([provider, providerCheckoutId])
+  @@index([nextReconcileAt])
+}
+
+model BillingEvent {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider        String
+  providerEventId String
+  kind            String
+  occurredAt      DateTime  @db.Timestamptz(3)
+  receivedAt      DateTime  @default(now()) @db.Timestamptz(3)
+  customerId      String?
+  paymentId       String?
+  state           String    @default("PENDING")
+  attemptCount    Int       @default(0)
+  nextAttemptAt   DateTime  @default(now()) @db.Timestamptz(3)
+  processedAt     DateTime? @db.Timestamptz(3)
+  failure         String?
+
+  @@unique([provider, providerEventId])
+  @@index([state, nextAttemptAt])
 }
 
 model BillingAuditEvent {

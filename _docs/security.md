@@ -341,8 +341,14 @@ no-store caching. SDK failures become bounded reason codes without provider bodi
 
 The sandbox key stays in the backend environment. No browser SDK, external script, card form or
 CSP exception is added. Deletion first closes checkout and cancels billing; provider failure retains
-a durable retry without restoring account access. Webhook signature/ledger processing remains #72;
-Club entitlement replacement remains #73. See the [billing boundary](../ARCHITECTURE.md#billing-boundary-partial).
+a durable retry without restoring account access. Stripe webhook verification uses raw request bytes,
+the environment-specific signing secret, a five-minute timestamp tolerance and the pinned API version.
+Invalid signatures cannot insert ledger records. The signature header is redacted from HTTP logs;
+payloads and provider error bodies are not persisted. The public route acknowledges only after the
+unique event receipt is stored. Workers fetch current provider truth and commit projection, audit and
+notification effects together; retries and reordered events cannot incrementally grant paid access.
+Sandbox registration and real signed-delivery evidence remain open under #72. Club entitlement
+replacement remains #73. See the [billing boundary](../ARCHITECTURE.md#billing-boundary-partial).
 
 ## Infrastructure
 

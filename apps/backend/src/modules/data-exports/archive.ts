@@ -12,6 +12,27 @@ const compress = promisify(gzip);
 const AVATAR_TIMEOUT_MS = 30_000;
 const SNAPSHOT_TIMEOUT_MS = 60_000;
 
+async function collectBillingEvents(tx: Prisma.TransactionClient, userId: string) {
+    const account = await tx.subscription.findUnique({
+        where: { userId },
+        select: { provider: true, providerCustomerId: true },
+    });
+    if (!account?.providerCustomerId) return [];
+    return tx.billingEvent.findMany({
+        where: { provider: account.provider, customerId: account.providerCustomerId },
+        select: {
+            providerEventId: true,
+            kind: true,
+            occurredAt: true,
+            receivedAt: true,
+            state: true,
+            processedAt: true,
+            failure: true,
+        },
+        orderBy: [{ receivedAt: 'asc' }, { id: 'asc' }],
+    });
+}
+
 async function collectPersonalData(tx: Prisma.TransactionClient, userId: string) {
     const profile = await tx.user.findUniqueOrThrow({
         where: { id: userId, status: 'ACTIVE' },
@@ -119,6 +140,7 @@ async function collectPersonalData(tx: Prisma.TransactionClient, userId: string)
             select: { action: true, createdAt: true },
             orderBy: { createdAt: 'asc' },
         }),
+        billingEvents: await collectBillingEvents(tx, userId),
         exportJobs: await tx.dataExportJob.findMany({
             where: { userId },
             select: {

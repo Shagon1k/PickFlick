@@ -62,8 +62,28 @@ function failuresOf(source: Record<string, string>): string[] {
 }
 
 describe('parseRuntimeEnvironment', () => {
+    it('should require billing for webhook verification and reject malformed signing configuration', () => {
+        expect(failuresOf({ ...local, STRIPE_WEBHOOK_SECRET: 'whsec_synthetic' })).toContain(
+            'STRIPE_WEBHOOK_SECRET requires billing configuration',
+        );
+        expect(failuresOf({ ...local, STRIPE_WEBHOOK_SECRET: 'malformed' }).length).toBeGreaterThan(
+            0,
+        );
+        expect(
+            parseRuntimeEnvironment({
+                ...local,
+                STRIPE_SECRET_KEY: 'rk_test_synthetic',
+                STRIPE_PRO_MONTHLY_PRICE_ID: 'price_fixture',
+                STRIPE_WEBHOOK_SECRET: 'whsec_synthetic',
+            }).billing.webhookSecret,
+        ).toBe('whsec_synthetic');
+    });
     it('should disable absent billing configuration and require a complete sandbox pair', () => {
-        expect(parseRuntimeEnvironment(local).billing).toEqual({ secretKey: '', priceId: '' });
+        expect(parseRuntimeEnvironment(local).billing).toEqual({
+            secretKey: '',
+            priceId: '',
+            webhookSecret: '',
+        });
         expect(failuresOf({ ...local, STRIPE_PRO_MONTHLY_PRICE_ID: 'price_fixture' })).toEqual([
             'STRIPE_PRO_MONTHLY_PRICE_ID must be supplied together with STRIPE_SECRET_KEY',
         ]);
